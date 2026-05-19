@@ -11,5 +11,6 @@ backend/uploads/*
 !backend/uploads/documents/.gitkeep
 !backend/uploads/profiles/.gitkeep
 *.log
+gh-login-output.txt
 .DS_Store
 Thumbs.db
