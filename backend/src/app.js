@@ -3,15 +3,10 @@ import cors from "cors";
 import helmet from "helmet";
 import morgan from "morgan";
 import rateLimit from "express-rate-limit";
-import path from "node:path";
-import { fileURLToPath } from "node:url";
 import { env } from "./config/env.js";
 import { uploadRoot } from "./config/uploads.js";
 import routes from "./routes/index.js";
 import { errorHandler, notFound } from "./middleware/errorHandler.js";
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
 
 export const app = express();
 
@@ -33,12 +28,6 @@ app.use(
 
 app.use("/uploads", express.static(uploadRoot));
 app.use("/api", routes);
-
-if (env.nodeEnv === "production") {
-  const frontendDist = path.resolve(__dirname, "../../frontend-dist");
-  app.use(express.static(frontendDist));
-  app.get("*", (req, res) => res.sendFile(path.join(frontendDist, "index.html")));
-}
 
 app.use(notFound);
 app.use(errorHandler);
