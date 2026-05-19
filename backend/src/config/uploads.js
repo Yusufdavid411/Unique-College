@@ -5,7 +5,9 @@ import { fileURLToPath } from "node:url";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-export const uploadRoot = path.resolve(__dirname, "../../uploads");
+export const uploadRoot = process.env.UPLOAD_ROOT
+  ? path.resolve(process.env.UPLOAD_ROOT)
+  : path.resolve(__dirname, "../../uploads");
 
 export const uploadFolders = {
   applications: path.join(uploadRoot, "applications"),
