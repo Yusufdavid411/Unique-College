@@ -1,4 +1,5 @@
 import { Router } from "express";
+import { prisma } from "../config/prisma.js";
 import applicationRoutes from "./applicationRoutes.js";
 import authRoutes from "./authRoutes.js";
 import contactRoutes from "./contactRoutes.js";
@@ -11,6 +12,15 @@ const router = Router();
 
 router.get("/health", (req, res) => {
   res.json({ success: true, message: "Unique College API is healthy" });
+});
+
+router.get("/health/db", async (req, res, next) => {
+  try {
+    await prisma.$queryRaw`SELECT 1`;
+    res.json({ success: true, message: "Unique College database is healthy" });
+  } catch (error) {
+    next(error);
+  }
 });
 
 router.use("/auth", authRoutes);
