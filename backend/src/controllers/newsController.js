@@ -1,6 +1,7 @@
 import { prisma } from "../config/prisma.js";
 import { created, ok } from "../utils/apiResponse.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
+import { fileMetadata } from "../services/uploadService.js";
 import { slugify } from "../utils/slugify.js";
 
 async function uniqueSlug(title, existingId) {
@@ -41,9 +42,11 @@ export const listNews = asyncHandler(async (req, res) => {
 
 export const createNews = asyncHandler(async (req, res) => {
   const slug = await uniqueSlug(req.body.title);
+  const metadata = fileMetadata(req.file, "documents");
   const news = await prisma.news.create({
     data: {
       ...req.body,
+      imagePath: metadata.path || req.body.imagePath || null,
       slug,
       authorId: req.user.id
     }
@@ -53,9 +56,14 @@ export const createNews = asyncHandler(async (req, res) => {
 
 export const updateNews = asyncHandler(async (req, res) => {
   const slug = await uniqueSlug(req.body.title, req.params.id);
+  const metadata = fileMetadata(req.file, "documents");
   const news = await prisma.news.update({
     where: { id: req.params.id },
-    data: { ...req.body, slug }
+    data: {
+      ...req.body,
+      imagePath: metadata.path || req.body.imagePath || null,
+      slug
+    }
   });
   ok(res, news, "News item updated");
 });

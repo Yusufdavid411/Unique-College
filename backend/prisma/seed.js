@@ -29,9 +29,11 @@ async function main() {
 
   const settings = [
     ["institution_name", "Unique College of Health Science and Technology", "identity"],
-    ["contact_email", "admissions@uniquecollege.edu.ng", "contact"],
-    ["contact_phone", "+234 800 000 0000", "contact"],
-    ["address", "Nigeria", "contact"]
+    ["contact_email", "uniquecollegescience@gmail.com", "contact"],
+    ["contact_phone", "+234 909 283 5595, +234 813 531 2799", "contact"],
+    ["address", "R3W6 + Q6X Satellite Quarters, behind Police Station, Kwali-Abuja", "contact"],
+    ["website", "www.uniquecollegekwali.com", "contact"],
+    ["motto", "Excellence in Impacting Knowledge", "identity"]
   ];
 
   for (const [key, value, group] of settings) {

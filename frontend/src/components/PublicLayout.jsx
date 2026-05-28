@@ -1,6 +1,7 @@
 import { NavLink, Outlet, Link } from "react-router-dom";
-import { GraduationCap, Menu, Phone } from "lucide-react";
+import { Mail, MapPin, Menu, Phone } from "lucide-react";
 import { useState } from "react";
+import { assetPaths, schoolInfo } from "../data/siteData.js";
 
 const navItems = [
   ["Home", "/"],
@@ -19,9 +20,9 @@ export default function PublicLayout() {
     <div className="site-shell">
       <header className="site-header">
         <Link to="/" className="brand" onClick={() => setOpen(false)}>
-          <span className="brand-mark"><GraduationCap size={24} /></span>
+          <span className="brand-mark image-mark"><img src={assetPaths.logo} alt="Unique College logo" /></span>
           <span>
-            <strong>Unique College</strong>
+            <strong>{schoolInfo.shortName}</strong>
             <small>Health Science & Technology</small>
           </span>
         </Link>
@@ -41,13 +42,17 @@ export default function PublicLayout() {
         <Outlet />
       </main>
       <footer className="site-footer">
-        <div>
-          <strong>Unique College of Health Science and Technology</strong>
-          <p>Modern healthcare education with practical, technology-ready training.</p>
+        <div className="footer-identity">
+          <img src={assetPaths.logo} alt="Unique College logo" loading="lazy" />
+          <div>
+            <strong>{schoolInfo.name}</strong>
+            <p>{schoolInfo.motto}. Transforming lives through quality healthcare education.</p>
+          </div>
         </div>
-        <div className="footer-contact">
-          <Phone size={18} />
-          <span>+234 800 000 0000</span>
+        <div className="footer-contact-list">
+          <span><MapPin size={18} />{schoolInfo.address}</span>
+          <span><Mail size={18} />{schoolInfo.email}</span>
+          <span><Phone size={18} />{schoolInfo.phoneDisplay}</span>
         </div>
       </footer>
     </div>

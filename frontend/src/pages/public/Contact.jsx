@@ -1,6 +1,7 @@
 import { useState } from "react";
 import Seo from "../../components/Seo.jsx";
 import { api } from "../../api/client.js";
+import { schoolInfo } from "../../data/siteData.js";
 
 export default function Contact() {
   const [form, setForm] = useState({ name: "", email: "", phone: "", subject: "", message: "" });
@@ -34,11 +35,13 @@ export default function Contact() {
         </form>
         <div className="location-panel">
           <h2>Location</h2>
-          <p>Nigeria</p>
+          <p>{schoolInfo.address}</p>
           <h2>Email</h2>
-          <p>admissions@uniquecollege.edu.ng</p>
+          <p>{schoolInfo.email}</p>
           <h2>Phone</h2>
-          <p>+234 800 000 0000</p>
+          <p>{schoolInfo.phoneDisplay}</p>
+          <h2>Website</h2>
+          <p>{schoolInfo.website}</p>
         </div>
       </section>
     </>

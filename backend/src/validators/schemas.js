@@ -21,7 +21,7 @@ export const applicationSchema = z.object({
     address: z.string().trim().min(5),
     state: z.string().trim().min(2),
     courseOfInterest: z.string().trim().min(2),
-    previousQualification: z.string().trim().min(2)
+    previousQualification: optionalString
   }),
   query: z.object({}).passthrough(),
   params: z.object({}).passthrough()

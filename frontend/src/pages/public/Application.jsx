@@ -11,29 +11,38 @@ const initial = {
   dateOfBirth: "",
   address: "",
   state: "",
-  courseOfInterest: programs[0].title,
-  previousQualification: ""
+  courseOfInterest: programs[0].title
 };
 
 export default function Application() {
   const [form, setForm] = useState(initial);
   const [passport, setPassport] = useState(null);
-  const [status, setStatus] = useState("");
+  const [status, setStatus] = useState({ type: "", message: "" });
 
   async function submit(event) {
     event.preventDefault();
-    setStatus("Submitting application...");
+    if (!event.currentTarget.checkValidity() || !passport) {
+      setStatus({ type: "error", message: "Please complete every required field and upload a passport photograph." });
+      return;
+    }
+
+    setStatus({ type: "info", message: "Submitting application..." });
     const data = new FormData();
     Object.entries(form).forEach(([key, value]) => data.append(key, value));
-    if (passport) data.append("passport", passport);
+    data.append("passport", passport);
 
     try {
       await api.post("/applications", data, { headers: { "Content-Type": "multipart/form-data" } });
       setForm(initial);
       setPassport(null);
-      setStatus("Application submitted. The admissions team can now review it.");
+      event.currentTarget.reset();
+      setStatus({
+        type: "success",
+        message:
+          "Application submitted. Please keep an eye on your email and phone. If your application is accepted, the admissions team will contact you with the next steps."
+      });
     } catch {
-      setStatus("Application could not be submitted. Please review the form.");
+      setStatus({ type: "error", message: "Application could not be submitted. Please review the form and try again." });
     }
   }
 
@@ -56,11 +65,10 @@ export default function Application() {
           <select value={form.courseOfInterest} onChange={(e) => setForm({ ...form, courseOfInterest: e.target.value })}>
             {programs.map((program) => <option key={program.title}>{program.title}</option>)}
           </select>
-          <input required placeholder="Previous qualification" value={form.previousQualification} onChange={(e) => setForm({ ...form, previousQualification: e.target.value })} />
           <textarea required placeholder="Address" rows="4" value={form.address} onChange={(e) => setForm({ ...form, address: e.target.value })} />
-          <label className="file-field">Passport photograph<input accept="image/png,image/jpeg,image/webp" type="file" onChange={(e) => setPassport(e.target.files?.[0] || null)} /></label>
+          <label className="file-field">Passport photograph<input required accept="image/png,image/jpeg,image/webp" type="file" onChange={(e) => setPassport(e.target.files?.[0] || null)} /></label>
           <button className="button primary" type="submit">Submit application</button>
-          {status && <p className="form-status">{status}</p>}
+          {status.message && <p className={`form-status ${status.type}`}>{status.message}</p>}
         </form>
       </section>
     </>

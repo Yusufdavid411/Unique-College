@@ -73,6 +73,18 @@ textarea {
   border-radius: 8px;
 }
 
+.brand-mark.image-mark {
+  overflow: hidden;
+  background: white;
+  border: 1px solid var(--line);
+}
+
+.brand-mark.image-mark img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
 .brand strong,
 .brand small {
   display: block;
@@ -327,10 +339,37 @@ td span,
   color: #aac6d8;
 }
 
-.footer-contact {
+.footer-identity {
   display: flex;
   align-items: center;
+  gap: 16px;
+  max-width: 560px;
+}
+
+.footer-identity img {
+  width: 72px;
+  height: 72px;
+  object-fit: cover;
+  border-radius: 8px;
+  background: white;
+}
+
+.footer-contact-list {
+  display: grid;
   gap: 10px;
+  min-width: min(100%, 360px);
+}
+
+.footer-contact-list span {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  color: #d7ecf6;
+}
+
+.footer-contact-list svg {
+  flex: 0 0 auto;
+  color: var(--cyan-500);
 }
 
 .page-hero {
@@ -457,8 +496,16 @@ textarea {
   font-weight: 750;
 }
 
+.form-status.success {
+  color: #137a42;
+}
+
 .form-status.error {
   color: #b91c1c;
+}
+
+.form-status.info {
+  color: var(--blue-700);
 }
 
 .gallery-card {
@@ -484,6 +531,42 @@ textarea {
 
 .gallery-card span {
   color: #d2edf5;
+}
+
+.news-card-media {
+  overflow: hidden;
+  padding: 0;
+}
+
+.news-card-media img {
+  width: 100%;
+  aspect-ratio: 16 / 10;
+  object-fit: cover;
+}
+
+.news-card-media h2,
+.news-card-media h3,
+.news-card-media p {
+  padding-left: 24px;
+  padding-right: 24px;
+}
+
+.news-card-media h2,
+.news-card-media h3 {
+  padding-top: 22px;
+}
+
+.news-card-media p:last-child {
+  padding-bottom: 24px;
+}
+
+.empty-state {
+  grid-column: 1 / -1;
+  padding: 28px;
+  color: var(--muted);
+  background: var(--soft);
+  border: 1px solid var(--line);
+  border-radius: 8px;
 }
 
 .login-screen,
@@ -645,6 +728,14 @@ th {
   background: white;
   border: 1px solid var(--line);
   border-radius: 8px;
+}
+
+.admin-list-thumb {
+  width: 86px;
+  height: 68px;
+  object-fit: cover;
+  border-radius: 8px;
+  flex: 0 0 auto;
 }
 
 .admin-list-item button,

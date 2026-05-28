@@ -8,6 +8,7 @@ export const createApplication = asyncHandler(async (req, res) => {
   const application = await prisma.application.create({
     data: {
       ...req.body,
+      previousQualification: req.body.previousQualification || "Not provided",
       dateOfBirth: new Date(req.body.dateOfBirth),
       passportPath: metadata.path,
       passportFileType: metadata.fileType,
