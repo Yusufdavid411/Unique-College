@@ -52,3 +52,8 @@ export const updateApplicationStatus = asyncHandler(async (req, res) => {
 
   ok(res, application, "Application status updated");
 });
+
+export const deleteApplication = asyncHandler(async (req, res) => {
+  await prisma.application.delete({ where: { id: req.params.id } });
+  ok(res, null, "Application deleted");
+});

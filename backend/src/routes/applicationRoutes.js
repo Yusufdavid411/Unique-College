@@ -1,6 +1,7 @@
 import { Router } from "express";
 import {
   createApplication,
+  deleteApplication,
   getApplication,
   listApplications,
   updateApplicationStatus
@@ -17,5 +18,6 @@ router.post("/", upload.single("passport"), validate(applicationSchema), createA
 router.get("/", requireAuth, requireRole("ADMIN"), listApplications);
 router.get("/:id", requireAuth, requireRole("ADMIN"), validate(idParamSchema), getApplication);
 router.patch("/:id/status", requireAuth, requireRole("ADMIN"), validate(statusSchema), updateApplicationStatus);
+router.delete("/:id", requireAuth, requireRole("ADMIN"), validate(idParamSchema), deleteApplication);
 
 export default router;

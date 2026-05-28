@@ -692,6 +692,25 @@ th {
   text-transform: uppercase;
 }
 
+.table-actions {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+.table-actions select {
+  min-width: 140px;
+}
+
+.danger-button {
+  border: 1px solid #f2b6b6;
+  background: #fff4f4;
+  color: #a12121;
+  border-radius: 6px;
+  padding: 10px 12px;
+  font-weight: 800;
+}
+
 .status {
   display: inline-flex;
   padding: 5px 9px;

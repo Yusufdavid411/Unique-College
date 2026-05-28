@@ -15,6 +15,11 @@ export default function AdminApplications() {
     load();
   }
 
+  async function remove(id) {
+    await api.delete(`/applications/${id}`);
+    load();
+  }
+
   return (
     <div className="admin-page">
       <header className="admin-header"><span className="eyebrow">Admissions</span><h1>Manage applications</h1></header>
@@ -29,13 +34,14 @@ export default function AdminApplications() {
                 <td>{item.phoneNumber}</td>
                 <td><span className={`status ${item.status.toLowerCase()}`}>{item.status}</span></td>
                 <td>{item.passportPath ? <a href={assetUrl(item.passportPath)} target="_blank" rel="noreferrer">View</a> : "None"}</td>
-                <td>
+                <td className="table-actions">
                   <select value={item.status} onChange={(e) => updateStatus(item.id, e.target.value)}>
                     <option value="PENDING">Pending</option>
                     <option value="REVIEWED">Reviewed</option>
                     <option value="ACCEPTED">Accepted</option>
                     <option value="REJECTED">Rejected</option>
                   </select>
+                  <button type="button" className="danger-button" onClick={() => remove(item.id)}>Delete</button>
                 </td>
               </tr>
             ))}
