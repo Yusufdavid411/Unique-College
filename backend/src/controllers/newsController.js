@@ -41,12 +41,16 @@ export const listNews = asyncHandler(async (req, res) => {
 });
 
 export const createNews = asyncHandler(async (req, res) => {
+  if (!req.file) {
+    return res.status(400).json({ success: false, message: "News image is required" });
+  }
+
   const slug = await uniqueSlug(req.body.title);
   const metadata = fileMetadata(req.file, "documents");
   const news = await prisma.news.create({
     data: {
       ...req.body,
-      imagePath: metadata.path || req.body.imagePath || null,
+      imagePath: metadata.path,
       slug,
       authorId: req.user.id
     }
@@ -57,13 +61,18 @@ export const createNews = asyncHandler(async (req, res) => {
 export const updateNews = asyncHandler(async (req, res) => {
   const slug = await uniqueSlug(req.body.title, req.params.id);
   const metadata = fileMetadata(req.file, "documents");
+  const data = {
+    ...req.body,
+    slug
+  };
+
+  if (metadata.path) {
+    data.imagePath = metadata.path;
+  }
+
   const news = await prisma.news.update({
     where: { id: req.params.id },
-    data: {
-      ...req.body,
-      imagePath: metadata.path || req.body.imagePath || null,
-      slug
-    }
+    data
   });
   ok(res, news, "News item updated");
 });

@@ -4,6 +4,10 @@ import { asyncHandler } from "../utils/asyncHandler.js";
 import { fileMetadata } from "../services/uploadService.js";
 
 export const createApplication = asyncHandler(async (req, res) => {
+  if (!req.file) {
+    return res.status(400).json({ success: false, message: "Passport photograph is required" });
+  }
+
   const metadata = fileMetadata(req.file, "applications");
   const application = await prisma.application.create({
     data: {
