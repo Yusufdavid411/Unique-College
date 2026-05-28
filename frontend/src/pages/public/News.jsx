@@ -5,6 +5,7 @@ import { api, assetUrl } from "../../api/client.js";
 export default function News() {
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [hiddenImages, setHiddenImages] = useState([]);
 
   useEffect(() => {
     api
@@ -24,7 +25,14 @@ export default function News() {
         )}
         {items.map((item) => (
           <article className="news-card news-card-media" key={item.id}>
-            {item.imagePath && <img src={assetUrl(item.imagePath)} alt={item.title} loading="lazy" />}
+            {item.imagePath && !hiddenImages.includes(item.id) && (
+              <img
+                src={assetUrl(item.imagePath)}
+                alt={item.title}
+                loading="lazy"
+                onError={() => setHiddenImages((current) => [...current, item.id])}
+              />
+            )}
             <h2>{item.title}</h2>
             <p>{item.excerpt}</p>
             {item.content && <p>{item.content}</p>}

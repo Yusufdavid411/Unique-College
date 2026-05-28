@@ -30,6 +30,7 @@ export default function App() {
         <Route path="gallery" element={<Gallery />} />
         <Route path="news" element={<News />} />
         <Route path="apply" element={<Application />} />
+        <Route path="application" element={<Application />} />
       </Route>
       <Route path="/admin/login" element={<AdminLogin />} />
       <Route

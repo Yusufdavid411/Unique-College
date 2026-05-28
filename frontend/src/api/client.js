@@ -17,5 +17,6 @@ api.interceptors.request.use((config) => {
 export function assetUrl(path) {
   if (!path) return "";
   if (path.startsWith("http")) return path;
+  if (path.startsWith("/school-assets/")) return path;
   return `${API_BASE_URL}${path}`;
 }
