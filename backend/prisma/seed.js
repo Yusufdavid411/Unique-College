@@ -31,9 +31,12 @@ async function main() {
     ["institution_name", "Unique College of Health Science and Technology", "identity"],
     ["contact_email", "uniquecollegescience@gmail.com", "contact"],
     ["contact_phone", "+234 909 283 5595, +234 813 531 2799", "contact"],
-    ["address", "R3W6 + Q6X Satellite Quarters, behind Police Station, Kwali-Abuja", "contact"],
+    ["address", "R3W6+Q6X, Satellite Quarters, behind Police Station, Kwali, Kwali FCT-Abuja", "contact"],
     ["website", "www.uniquecollegekwali.com", "contact"],
-    ["motto", "Excellence in Impacting Knowledge", "identity"]
+    ["motto", "Excellence in Impacting Knowledge", "identity"],
+    ["established", "September 7, 2024", "identity"],
+    ["registration_number", "RC-7901067", "identity"],
+    ["approval", "Provisional approval from the Department of Higher Education FCT-Abuja, Ministry of Education-Nigeria.", "identity"]
   ];
 
   for (const [key, value, group] of settings) {

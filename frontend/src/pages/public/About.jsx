@@ -1,5 +1,5 @@
 import Seo from "../../components/Seo.jsx";
-import { assetPaths, schoolInfo } from "../../data/siteData.js";
+import { anthem, imagery, pledge, schoolInfo } from "../../data/siteData.js";
 
 export default function About() {
   return (
@@ -10,8 +10,13 @@ export default function About() {
         <h1>{schoolInfo.motto} in health science education.</h1>
       </section>
       <section className="section split-section">
-        <img src={assetPaths.campusWide} alt="Unique College students and campus life" loading="lazy" />
+        <img src={imagery.about} alt="Unique College campus entrance" loading="lazy" />
         <div className="stack">
+          <article>
+            <h2>About us</h2>
+            <p>{schoolInfo.about}</p>
+            <p>{schoolInfo.profile}</p>
+          </article>
           <article>
             <h2>Mission</h2>
             <p>{schoolInfo.mission}</p>
@@ -24,12 +29,39 @@ export default function About() {
             <h2>Philosophy</h2>
             <p>{schoolInfo.philosophy}</p>
           </article>
+          <article>
+            <h2>Objective</h2>
+            <p>{schoolInfo.objective}</p>
+          </article>
         </div>
       </section>
       <section className="section cards-grid">
-        <article className="info-card"><h3>Registered Identity</h3><p>RC: 7901067. Unique College of Health Science and Technology serves students from its Kwali-Abuja campus.</p></article>
+        <article className="info-card"><h3>Registered Identity</h3><p>{schoolInfo.identity}</p></article>
+        <article className="info-card"><h3>Approval</h3><p>{schoolInfo.approval}</p></article>
         <article className="info-card"><h3>Campus Address</h3><p>{schoolInfo.address}</p></article>
         <article className="info-card"><h3>Contact</h3><p>{schoolInfo.email}. {schoolInfo.phoneDisplay}.</p></article>
+      </section>
+      <section className="section split-section anthem-section">
+        <div className="anthem-card">
+          <span className="eyebrow">School Anthem</span>
+          <h2>{anthem.title}</h2>
+          {anthem.verses.map((verse, index) => (
+            <div className="anthem-lines" key={index}>
+              {verse.map((line) => <p key={line}>{line}</p>)}
+              {index === 0 && (
+                <div className="chorus">
+                  <strong>Chorus</strong>
+                  {anthem.chorus.map((line) => <p key={line}>{line}</p>)}
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+        <div className="anthem-card">
+          <span className="eyebrow">School Pledge</span>
+          <h2>{pledge.title}</h2>
+          {pledge.lines.map((line) => <p key={line}>{line}</p>)}
+        </div>
       </section>
     </>
   );

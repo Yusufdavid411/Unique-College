@@ -268,6 +268,46 @@ p {
   box-shadow: 0 10px 30px rgba(19, 49, 78, 0.06);
 }
 
+.anthem-section {
+  align-items: start;
+  background: var(--soft);
+}
+
+.anthem-card {
+  min-height: 100%;
+  padding: 28px;
+  background: white;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  box-shadow: 0 10px 30px rgba(19, 49, 78, 0.06);
+}
+
+.anthem-card h2 {
+  margin-bottom: 18px;
+}
+
+.anthem-lines,
+.chorus {
+  margin-top: 18px;
+}
+
+.anthem-card p {
+  margin-bottom: 8px;
+}
+
+.chorus {
+  padding: 16px;
+  border-left: 4px solid var(--cyan-500);
+  background: var(--blue-100);
+  border-radius: 8px;
+}
+
+.chorus strong {
+  display: block;
+  margin-bottom: 8px;
+  color: var(--blue-800);
+}
+
 .feature-card svg {
   color: var(--blue-700);
   margin-bottom: 18px;

@@ -4,7 +4,7 @@ import Seo from "../../components/Seo.jsx";
 import { schoolInfo } from "../../data/siteData.js";
 
 export default function Admission() {
-  const steps = ["Review programme requirements", "Complete every required field on the online application form", "Upload a clear passport photograph", "Watch your email and phone for admission updates if accepted"];
+  const steps = ["Review the updated 4-semester ND programme options", "Complete every required field on the online application form", "Upload a clear passport photograph", "Watch your email and phone for admission updates if accepted"];
   return (
     <>
       <Seo title="Admission" description="Admission requirements and application process for Unique College." />
@@ -15,7 +15,7 @@ export default function Admission() {
       <section className="section split-section">
         <div>
           <h2>Entry requirements</h2>
-          <p>Applicants seeking admission into diploma programmes must possess four credits in SSCE, WAEC, or NECO at not more than two sittings, including English, Mathematics, Biology, Physics, and/or Chemistry.</p>
+          <p>Applicants seeking admission into ND programmes should possess relevant O-Level credits, including English, Mathematics, Biology, Chemistry, Physics, or related science subjects as applicable to the programme.</p>
           <p>Application support is available through the registrar office at {schoolInfo.address}.</p>
           <Link className="button primary" to="/apply">Apply now <ArrowRight size={18} /></Link>
         </div>

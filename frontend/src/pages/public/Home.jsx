@@ -7,11 +7,11 @@ export default function Home() {
   return (
     <>
       <Seo title="Home" description="Unique College of Health Science and Technology official website and admission portal." />
-      <section className="hero" style={{ backgroundImage: `linear-gradient(90deg, rgba(2, 41, 75, .9), rgba(2, 87, 134, .42)), url(${imagery.hero})` }}>
+      <section className="hero" style={{ backgroundImage: `linear-gradient(90deg, rgba(2, 41, 75, .9), rgba(2, 87, 134, .34)), url(${imagery.hero})` }}>
         <div className="hero-content">
           <span className="eyebrow">Admission open for {schoolInfo.admissionSession}</span>
           <h1>{schoolInfo.name} {schoolInfo.location}</h1>
-          <p>{schoolInfo.motto}. Practical healthcare education for community health, laboratory science, pharmacy, public health, and health information management.</p>
+          <p>{schoolInfo.motto}. Practical healthcare education for community health, pharmacy technology, medical laboratory technology, health information management, public health, and health promotion.</p>
           <div className="hero-actions">
             <Link className="button primary" to="/apply">Start Application <ArrowRight size={18} /></Link>
             <Link className="button ghost" to="/courses">Explore Courses</Link>
@@ -23,18 +23,18 @@ export default function Home() {
         <div>
           <span className="eyebrow">About the institution</span>
           <h2>Transforming lives through quality healthcare education.</h2>
-          <p>{schoolInfo.philosophy}</p>
+          <p>{schoolInfo.profile}</p>
           <Link className="text-link" to="/about">Read about our mission <ArrowRight size={16} /></Link>
         </div>
-        <img src={assetPaths.programsFlyer} alt="Unique College programmes and entry requirements" loading="lazy" />
+        <img src={assetPaths.campusGate} alt="Unique College campus entrance" loading="lazy" />
       </section>
 
       <section className="section feature-grid">
         {[
           [Microscope, "Medical laboratory training", "Diagnostic support skills and safe laboratory practice."],
-          [Activity, "Community health focus", "Primary health care knowledge for service in any community."],
-          [BookOpen, "Clear admission pathway", "Entry requirements and programme details are easy to review."],
-          [ShieldCheck, "Professional formation", "Training for responsible, inventive, and competent health workers."]
+          [Activity, "Primary health care focus", "Health personnel prepared for meaningful service in communities."],
+          [BookOpen, "Six ND programmes", "Updated academic options with 4-semester programme duration."],
+          [ShieldCheck, "Approved institution", `${schoolInfo.registrationNumber} with provisional approval in FCT-Abuja.`]
         ].map(([Icon, title, text]) => (
           <article className="feature-card" key={title}>
             <Icon size={26} />

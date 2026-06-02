@@ -12,5 +12,7 @@ backend/uploads/*
 !backend/uploads/profiles/.gitkeep
 *.log
 gh-login-output.txt
+.codex/
+.codex-remote-attachments/
 .DS_Store
 Thumbs.db

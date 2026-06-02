@@ -1,13 +1,7 @@
 import { useEffect, useState } from "react";
 import Seo from "../../components/Seo.jsx";
 import { api, assetUrl } from "../../api/client.js";
-import { assetPaths } from "../../data/siteData.js";
-
-const officialGallery = [
-  ["Classroom learning", "Campus life", assetPaths.campusWide],
-  ["Campus facilities", "Campus", assetPaths.campusContact],
-  ["Admission programmes", "Admissions", assetPaths.admissionFlyer]
-];
+import { officialGallery } from "../../data/siteData.js";
 
 export default function Gallery() {
   const [items, setItems] = useState([]);
@@ -27,7 +21,7 @@ export default function Gallery() {
   return (
     <>
       <Seo title="Gallery" description="Medical, academic, and laboratory gallery for Unique College." />
-      <section className="page-hero compact"><span className="eyebrow">Gallery</span><h1>Campus life, labs, and clinical learning environments.</h1></section>
+      <section className="page-hero compact"><span className="eyebrow">Gallery</span><h1>Campus life, academic learning, and student activities.</h1></section>
       <section className="section gallery-grid">
         {!loading && !visibleItems.length && (
           officialGallery.map(([title, category, image]) => (

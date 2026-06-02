@@ -7,7 +7,7 @@ export default function Courses() {
       <Seo title="Courses" description="Health science programmes, duration, and requirements at Unique College." />
       <section className="page-hero compact">
         <span className="eyebrow">Programmes</span>
-        <h1>Health science courses designed around practical clinical environments.</h1>
+        <h1>ND health science programmes designed for practical healthcare service.</h1>
       </section>
       <section className="section course-list">
         {programs.map((program) => (

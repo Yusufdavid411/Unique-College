@@ -32,7 +32,7 @@ export default function Application() {
     data.append("passport", passport);
 
     try {
-      await api.post("/applications", data, { headers: { "Content-Type": "multipart/form-data" } });
+      await api.post("/applications", data);
       setForm(initial);
       setPassport(null);
       event.currentTarget.reset();
@@ -41,8 +41,11 @@ export default function Application() {
         message:
           "Application submitted. Please keep an eye on your email and phone. If your application is accepted, the admissions team will contact you with the next steps."
       });
-    } catch {
-      setStatus({ type: "error", message: "Application could not be submitted. Please review the form and try again." });
+    } catch (error) {
+      setStatus({
+        type: "error",
+        message: error.response?.data?.message || "Application could not be submitted. Please review the form and try again."
+      });
     }
   }
 
