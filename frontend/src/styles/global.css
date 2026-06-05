@@ -176,6 +176,10 @@ textarea {
   letter-spacing: 0;
 }
 
+.hero p {
+  color: rgb(221, 226, 228)
+}
+
 .hero p,
 .page-hero p {
   max-width: 680px;
