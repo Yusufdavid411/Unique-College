@@ -17,7 +17,10 @@ export function errorHandler(error, req, res, next) {
   }
 
   if (error.name === "MulterError") {
-    return res.status(400).json({ success: false, message: error.message });
+    const message = error.code === "LIMIT_FILE_SIZE"
+      ? "Uploaded image is too large. Please upload an image below 10 MB."
+      : error.message;
+    return res.status(400).json({ success: false, message });
   }
 
   const status = error.statusCode || 500;

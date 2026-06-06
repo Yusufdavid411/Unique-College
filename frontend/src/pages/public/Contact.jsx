@@ -5,17 +5,29 @@ import { schoolInfo } from "../../data/siteData.js";
 
 export default function Contact() {
   const [form, setForm] = useState({ name: "", email: "", phone: "", subject: "", message: "" });
-  const [status, setStatus] = useState("");
+  const [status, setStatus] = useState({ type: "", message: "" });
+
+  function formatServerError(error) {
+    const response = error.response?.data;
+    if (!response) return "Message could not be sent. Please check your connection and try again.";
+    if (response.errors && typeof response.errors === "object") {
+      const details = Object.entries(response.errors)
+        .flatMap(([field, messages]) => (Array.isArray(messages) ? messages.map((message) => `${field}: ${message}`) : []))
+        .join(" ");
+      return details ? `${response.message}. ${details}` : response.message;
+    }
+    return response.message || "Please check the form and try again.";
+  }
 
   async function submit(event) {
     event.preventDefault();
-    setStatus("Sending...");
+    setStatus({ type: "info", message: "Sending..." });
     try {
       await api.post("/contacts", form);
       setForm({ name: "", email: "", phone: "", subject: "", message: "" });
-      setStatus("Message sent successfully.");
-    } catch {
-      setStatus("Please check the form and try again.");
+      setStatus({ type: "success", message: "Message sent successfully." });
+    } catch (error) {
+      setStatus({ type: "error", message: formatServerError(error) });
     }
   }
 
@@ -31,7 +43,7 @@ export default function Contact() {
           <input required placeholder="Subject" value={form.subject} onChange={(e) => setForm({ ...form, subject: e.target.value })} />
           <textarea required placeholder="Message" rows="6" value={form.message} onChange={(e) => setForm({ ...form, message: e.target.value })} />
           <button className="button primary" type="submit">Send message</button>
-          {status && <p className="form-status">{status}</p>}
+          {status.message && <p className={`form-status ${status.type}`}>{status.message}</p>}
         </form>
         <div className="location-panel">
           <h2>Location</h2>

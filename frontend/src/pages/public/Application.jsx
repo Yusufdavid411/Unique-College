@@ -19,6 +19,18 @@ export default function Application() {
   const [passport, setPassport] = useState(null);
   const [status, setStatus] = useState({ type: "", message: "" });
 
+  function formatServerError(error) {
+    const response = error.response?.data;
+    if (!response) return "Application could not be submitted. Please check your connection and try again.";
+    if (response.errors && typeof response.errors === "object") {
+      const details = Object.entries(response.errors)
+        .flatMap(([field, messages]) => (Array.isArray(messages) ? messages.map((message) => `${field}: ${message}`) : []))
+        .join(" ");
+      return details ? `${response.message}. ${details}` : response.message;
+    }
+    return response.message || "Application could not be submitted. Please review the form and try again.";
+  }
+
   async function submit(event) {
     event.preventDefault();
     if (!event.currentTarget.checkValidity() || !passport) {
@@ -42,10 +54,7 @@ export default function Application() {
           "Application submitted. Please keep an eye on your email and phone. If your application is accepted, the admissions team will contact you with the next steps."
       });
     } catch (error) {
-      setStatus({
-        type: "error",
-        message: error.response?.data?.message || "Application could not be submitted. Please review the form and try again."
-      });
+      setStatus({ type: "error", message: formatServerError(error) });
     }
   }
 

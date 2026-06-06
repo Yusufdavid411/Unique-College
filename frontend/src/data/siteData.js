@@ -30,6 +30,22 @@ export const schoolInfo = {
     "Unique College of Health Science and Technology is dedicated to transforming lives through quality healthcare education. We stand as a beacon of academic excellence in Kwali-Abuja, preparing the next generation of health professionals committed to serving their communities with integrity and innovation."
 };
 
+export const leadershipWelcome = {
+  title: "Welcome to Unique College",
+  label: "College Leadership",
+  name: "Unique College Leadership",
+  role: "Office of the Provost",
+  image: "/school-assets/official-visit-hall.jpg",
+  paragraphs: [
+    "I warmly welcome you to Unique College of Health Science and Technology, Kwali-Abuja, a private tertiary healthcare institution committed to practical training, discipline, and academic excellence.",
+    "Our learning environment is designed to produce competent healthcare personnel who can serve communities with compassion, integrity, innovation, and professional responsibility."
+  ],
+  points: [
+    "Practical health science training for community service",
+    "A disciplined academic environment for future healthcare professionals"
+  ]
+};
+
 export const anthem = {
   title: "Unique Anthem",
   verses: [

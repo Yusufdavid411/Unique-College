@@ -1,5 +1,5 @@
 import Seo from "../../components/Seo.jsx";
-import { anthem, imagery, pledge, schoolInfo } from "../../data/siteData.js";
+import { anthem, assetPaths, leadershipWelcome, pledge, schoolInfo } from "../../data/siteData.js";
 
 export default function About() {
   return (
@@ -9,8 +9,21 @@ export default function About() {
         <span className="eyebrow">About Unique College</span>
         <h1>{schoolInfo.motto} in health science education.</h1>
       </section>
+      <section className="section leadership-section about-leadership">
+        <div className="leader-portrait">
+          <img src={leadershipWelcome.image} alt={leadershipWelcome.name} loading="lazy" />
+          <div>
+            <strong>{leadershipWelcome.name}</strong>
+            <span>{leadershipWelcome.role}</span>
+          </div>
+        </div>
+        <div className="leader-copy">
+          <span className="eyebrow">{leadershipWelcome.label}</span>
+          <h2>{leadershipWelcome.title}</h2>
+          {leadershipWelcome.paragraphs.map((paragraph) => <p key={paragraph}>{paragraph}</p>)}
+        </div>
+      </section>
       <section className="section split-section">
-        <img src={imagery.about} alt="Unique College campus entrance" loading="lazy" />
         <div className="stack">
           <article>
             <h2>About us</h2>
@@ -34,6 +47,7 @@ export default function About() {
             <p>{schoolInfo.objective}</p>
           </article>
         </div>
+        <img src={assetPaths.campusGate} alt="Unique College campus entrance" loading="lazy" />
       </section>
       <section className="section cards-grid">
         <article className="info-card"><h3>Registered Identity</h3><p>{schoolInfo.identity}</p></article>

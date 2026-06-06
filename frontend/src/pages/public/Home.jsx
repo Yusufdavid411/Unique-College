@@ -1,9 +1,23 @@
+import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { Activity, ArrowRight, BookOpen, Microscope, ShieldCheck } from "lucide-react";
+import { Activity, ArrowRight, BookOpen, CheckCircle2, Microscope, ShieldCheck } from "lucide-react";
+import { api, assetUrl } from "../../api/client.js";
 import Seo from "../../components/Seo.jsx";
-import { assetPaths, imagery, programs, sampleNews, schoolInfo, stats } from "../../data/siteData.js";
+import { assetPaths, imagery, leadershipWelcome, programs, schoolInfo, stats } from "../../data/siteData.js";
 
 export default function Home() {
+  const [news, setNews] = useState([]);
+  const [newsLoading, setNewsLoading] = useState(true);
+  const [hiddenNewsImages, setHiddenNewsImages] = useState([]);
+
+  useEffect(() => {
+    api
+      .get("/news/public")
+      .then((res) => setNews(res.data.data.slice(0, 2)))
+      .catch(() => setNews([]))
+      .finally(() => setNewsLoading(false));
+  }, []);
+
   return (
     <>
       <Seo title="Home" description="Unique College of Health Science and Technology official website and admission portal." />
@@ -15,6 +29,26 @@ export default function Home() {
           <div className="hero-actions">
             <Link className="button primary" to="/apply">Start Application <ArrowRight size={18} /></Link>
             <Link className="button ghost" to="/courses">Explore Courses</Link>
+          </div>
+        </div>
+      </section>
+
+      <section className="section leadership-section">
+        <div className="leader-portrait">
+          <img src={leadershipWelcome.image} alt={leadershipWelcome.name} loading="lazy" />
+          <div>
+            <strong>{leadershipWelcome.name}</strong>
+            <span>{leadershipWelcome.role}</span>
+          </div>
+        </div>
+        <div className="leader-copy">
+          <span className="eyebrow">{leadershipWelcome.label}</span>
+          <h2>{leadershipWelcome.title}</h2>
+          {leadershipWelcome.paragraphs.map((paragraph) => <p key={paragraph}>{paragraph}</p>)}
+          <div className="leader-points">
+            {leadershipWelcome.points.map((point) => (
+              <span key={point}><CheckCircle2 size={20} />{point}</span>
+            ))}
           </div>
         </div>
       </section>
@@ -54,9 +88,12 @@ export default function Home() {
             <article className="program-card" key={program.title}>
               <h3>{program.title}</h3>
               <p>{program.summary}</p>
-              <span>{program.duration}</span>
+          <span>{program.duration}</span>
             </article>
           ))}
+        </div>
+        <div className="section-action">
+          <Link className="text-link" to="/courses">See all courses <ArrowRight size={16} /></Link>
         </div>
       </section>
 
@@ -74,13 +111,27 @@ export default function Home() {
           <span className="eyebrow">News</span>
           <h2>Latest institutional updates</h2>
         </div>
+        {!newsLoading && !news.length && (
+          <div className="empty-state">No published news yet. Updates added from the admin dashboard will appear here.</div>
+        )}
         <div className="cards-grid">
-          {sampleNews.map((item) => (
-            <article className="news-card" key={item.title}>
+          {news.map((item) => (
+            <article className="news-card news-card-media" key={item.id}>
+              {item.imagePath && !hiddenNewsImages.includes(item.id) && (
+                <img
+                  src={assetUrl(item.imagePath)}
+                  alt={item.title}
+                  loading="lazy"
+                  onError={() => setHiddenNewsImages((current) => [...current, item.id])}
+                />
+              )}
               <h3>{item.title}</h3>
               <p>{item.excerpt}</p>
             </article>
           ))}
+        </div>
+        <div className="section-action">
+          <Link className="text-link" to="/news">See more news <ArrowRight size={16} /></Link>
         </div>
       </section>
 
