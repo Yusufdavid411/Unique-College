@@ -8,6 +8,13 @@ export function notFound(req, res) {
 }
 
 export function errorHandler(error, req, res, next) {
+  if (error.message?.startsWith("Origin not allowed by CORS")) {
+    return res.status(403).json({
+      success: false,
+      message: "This website is not allowed to access the API. Please check the backend CLIENT_URL setting."
+    });
+  }
+
   if (error instanceof ZodError) {
     return res.status(422).json({
       success: false,

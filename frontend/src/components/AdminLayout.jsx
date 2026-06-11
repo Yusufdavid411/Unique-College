@@ -1,6 +1,7 @@
 import { NavLink, Outlet, useNavigate } from "react-router-dom";
 import { Images, LayoutDashboard, LogOut, MessageSquare, Newspaper, Settings, Users } from "lucide-react";
 import { useAuth } from "../context/AuthContext.jsx";
+import { assetPaths } from "../data/siteData.js";
 
 const items = [
   ["Overview", "/admin", LayoutDashboard],
@@ -24,8 +25,11 @@ export default function AdminLayout() {
     <div className="admin-shell">
       <aside className="admin-sidebar">
         <div className="admin-brand">
-          <strong>Unique College</strong>
-          <span>{user?.name}</span>
+          <img src={assetPaths.logo} alt="Unique College logo" />
+          <div>
+            <strong>Unique College</strong>
+            <span>{user?.name}</span>
+          </div>
         </div>
         <nav>
           {items.map(([label, path, Icon]) => (

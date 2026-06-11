@@ -17,7 +17,10 @@ export function AuthProvider({ children }) {
     api
       .get("/auth/me")
       .then((response) => setUser(response.data.data.user))
-      .catch(() => localStorage.removeItem("unique_college_token"))
+      .catch(() => {
+        localStorage.removeItem("unique_college_token");
+        setUser(null);
+      })
       .finally(() => setLoading(false));
   }, []);
 

@@ -10,14 +10,15 @@ async function main() {
   const email = process.env.ADMIN_EMAIL || "admin@uniquecollege.edu.ng";
   const password = process.env.ADMIN_PASSWORD || "ChangeMe123!";
   const passwordHash = await bcrypt.hash(password, 12);
+  const resetPassword = process.env.ADMIN_RESET_PASSWORD === "true";
 
   await prisma.user.upsert({
     where: { email },
     update: {
       name: process.env.ADMIN_NAME || "System Administrator",
-      passwordHash,
       role: "ADMIN",
-      isActive: true
+      isActive: true,
+      ...(resetPassword ? { passwordHash } : {})
     },
     create: {
       name: process.env.ADMIN_NAME || "System Administrator",

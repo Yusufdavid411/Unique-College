@@ -71,6 +71,7 @@ Backend: `http://localhost:5000`
 ## Deployment
 
 - Backend is Render-ready. Set the environment variables from `backend/.env.example`.
+- The seed script preserves an existing admin password by default. To intentionally reset the seeded admin password on Render, set `ADMIN_RESET_PASSWORD=true` for one deploy, then set it back to `false`.
 - Frontend builds with `npm run build --prefix frontend`.
 - Database is portable PostgreSQL. No Supabase-specific logic is used; future migration requires exporting PostgreSQL, importing it into the new host, and changing `DATABASE_URL`.
 

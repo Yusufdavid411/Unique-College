@@ -1,6 +1,7 @@
 import { useState } from "react";
 import Seo from "../../components/Seo.jsx";
-import { api } from "../../api/client.js";
+import LoadingButton from "../../components/LoadingButton.jsx";
+import { api, apiErrorMessage } from "../../api/client.js";
 import { programs } from "../../data/siteData.js";
 
 const initial = {
@@ -18,18 +19,7 @@ export default function Application() {
   const [form, setForm] = useState(initial);
   const [passport, setPassport] = useState(null);
   const [status, setStatus] = useState({ type: "", message: "" });
-
-  function formatServerError(error) {
-    const response = error.response?.data;
-    if (!response) return "Application could not be submitted. Please check your connection and try again.";
-    if (response.errors && typeof response.errors === "object") {
-      const details = Object.entries(response.errors)
-        .flatMap(([field, messages]) => (Array.isArray(messages) ? messages.map((message) => `${field}: ${message}`) : []))
-        .join(" ");
-      return details ? `${response.message}. ${details}` : response.message;
-    }
-    return response.message || "Application could not be submitted. Please review the form and try again.";
-  }
+  const [submitting, setSubmitting] = useState(false);
 
   async function submit(event) {
     event.preventDefault();
@@ -39,6 +29,7 @@ export default function Application() {
     }
 
     setStatus({ type: "info", message: "Submitting application..." });
+    setSubmitting(true);
     const data = new FormData();
     Object.entries(form).forEach(([key, value]) => data.append(key, value));
     data.append("passport", passport);
@@ -54,7 +45,12 @@ export default function Application() {
           "Application submitted. Please keep an eye on your email and phone. If your application is accepted, the admissions team will contact you with the next steps."
       });
     } catch (error) {
-      setStatus({ type: "error", message: formatServerError(error) });
+      setStatus({
+        type: "error",
+        message: apiErrorMessage(error, "Application could not be submitted. Please review the form and try again.")
+      });
+    } finally {
+      setSubmitting(false);
     }
   }
 
@@ -79,7 +75,9 @@ export default function Application() {
           </select>
           <textarea required placeholder="Address" rows="4" value={form.address} onChange={(e) => setForm({ ...form, address: e.target.value })} />
           <label className="file-field">Passport photograph<input required accept="image/png,image/jpeg,image/webp" type="file" onChange={(e) => setPassport(e.target.files?.[0] || null)} /></label>
-          <button className="button primary" type="submit">Submit application</button>
+          <LoadingButton type="submit" loading={submitting} loadingText="Submitting application...">
+            Submit application
+          </LoadingButton>
           {status.message && <p className={`form-status ${status.type}`}>{status.message}</p>}
         </form>
       </section>

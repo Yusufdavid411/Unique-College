@@ -374,6 +374,17 @@ p {
   font-weight: 750;
 }
 
+button:disabled,
+.button:disabled,
+select:disabled {
+  cursor: not-allowed;
+  opacity: .68;
+}
+
+.spin-icon {
+  animation: spin .8s linear infinite;
+}
+
 .leader-copy h2 {
   color: var(--blue-800);
 }
@@ -759,7 +770,9 @@ textarea {
   display: grid;
   place-items: center;
   padding: 24px;
-  background: linear-gradient(135deg, var(--blue-900), #eef8fb);
+  background:
+    linear-gradient(135deg, rgba(6, 55, 95, .92), rgba(238, 248, 251, .86)),
+    url("/school-assets/campus-gate.jpg") center / cover;
 }
 
 .login-panel {
@@ -770,7 +783,10 @@ textarea {
   min-height: 100vh;
   display: grid;
   grid-template-columns: 280px minmax(0, 1fr);
-  background: var(--soft);
+  background:
+    linear-gradient(120deg, rgba(246, 250, 252, .96), rgba(232, 244, 251, .9)),
+    url("/school-assets/logo-transparent.png") right 42px bottom 34px / min(42vw, 520px) auto no-repeat,
+    var(--soft);
 }
 
 .admin-sidebar {
@@ -782,12 +798,27 @@ textarea {
   gap: 22px;
   padding: 24px;
   color: white;
-  background: #082f4f;
+  overflow: hidden;
+  background:
+    linear-gradient(180deg, rgba(8, 47, 79, .98), rgba(6, 29, 50, .96)),
+    url("/school-assets/campus-courtyard.jpg") center / cover;
 }
 
 .admin-brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
   padding-bottom: 20px;
   border-bottom: 1px solid rgba(255, 255, 255, .18);
+}
+
+.admin-brand img {
+  width: 52px;
+  height: 52px;
+  object-fit: contain;
+  padding: 4px;
+  border-radius: 8px;
+  background: white;
 }
 
 .admin-sidebar nav {
@@ -821,6 +852,7 @@ textarea {
 
 .admin-main {
   padding: 34px;
+  min-width: 0;
 }
 
 .admin-header {
@@ -878,6 +910,7 @@ th {
 
 .table-actions {
   display: flex;
+  flex-wrap: wrap;
   gap: 10px;
   align-items: center;
 }
@@ -887,12 +920,39 @@ th {
 }
 
 .danger-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 40px;
   border: 1px solid #f2b6b6;
   background: #fff4f4;
   color: #a12121;
   border-radius: 6px;
   padding: 10px 12px;
   font-weight: 800;
+}
+
+.admin-notice {
+  margin: 0 0 16px;
+  padding: 12px 14px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: white;
+  color: var(--blue-800);
+  font-weight: 750;
+}
+
+.admin-notice.success {
+  border-color: #bfe9d2;
+  background: #effbf4;
+  color: #137a42;
+}
+
+.admin-notice.error {
+  border-color: #f2b6b6;
+  background: #fff4f4;
+  color: #a12121;
 }
 
 .status {
@@ -943,7 +1003,12 @@ th {
 
 .admin-list-item button,
 .message-item button,
-.admin-gallery-list button {
+.admin-gallery-list button,
+.list-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
   align-self: start;
   min-height: 36px;
   padding: 0 12px;
@@ -993,6 +1058,12 @@ th {
   to {
     opacity: 1;
     transform: translateY(0);
+  }
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
   }
 }
 
@@ -1053,10 +1124,31 @@ th {
   .admin-sidebar {
     position: static;
     height: auto;
+    padding: 18px;
+  }
+
+  .admin-sidebar nav {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .admin-sidebar a,
+  .sidebar-logout {
+    justify-content: center;
+    min-height: 48px;
+  }
+
+  .sidebar-logout {
+    margin-top: 0;
   }
 
   .admin-main {
     padding: 22px;
+  }
+
+  .admin-shell {
+    background:
+      linear-gradient(180deg, rgba(246, 250, 252, .98), rgba(232, 244, 251, .92)),
+      var(--soft);
   }
 }
 
@@ -1080,5 +1172,28 @@ th {
   .page-hero {
     padding-left: 18px;
     padding-right: 18px;
+  }
+
+  .admin-sidebar nav {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .admin-brand {
+    align-items: flex-start;
+  }
+
+  .admin-header h1 {
+    font-size: 28px;
+  }
+
+  .form-panel,
+  .location-panel,
+  .login-panel {
+    padding: 20px;
+  }
+
+  th,
+  td {
+    padding: 12px;
   }
 }
