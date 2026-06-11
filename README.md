@@ -85,3 +85,5 @@ Files are stored on the local server under:
 - `backend/uploads/profiles`
 
 The database stores only file path, file type, file size, and upload metadata.
+
+On Render, `UPLOAD_ROOT` is set to `/var/data/uploads`. Attach a persistent disk at `/var/data` so uploaded news, gallery, and application files survive redeploys and restarts.

@@ -1,7 +1,9 @@
 import { useEffect, useState } from "react";
 import AdminNotice from "../../components/AdminNotice.jsx";
+import FallbackImage from "../../components/FallbackImage.jsx";
 import LoadingButton from "../../components/LoadingButton.jsx";
 import { api, apiErrorMessage, assetUrl } from "../../api/client.js";
+import { assetPaths } from "../../data/siteData.js";
 
 const empty = { title: "", excerpt: "", content: "", isPublished: true };
 
@@ -71,7 +73,12 @@ export default function AdminNews() {
           {!loading && !items.length && <div className="empty-state">No news has been created yet.</div>}
           {!loading && items.map((item) => (
             <article className="admin-list-item" key={item.id}>
-              {item.imagePath && <img className="admin-list-thumb" src={assetUrl(item.imagePath)} alt={item.title} />}
+              <FallbackImage
+                className="admin-list-thumb"
+                src={assetUrl(item.imagePath)}
+                fallback={assetPaths.admissionFlyer}
+                alt={item.title}
+              />
               <div><strong>{item.title}</strong><span>{item.excerpt}</span></div>
               <LoadingButton className="list-button" loading={busyId === item.id} loadingText="Deleting..." onClick={() => remove(item.id)}>
                 Delete

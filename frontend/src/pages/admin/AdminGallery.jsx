@@ -1,7 +1,9 @@
 import { useEffect, useState } from "react";
 import AdminNotice from "../../components/AdminNotice.jsx";
+import FallbackImage from "../../components/FallbackImage.jsx";
 import LoadingButton from "../../components/LoadingButton.jsx";
 import { api, apiErrorMessage, assetUrl } from "../../api/client.js";
+import { assetPaths } from "../../data/siteData.js";
 
 export default function AdminGallery() {
   const [items, setItems] = useState([]);
@@ -68,7 +70,7 @@ export default function AdminGallery() {
           {!loading && !items.length && <div className="empty-state">No gallery images have been uploaded yet.</div>}
           {!loading && items.map((item) => (
             <article key={item.id}>
-              <img src={assetUrl(item.imagePath)} alt={item.title} />
+              <FallbackImage src={assetUrl(item.imagePath)} fallback={assetPaths.campusWide} alt={item.title} />
               <div><strong>{item.title}</strong><span>{item.category}</span></div>
               <LoadingButton className="list-button" loading={busyId === item.id} loadingText="Deleting..." onClick={() => remove(item.id)}>
                 Delete
