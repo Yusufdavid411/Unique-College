@@ -2,9 +2,7 @@ import { useEffect } from "react";
 
 export default function Seo({ title, description }) {
   useEffect(() => {
-    document.title = title
-      ? `${title} | Unique College`
-      : "Unique College of Health Science and Technology";
+    document.title = !title || title === "Home" ? "Unique College" : `${title} | Unique College`;
 
     const meta = document.querySelector("meta[name='description']");
     if (meta && description) {
