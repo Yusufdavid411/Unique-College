@@ -3,12 +3,14 @@ import { Link } from "react-router-dom";
 import { Activity, ArrowRight, BookOpen, CheckCircle2, Microscope, ShieldCheck } from "lucide-react";
 import { api, assetUrl } from "../../api/client.js";
 import Seo from "../../components/Seo.jsx";
-import { assetPaths, imagery, leadershipWelcome, programs, schoolInfo, stats } from "../../data/siteData.js";
+import { assetPaths, heroSlides, leadershipWelcome, programs, schoolInfo, stats } from "../../data/siteData.js";
 
 export default function Home() {
   const [news, setNews] = useState([]);
   const [newsLoading, setNewsLoading] = useState(true);
   const [hiddenNewsImages, setHiddenNewsImages] = useState([]);
+  const [activeHeroSlide, setActiveHeroSlide] = useState(0);
+  const [leavingHeroSlide, setLeavingHeroSlide] = useState(null);
 
   useEffect(() => {
     api
@@ -18,10 +20,35 @@ export default function Home() {
       .finally(() => setNewsLoading(false));
   }, []);
 
+
+  useEffect(() => {
+    const intervalId = window.setInterval(() => {
+      setActiveHeroSlide((current) => {
+        setLeavingHeroSlide(current);
+        return (current + 1) % heroSlides.length;
+      });
+    }, 5000);
+
+    return () => window.clearInterval(intervalId);
+  }, []);
+
+  useEffect(() => {
+    if (leavingHeroSlide === null) return undefined;
+    const timeoutId = window.setTimeout(() => setLeavingHeroSlide(null), 1250);
+    return () => window.clearTimeout(timeoutId);
+  }, [leavingHeroSlide]);
+
   return (
     <>
       <Seo title="Home" description="Unique College of Health Science and Technology official website and admission portal." />
-      <section className="hero" style={{ backgroundImage: `linear-gradient(90deg, rgba(2, 41, 75, .9), rgba(2, 87, 134, .34)), url(${imagery.hero})` }}>
+      <section className="hero">
+        <div className="hero-slider" aria-hidden="true">
+          {heroSlides.map((image, index) => {
+            const stateClass = index === activeHeroSlide ? "is-active" : index === leavingHeroSlide ? "is-leaving" : "";
+            return <div className={`hero-slide ${stateClass}`} key={image} style={{ backgroundImage: `url(${image})` }} />;
+          })}
+        </div>
+        <div className="hero-overlay" />
         <div className="hero-content">
           <span className="eyebrow">Admission open for {schoolInfo.admissionSession}</span>
           <h1>{schoolInfo.name} {schoolInfo.location}</h1>

@@ -190,3 +190,10 @@ export const imagery = {
   studentLife: assetPaths.courtyardStudentLife,
   leadership: assetPaths.officialVisitHall
 };
+export const heroSlides = [
+  assetPaths.uniformGroupWide,
+  assetPaths.campusGate,
+  assetPaths.classroomStudents,
+  assetPaths.courtyardStudentLife,
+  assetPaths.officialVisitHall
+];

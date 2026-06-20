@@ -179,16 +179,57 @@ textarea {
 }
 
 .hero {
+  position: relative;
   min-height: 680px;
   display: flex;
   align-items: center;
+  overflow: hidden;
   padding: 120px clamp(20px, 7vw, 96px);
   color: white;
+  background: #06243d;
+}
+
+.hero-slider,
+.hero-slide,
+.hero-overlay {
+  position: absolute;
+  inset: 0;
+}
+
+.hero-slider {
+  z-index: 0;
+  overflow: hidden;
+}
+
+.hero-slide {
   background-position: center;
   background-size: cover;
+  transform: translateX(14%) scale(1.08) rotate(.001deg);
+  clip-path: polygon(100% 0, 100% 0, 100% 100%, 100% 100%);
+  z-index: 1;
+}
+
+.hero-slide.is-active {
+  z-index: 3;
+  animation: heroReveal 1.15s cubic-bezier(.16, 1, .3, 1) both, heroDrift 5s linear both;
+}
+
+.hero-slide.is-leaving {
+  z-index: 2;
+  animation: heroExit 1.15s cubic-bezier(.76, 0, .24, 1) both;
+}
+
+.hero-overlay {
+  z-index: 4;
+  background:
+    linear-gradient(90deg, rgba(2, 41, 75, .94), rgba(2, 87, 134, .42) 52%, rgba(2, 32, 56, .28)),
+    linear-gradient(0deg, rgba(3, 25, 44, .58), rgba(3, 25, 44, .04) 48%);
+  pointer-events: none;
 }
 
 .hero-content {
+  position: relative;
+  z-index: 5;
   max-width: 760px;
   animation: fadeUp .75s ease both;
 }
@@ -228,6 +269,40 @@ textarea {
   flex-wrap: wrap;
   gap: 12px;
   margin-top: 34px;
+}
+
+@keyframes heroReveal {
+  0% {
+    transform: translateX(14%) scale(1.08) rotate(.001deg);
+    clip-path: polygon(100% 0, 100% 0, 100% 100%, 100% 100%);
+  }
+  55% {
+    clip-path: polygon(18% 0, 100% 0, 82% 100%, 0 100%);
+  }
+  100% {
+    transform: translateX(0) scale(1) rotate(.001deg);
+    clip-path: polygon(0 0, 100% 0, 100% 100%, 0 100%);
+  }
+}
+
+@keyframes heroExit {
+  0% {
+    transform: translateX(0) scale(1) rotate(.001deg);
+    clip-path: polygon(0 0, 100% 0, 100% 100%, 0 100%);
+  }
+  100% {
+    transform: translateY(-8%) scale(1.12) rotate(.001deg);
+    clip-path: polygon(0 0, 100% 14%, 100% 14%, 0 0);
+  }
+}
+
+@keyframes heroDrift {
+  0% {
+    background-position: center;
+  }
+  100% {
+    background-position: center 46%;
+  }
 }
 
 .section {
