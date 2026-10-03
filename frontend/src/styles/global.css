@@ -162,8 +162,8 @@ textarea {
 
 .button.ghost {
   color: white;
-  background: rgba(255, 255, 255, 0.16);
-  border: 1px solid rgba(255, 255, 255, 0.46);
+  background: rgba(0, 0, 0, 0.24);
+  border: 2px solid rgba(255, 255, 255, 0.84);
 }
 
 .button.ghost:hover {
@@ -226,15 +226,15 @@ textarea {
 .hero-overlay {
   z-index: 4;
   background:
-    linear-gradient(90deg, rgba(2, 41, 75, .94), rgba(2, 87, 134, .42) 52%, rgba(2, 32, 56, .28)),
-    linear-gradient(0deg, rgba(3, 25, 44, .58), rgba(3, 25, 44, .04) 48%);
+    linear-gradient(90deg, rgba(2, 28, 50, .98), rgba(2, 45, 78, .9) 44%, rgba(2, 32, 56, .72) 72%, rgba(2, 24, 42, .68)),
+    linear-gradient(0deg, rgba(3, 25, 44, .76), rgba(3, 25, 44, .32) 54%);
   pointer-events: none;
 }
 
 .hero-content {
   position: relative;
   z-index: 5;
-  max-width: 760px;
+  max-width: 860px;
   animation: fadeUp .75s ease both;
 }
 
@@ -256,6 +256,12 @@ textarea {
   letter-spacing: 0;
 }
 
+.hero h1 {
+  color: #ffffff;
+  font-weight: 950;
+  text-shadow: 0 4px 22px rgba(0, 0, 0, .82);
+}
+
 .hero p,
 .page-hero p {
   max-width: 680px;
@@ -264,8 +270,23 @@ textarea {
 
 .hero p {
   color: #ffffff;
-  font-weight: 700;
-  text-shadow: 0 3px 18px rgba(0, 0, 0, .72);
+  max-width: 760px;
+  font-size: clamp(20px, 2.2vw, 25px);
+  font-weight: 800;
+  line-height: 1.52;
+  text-shadow: 0 4px 20px rgba(0, 0, 0, .88);
+}
+
+.hero .eyebrow {
+  padding: 10px 14px;
+  color: #06375f;
+  background: #ffffff;
+  border: 2px solid rgba(255, 255, 255, .92);
+  border-radius: 8px;
+  box-shadow: 0 14px 34px rgba(0, 0, 0, .26);
+  font-size: clamp(14px, 1.6vw, 18px);
+  font-weight: 950;
+  text-transform: none;
 }
 
 .hero-actions {
@@ -597,7 +618,8 @@ td span,
 }
 
 .stats-band span {
-  color: #bde5ef;
+  color: #ffffff;
+  font-weight: 750;
 }
 
 .cta-band {
@@ -623,7 +645,8 @@ td span,
 
 .site-footer p {
   margin-bottom: 0;
-  color: #aac6d8;
+  color: #d9ecf7;
+  font-weight: 650;
 }
 
 .footer-identity {
@@ -661,8 +684,14 @@ td span,
 
 .page-hero {
   padding: 88px clamp(20px, 6vw, 86px);
-  background: linear-gradient(135deg, var(--blue-900), var(--blue-700));
+  background: linear-gradient(135deg, #041f36, var(--blue-800));
   color: white;
+}
+
+.page-hero h1 {
+  color: #ffffff;
+  font-weight: 950;
+  text-shadow: 0 3px 18px rgba(0, 0, 0, .48);
 }
 
 .page-hero.compact h1 {
@@ -728,7 +757,7 @@ td span,
   display: grid;
   gap: 14px;
   padding: 28px;
-  border: 1px solid var(--line);
+  border: 1px solid var(--line-strong);
   border-radius: 8px;
   background: white;
   box-shadow: var(--shadow);
@@ -821,11 +850,12 @@ textarea {
   inset: auto 0 0;
   padding: 18px;
   color: white;
-  background: linear-gradient(transparent, rgba(0, 0, 0, .74));
+  background: linear-gradient(transparent, rgba(0, 0, 0, .92));
 }
 
 .gallery-card span {
-  color: #d2edf5;
+  color: #ffffff;
+  font-weight: 750;
 }
 
 .news-card-media {
