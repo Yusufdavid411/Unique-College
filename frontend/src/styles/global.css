@@ -235,7 +235,7 @@ textarea {
   position: relative;
   z-index: 5;
   max-width: 860px;
-  animation: fadeUp .75s ease both;
+  perspective: 900px;
 }
 
 .eyebrow {
@@ -257,9 +257,24 @@ textarea {
 }
 
 .hero h1 {
+  position: relative;
   color: #ffffff;
   font-weight: 950;
   text-shadow: 0 4px 22px rgba(0, 0, 0, .82);
+  animation: heroTitleIn .95s cubic-bezier(.16, 1, .3, 1) .18s both;
+}
+
+.hero h1::after {
+  content: "";
+  display: block;
+  width: min(240px, 52vw);
+  height: 5px;
+  margin-top: 20px;
+  background: linear-gradient(90deg, #ffffff, var(--cyan-500), var(--green-500));
+  border-radius: 999px;
+  box-shadow: 0 10px 28px rgba(32, 184, 199, .38);
+  transform-origin: left;
+  animation: heroLineIn .85s cubic-bezier(.16, 1, .3, 1) .7s both;
 }
 
 .hero p,
@@ -275,9 +290,12 @@ textarea {
   font-weight: 800;
   line-height: 1.52;
   text-shadow: 0 4px 20px rgba(0, 0, 0, .88);
+  animation: heroCopyIn .95s cubic-bezier(.16, 1, .3, 1) .42s both;
 }
 
 .hero .eyebrow {
+  position: relative;
+  overflow: hidden;
   padding: 10px 14px;
   color: #06375f;
   background: #ffffff;
@@ -287,6 +305,16 @@ textarea {
   font-size: clamp(14px, 1.6vw, 18px);
   font-weight: 950;
   text-transform: none;
+  animation: heroBadgeIn .8s cubic-bezier(.16, 1, .3, 1) both;
+}
+
+.hero .eyebrow::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(110deg, transparent 0 24%, rgba(32, 184, 199, .2) 42%, transparent 62% 100%);
+  transform: translateX(-120%);
+  animation: heroBadgeShine 1.35s ease .8s both;
 }
 
 .hero-actions {
@@ -294,6 +322,23 @@ textarea {
   flex-wrap: wrap;
   gap: 12px;
   margin-top: 34px;
+}
+
+.hero-actions .button {
+  animation: heroActionsIn .9s cubic-bezier(.16, 1, .3, 1) .68s both;
+}
+
+.hero-actions .button:nth-child(2) {
+  animation-name: heroGhostActionIn;
+  animation-delay: .82s;
+}
+
+.hero-actions .button.primary {
+  box-shadow: 0 18px 42px rgba(10, 109, 180, .36);
+}
+
+.hero-actions .button.ghost {
+  backdrop-filter: blur(6px);
 }
 
 @keyframes heroReveal {
@@ -334,6 +379,87 @@ textarea {
   padding: 82px clamp(20px, 6vw, 86px);
   background: #ffffff;
   border-bottom: 1px solid #e8eef3;
+}
+
+@keyframes heroBadgeIn {
+  from {
+    opacity: 0;
+    transform: translateX(-54px) rotate(-1deg);
+    filter: blur(3px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0) rotate(0);
+    filter: blur(0);
+  }
+}
+
+@keyframes heroBadgeShine {
+  from {
+    transform: translateX(-120%);
+  }
+  to {
+    transform: translateX(120%);
+  }
+}
+
+@keyframes heroTitleIn {
+  from {
+    opacity: 0;
+    transform: translateX(70px) rotateY(-12deg);
+    filter: blur(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0) rotateY(0);
+    filter: blur(0);
+  }
+}
+
+@keyframes heroLineIn {
+  from {
+    opacity: 0;
+    transform: scaleX(0);
+  }
+  to {
+    opacity: 1;
+    transform: scaleX(1);
+  }
+}
+
+@keyframes heroCopyIn {
+  from {
+    opacity: 0;
+    transform: translateY(34px);
+    filter: blur(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+    filter: blur(0);
+  }
+}
+
+@keyframes heroActionsIn {
+  from {
+    opacity: 0;
+    transform: translateX(-28px) translateY(18px) scale(.96);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes heroGhostActionIn {
+  from {
+    opacity: 0;
+    transform: translateX(28px) translateY(18px) scale(.96);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0) translateY(0) scale(1);
+  }
 }
 
 .section.narrow {
@@ -1218,6 +1344,20 @@ th {
   .stats-band,
   .cta-band {
     animation: fadeUp .65s ease both;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hero-slide,
+  .hero h1,
+  .hero h1::after,
+  .hero p,
+  .hero .eyebrow,
+  .hero .eyebrow::before,
+  .hero-actions .button {
+    animation: none;
+    transform: none;
+    filter: none;
   }
 }
 

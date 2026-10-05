@@ -49,7 +49,7 @@ export default function Home() {
           })}
         </div>
         <div className="hero-overlay" />
-        <div className="hero-content">
+        <div className="hero-content" key={activeHeroSlide}>
           <span className="eyebrow">2026/2027 Admissions Are Now Open</span>
           <h1>{schoolInfo.name} {schoolInfo.location}</h1>
           <p>{schoolInfo.motto}. Practical healthcare education for community health, pharmacy technology, medical laboratory technology, health information management, public health, and health promotion.</p>
