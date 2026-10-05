@@ -447,8 +447,8 @@ p {
 
 .leadership-section {
   display: grid;
-  grid-template-columns: minmax(280px, 430px) minmax(0, 1fr);
-  gap: clamp(30px, 6vw, 84px);
+  grid-template-columns: minmax(280px, 400px) minmax(0, 1fr);
+  gap: clamp(32px, 6vw, 86px);
   align-items: center;
   background: #ffffff;
 }
@@ -459,22 +459,26 @@ p {
 
 .leader-portrait {
   overflow: hidden;
-  background: white;
-  border: 1px solid var(--line-strong);
+  background: linear-gradient(145deg, #061b36, #092c57);
+  border: 1px solid rgba(10, 94, 168, .22);
   border-radius: 8px;
-  box-shadow: var(--shadow);
+  box-shadow: 0 26px 60px rgba(11, 45, 74, .18);
   transition: transform .35s ease, box-shadow .35s ease;
 }
 
 .leader-portrait img {
   width: 100%;
-  aspect-ratio: 4 / 5;
-  object-fit: cover;
+  display: block;
+  aspect-ratio: 2 / 3;
+  object-fit: contain;
+  background: #071b34;
 }
 
 .leader-portrait div {
-  padding: 18px;
+  padding: 18px 20px 20px;
   text-align: center;
+  background: #ffffff;
+  border-top: 1px solid rgba(10, 94, 168, .14);
 }
 
 .leader-portrait strong,
@@ -485,11 +489,13 @@ p {
 .leader-portrait strong {
   color: var(--blue-800);
   font-weight: 900;
+  font-size: 18px;
 }
 
 .leader-portrait span {
   color: var(--muted);
   font-weight: 750;
+  margin-top: 4px;
 }
 
 button:disabled,
@@ -505,10 +511,12 @@ select:disabled {
 
 .leader-copy h2 {
   color: var(--blue-800);
+  max-width: 680px;
 }
 
 .leader-copy p {
   font-size: 18px;
+  max-width: 760px;
 }
 
 .leader-points {

@@ -32,10 +32,10 @@ export const schoolInfo = {
 
 export const leadershipWelcome = {
   title: "Welcome to Unique College",
-  label: "College Leadership",
-  name: "Unique College Leadership",
-  role: "Office of the Provost",
-  image: "/school-assets/official-visit-hall.jpg",
+  label: "CEO's Welcome",
+  name: "Luka Iko John",
+  role: "CHIEF EXECUTIVE OFFICER (CEO)",
+  image: "/school-assets/ceo-luka-iko-john.jpg",
   paragraphs: [
     "I warmly welcome you to Unique College of Health Science and Technology, Kwali-Abuja, a private tertiary healthcare institution committed to practical training, discipline, and academic excellence.",
     "Our learning environment is designed to produce competent healthcare personnel who can serve communities with compassion, integrity, innovation, and professional responsibility."
