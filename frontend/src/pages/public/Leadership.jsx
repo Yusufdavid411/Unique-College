@@ -9,6 +9,25 @@ const groupedProfiles = leadershipProfiles.slice(1).reduce((groups, profile) => 
   return groups;
 }, {});
 
+const groupHeadings = {
+  "Management Staff": {
+    title: "Registry and management team",
+    text: "Administrative officers supporting records, admissions, coordination, and day-to-day institutional service."
+  },
+  "Governing Council": {
+    title: "Governance and council oversight",
+    text: "Council leadership providing policy direction, accountability, and strategic guidance for sustainable growth."
+  },
+  "Advisory Board": {
+    title: "Advisory board guidance",
+    text: "Senior academic and professional advisers supporting standards, quality, and institutional development."
+  },
+  "Academic Leadership": {
+    title: "Departmental academic heads",
+    text: "Heads of department coordinating teaching, practical learning, and student professional readiness."
+  }
+};
+
 export default function Leadership() {
   return (
     <>
@@ -43,7 +62,8 @@ export default function Leadership() {
         <section className="section leadership-group-section" key={group}>
           <div className="section-heading">
             <span className="eyebrow">{group}</span>
-            <h2>{group === "Academic Leadership" ? "Departmental academic heads" : "Institutional leadership"}</h2>
+            <h2>{groupHeadings[group]?.title || group}</h2>
+            <p>{groupHeadings[group]?.text}</p>
           </div>
           <div className="leadership-grid">
             {profiles.map((profile) => (

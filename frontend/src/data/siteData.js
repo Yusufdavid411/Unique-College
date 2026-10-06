@@ -181,15 +181,15 @@ export const leadershipProfiles = [
     ]
   },
   {
-    name: "Chairman, Governing Council",
-    role: "Governing Council Chairman",
+    name: "Prof. Zaruwa Moses Zira",
+    role: "Chairman, Governing Council",
     group: "Governing Council",
     image: "/school-assets/governing-council-chairman.jpg",
     summary:
-      "Provides governance oversight, policy direction, and institutional support for the college's long-term development.",
+      "Leads the Governing Council with commitment to transparency, accountability, academic integrity, and the long-term development of the college.",
     achievements: [
-      "Guides institutional governance and accountability",
-      "Supports strategic decisions for sustainable academic growth"
+      "Supports academic development, infrastructural growth, staff capacity building, and regulatory compliance",
+      "Holds advanced training and qualifications across biochemistry, pharmacy, higher education management, and clinical psychology"
     ]
   },
   {
