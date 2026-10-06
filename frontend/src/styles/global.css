@@ -102,7 +102,7 @@ textarea {
 .brand-mark.image-mark img {
   width: 100%;
   height: 100%;
-  object-fit: cover;
+  object-fit: contain;
 }
 
 .brand strong,
@@ -118,7 +118,7 @@ textarea {
 .main-nav {
   display: flex;
   align-items: center;
-  gap: 18px;
+  gap: 14px;
   color: #32465b;
   font-weight: 650;
   font-size: 14px;
@@ -675,6 +675,191 @@ select:disabled {
   color: var(--green-500);
 }
 
+.leadership-preview-section {
+  background: #ffffff;
+}
+
+.leadership-strip {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.mini-leader-card {
+  overflow: hidden;
+  background: #ffffff;
+  border: 1px solid var(--line-strong);
+  border-radius: 8px;
+  box-shadow: 0 12px 30px rgba(11, 45, 74, .08);
+}
+
+.mini-leader-card img {
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  object-fit: cover;
+  object-position: center top;
+  background: #f4f8fb;
+}
+
+.mini-leader-card div {
+  padding: 16px;
+}
+
+.mini-leader-card strong,
+.mini-leader-card span {
+  display: block;
+}
+
+.mini-leader-card strong {
+  color: var(--blue-800);
+  font-weight: 900;
+}
+
+.mini-leader-card span {
+  margin-top: 4px;
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 750;
+}
+
+.leadership-hero {
+  background:
+    linear-gradient(90deg, rgba(6, 55, 95, .94), rgba(10, 109, 180, .82)),
+    url("/school-assets/campus-courtyard.jpg") center / cover;
+}
+
+.leadership-feature {
+  display: grid;
+  grid-template-columns: minmax(280px, 380px) minmax(0, 1fr);
+  gap: clamp(30px, 6vw, 80px);
+  align-items: center;
+  background: #ffffff;
+}
+
+.leadership-feature-image {
+  overflow: hidden;
+  border-radius: 8px;
+  border: 1px solid var(--line-strong);
+  box-shadow: var(--shadow);
+  background: #071b34;
+}
+
+.leadership-feature-image img {
+  width: 100%;
+  aspect-ratio: 2 / 3;
+  object-fit: contain;
+  background: #071b34;
+}
+
+.leadership-feature-copy strong {
+  display: inline-flex;
+  margin-bottom: 18px;
+  color: var(--blue-800);
+  font-size: 18px;
+  font-weight: 900;
+}
+
+.leadership-feature-copy p {
+  max-width: 760px;
+  font-size: 18px;
+}
+
+.leadership-group-section {
+  background: #ffffff;
+}
+
+.leadership-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 22px;
+}
+
+.leadership-card {
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  min-height: 100%;
+  background: #ffffff;
+  border: 1px solid var(--line-strong);
+  border-radius: 8px;
+  box-shadow: 0 12px 30px rgba(11, 45, 74, .08);
+  transition: transform .25s ease, box-shadow .25s ease, border-color .25s ease;
+}
+
+.leadership-card:hover {
+  transform: translateY(-5px);
+  border-color: rgba(10, 109, 180, .46);
+  box-shadow: var(--shadow);
+}
+
+.leadership-card img {
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  object-fit: cover;
+  object-position: center top;
+  background: #f4f8fb;
+}
+
+.leadership-card-body {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  padding: 22px;
+}
+
+.leadership-card h3 {
+  margin-bottom: 6px;
+  color: var(--blue-800);
+}
+
+.leadership-card strong {
+  display: block;
+  margin-bottom: 14px;
+  color: var(--ink);
+  font-weight: 900;
+}
+
+.leadership-card p {
+  color: var(--muted);
+}
+
+.leadership-card ul {
+  display: grid;
+  gap: 10px;
+  margin: auto 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.leadership-card li {
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+  color: var(--blue-800);
+  font-size: 14px;
+  font-weight: 800;
+}
+
+.leadership-card li svg {
+  flex: 0 0 auto;
+  color: var(--green-500);
+  margin-top: 3px;
+}
+
+.leadership-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  width: fit-content;
+  margin-bottom: 14px;
+  padding: 7px 10px;
+  color: var(--blue-800);
+  background: var(--blue-100);
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 900;
+}
+
 .anthem-section {
   align-items: start;
   background: #ffffff;
@@ -804,7 +989,7 @@ td span,
 .footer-identity img {
   width: 72px;
   height: 72px;
-  object-fit: cover;
+  object-fit: contain;
   border-radius: 8px;
   background: white;
 }
@@ -1068,7 +1253,7 @@ textarea {
   grid-template-columns: 280px minmax(0, 1fr);
   background:
     linear-gradient(120deg, rgba(246, 250, 252, .96), rgba(232, 244, 251, .9)),
-    url("/school-assets/logo-transparent.png") right 42px bottom 34px / min(42vw, 520px) auto no-repeat,
+    url("/school-assets/logo-new.jpg") right 42px bottom 34px / min(32vw, 360px) auto no-repeat,
     var(--soft);
 }
 
@@ -1316,12 +1501,15 @@ th {
   .feature-grid,
   .cards-grid,
   .gallery-grid,
+  .leadership-grid,
+  .leadership-strip,
   .admin-stats {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
   .split-section,
   .leadership-section,
+  .leadership-feature,
   .contact-grid,
   .admin-two-col {
     grid-template-columns: 1fr;
@@ -1407,6 +1595,8 @@ th {
 
   .stats-band,
   .cta-band,
+  .leadership-grid,
+  .leadership-strip,
   .site-footer,
   .application-form,
   .admin-shell {

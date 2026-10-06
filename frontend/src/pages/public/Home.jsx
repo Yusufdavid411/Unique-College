@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 import { Activity, ArrowRight, BookOpen, CheckCircle2, Microscope, ShieldCheck } from "lucide-react";
 import { api, assetUrl } from "../../api/client.js";
 import Seo from "../../components/Seo.jsx";
-import { assetPaths, heroSlides, leadershipWelcome, programs, schoolInfo, stats } from "../../data/siteData.js";
+import { assetPaths, heroSlides, leadershipProfiles, leadershipWelcome, programs, schoolInfo, stats } from "../../data/siteData.js";
 
 export default function Home() {
   const [news, setNews] = useState([]);
@@ -77,6 +77,27 @@ export default function Home() {
               <span key={point}><CheckCircle2 size={20} />{point}</span>
             ))}
           </div>
+        </div>
+      </section>
+
+      <section className="section leadership-preview-section">
+        <div className="section-heading">
+          <span className="eyebrow">Leadership & Administration</span>
+          <h2>Meet the team guiding Unique College.</h2>
+        </div>
+        <div className="leadership-strip">
+          {leadershipProfiles.slice(0, 4).map((profile) => (
+            <article className="mini-leader-card" key={`${profile.name}-${profile.role}`}>
+              <img src={profile.image} alt={profile.name} loading="lazy" />
+              <div>
+                <strong>{profile.name}</strong>
+                <span>{profile.role}</span>
+              </div>
+            </article>
+          ))}
+        </div>
+        <div className="section-action">
+          <Link className="text-link" to="/leadership">View leadership profiles <ArrowRight size={16} /></Link>
         </div>
       </section>
 

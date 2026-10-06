@@ -6,6 +6,7 @@ import { assetPaths, schoolInfo } from "../data/siteData.js";
 const navItems = [
   ["Home", "/"],
   ["About", "/about"],
+  ["Leadership", "/leadership"],
   ["Courses", "/courses"],
   ["Admission", "/admission"],
   ["Gallery", "/gallery"],

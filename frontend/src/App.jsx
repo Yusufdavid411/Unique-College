@@ -4,6 +4,7 @@ import ProtectedRoute from "./components/ProtectedRoute.jsx";
 import AdminLayout from "./components/AdminLayout.jsx";
 import Home from "./pages/public/Home.jsx";
 import About from "./pages/public/About.jsx";
+import Leadership from "./pages/public/Leadership.jsx";
 import Courses from "./pages/public/Courses.jsx";
 import Admission from "./pages/public/Admission.jsx";
 import Contact from "./pages/public/Contact.jsx";
@@ -24,6 +25,7 @@ export default function App() {
       <Route element={<PublicLayout />}>
         <Route index element={<Home />} />
         <Route path="about" element={<About />} />
+        <Route path="leadership" element={<Leadership />} />
         <Route path="courses" element={<Courses />} />
         <Route path="admission" element={<Admission />} />
         <Route path="contact" element={<Contact />} />

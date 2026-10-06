@@ -83,7 +83,7 @@ export const pledge = {
 };
 
 export const assetPaths = {
-  logo: "/school-assets/logo.jpeg",
+  logo: "/school-assets/logo-new.jpg",
   admissionFlyer: "/school-assets/admission-open-2026.jpeg",
   programsFlyer: "/school-assets/programs-info.jpeg",
   campusWide: "/school-assets/campus-contact-wide.jpeg",
@@ -106,42 +106,42 @@ const generalRequirements =
 export const programs = [
   {
     title: "Community Health Extension Workers (CHEW) ND",
-    duration: "4 semesters",
+    duration: "6 semesters",
     requirements: generalRequirements,
     summary:
       "National Diploma training for primary healthcare practice, community health service, prevention, and patient support."
   },
   {
     title: "Pharmacy Technician ND",
-    duration: "4 semesters",
+    duration: "6 semesters",
     requirements: generalRequirements,
     summary:
       "Training for pharmacy support practice, medicine handling, dispensing assistance, inventory, and patient-focused service."
   },
   {
     title: "Medical Laboratory Technician (MLT) ND",
-    duration: "4 semesters",
+    duration: "6 semesters",
     requirements: generalRequirements,
     summary:
       "Practical laboratory training for diagnostic support, specimen handling, basic analysis, and safe laboratory procedures."
   },
   {
     title: "Health Information Management (HIM) ND",
-    duration: "4 semesters",
+    duration: "6 semesters",
     requirements: generalRequirements,
     summary:
       "Training in health records, data handling, hospital information workflow, reporting, and digital health administration."
   },
   {
     title: "Public Health Science ND",
-    duration: "4 semesters",
+    duration: "6 semesters",
     requirements: generalRequirements,
     summary:
       "Public health training focused on prevention, health education, epidemiology basics, and community health systems."
   },
   {
     title: "Health Promotion Science ND",
-    duration: "4 semesters",
+    duration: "6 semesters",
     requirements: generalRequirements,
     summary:
       "Training for health awareness, behavior change communication, outreach planning, and community health promotion."
@@ -152,7 +152,82 @@ export const stats = [
   [schoolInfo.registrationNumber, "Registered institution"],
   ["2026/2027", "Admission open"],
   ["6", "ND programmes"],
-  ["4 semesters", "Programme duration"]
+  ["6 semesters", "Programme duration"]
+];
+
+export const leadershipProfiles = [
+  {
+    name: leadershipWelcome.name,
+    role: leadershipWelcome.role,
+    group: "Executive Leadership",
+    image: leadershipWelcome.image,
+    summary:
+      "Provides institutional vision, executive direction, and strategic leadership for the growth of Unique College of Health Science and Technology.",
+    achievements: [
+      "Leads the college's mission of practical health science education",
+      "Champions disciplined training, service, and academic excellence"
+    ]
+  },
+  {
+    name: "Danjuma Christopher",
+    role: "Registrar",
+    group: "Management Staff",
+    image: "/school-assets/registrar-danjuma-christopher.jpg",
+    summary:
+      "Coordinates registry operations, student records, admissions documentation, and institutional administrative processes.",
+    achievements: [
+      "Supports admission and academic records administration",
+      "Strengthens communication between students, staff, and management"
+    ]
+  },
+  {
+    name: "Chairman, Governing Council",
+    role: "Governing Council Chairman",
+    group: "Governing Council",
+    image: "/school-assets/governing-council-chairman.jpg",
+    summary:
+      "Provides governance oversight, policy direction, and institutional support for the college's long-term development.",
+    achievements: [
+      "Guides institutional governance and accountability",
+      "Supports strategic decisions for sustainable academic growth"
+    ]
+  },
+  {
+    name: "Prof. Andrew Ezeudayan Zamani",
+    role: "Advisory Board Chairman",
+    group: "Advisory Board",
+    image: "/school-assets/advisory-board-chairman.jpg",
+    summary:
+      "Professor of Clinical Psychology, Department of Psychology, PMB 1022, Keffi, Nigeria.",
+    achievements: [
+      "Provides advisory leadership on academic quality and professional standards",
+      "Supports institutional development through senior academic experience"
+    ]
+  },
+  {
+    name: "Mr. Femi Monday",
+    role: "HOD, Medical Laboratory Science",
+    group: "Academic Leadership",
+    image: "/school-assets/hod-medical-lab-femi-monday.jpg",
+    summary:
+      "Leads the Medical Laboratory Science department with focus on practical diagnostic training and laboratory discipline.",
+    achievements: [
+      "Coordinates medical laboratory science teaching and practical exposure",
+      "Promotes safe laboratory practice and professional readiness"
+    ]
+  },
+  {
+    name: "Tillani Zuhairu",
+    role: "HOD, Community Health Science",
+    group: "Academic Leadership",
+    image: "/school-assets/hod-community-health-tillani-zuhairu.jpg",
+    summary:
+      "Leads Community Health Science training with emphasis on primary healthcare, community service, and student competence.",
+    achievements: [
+      "Coordinates community health science instruction",
+      "Supports training for healthcare service in local communities"
+    ]
+  }
 ];
 
 export const sampleNews = [
