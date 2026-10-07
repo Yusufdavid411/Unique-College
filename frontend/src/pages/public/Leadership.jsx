@@ -1,6 +1,6 @@
 import { Award, BriefcaseBusiness, CheckCircle2 } from "lucide-react";
 import Seo from "../../components/Seo.jsx";
-import { leadershipProfiles, schoolInfo } from "../../data/siteData.js";
+import { leadershipProfiles } from "../../data/siteData.js";
 
 const featuredProfile = leadershipProfiles[0];
 const groupedProfiles = leadershipProfiles.slice(1).reduce((groups, profile) => {
@@ -10,21 +10,17 @@ const groupedProfiles = leadershipProfiles.slice(1).reduce((groups, profile) => 
 }, {});
 
 const groupHeadings = {
+  "Board Members": {
+    title: "Board Members",
+    text: "Council and board leaders providing governance, advisory strength, policy direction, and institutional oversight."
+  },
   "Management Staff": {
-    title: "Registry And Management Team",
-    text: "Administrative officers supporting records, admissions, coordination, and day-to-day institutional service."
+    title: "Management Staff",
+    text: "Administrative, academic, assessment, student affairs, research, IT, and coordination officers supporting daily institutional service."
   },
-  "Governing Council": {
-    title: "Governance And Council Oversight",
-    text: "Council leadership providing policy direction, accountability, and strategic guidance for sustainable growth."
-  },
-  "Advisory Board": {
-    title: "Advisory Board Guidance",
-    text: "Senior academic and professional advisers supporting standards, quality, and institutional development."
-  },
-  "Academic Leadership": {
-    title: "Departmental Academic Heads",
-    text: "Heads of department coordinating teaching, practical learning, and student professional readiness."
+  "Departmental HODs": {
+    title: "Departmental HODs",
+    text: "Heads of department coordinating teaching, practical learning, welcome guidance, and student professional readiness."
   }
 };
 

@@ -177,8 +177,8 @@ export const leadershipProfiles = [
   },
   {
     name: "Prof. Zaruwa Moses Zira",
-    role: "Chairman, Governing Council",
-    group: "Governing Council",
+    role: "Board Chairman, Governing Council",
+    group: "Board Members",
     image: "/school-assets/governing-council-chairman.jpg",
     summary:
       "Leads the Governing Council with commitment to transparency, accountability, academic integrity, and the long-term development of the college.",
@@ -190,7 +190,7 @@ export const leadershipProfiles = [
   {
     name: "Danjuma Christopher",
     role: "Registrar",
-    group: "Management Staff",
+    group: "Board Members",
     image: "/school-assets/registrar-danjuma-christopher.jpg",
     summary:
       "Coordinates registry operations, student records, admissions documentation, and institutional administrative processes.",
@@ -202,7 +202,7 @@ export const leadershipProfiles = [
   {
     name: "Prof. Andrew Ezeudayan Zamani",
     role: "Advisory Board Chairman",
-    group: "Advisory Board",
+    group: "Board Members",
     image: "/school-assets/advisory-board-chairman.jpg",
     summary:
       "Professor of Clinical Psychology and Advisory Board Chairman, supporting academic quality, professional standards, and institutional development.",
@@ -212,9 +212,81 @@ export const leadershipProfiles = [
     ]
   },
   {
+    name: "Mr. Usman Karuma Shuaib",
+    role: "Dean of Student Studies",
+    group: "Management Staff",
+    image: "/school-assets/dean-student-studies-usman-karuma-shuaib.jpg",
+    summary:
+      "Supports student studies, learner guidance, academic discipline, and the welfare systems that help students stay focused and accountable.",
+    achievements: [
+      "Coordinates student-study support and academic guidance",
+      "Strengthens student discipline, communication, and institutional care"
+    ]
+  },
+  {
+    name: "Adamu Emmanuel",
+    role: "Academic Secretary",
+    group: "Management Staff",
+    image: "/school-assets/academic-secretary-adamu-emmanuel.jpg",
+    summary:
+      "Academic Secretary and lecturer with teaching experience in English and Citizenship Education, supporting academic coordination and record processes.",
+    achievements: [
+      "Holds a B.A. in Linguistics from Nasarawa State University, Keffi, and is pursuing a Master's degree",
+      "Coordinates academic programmes, records, and smooth academic operations with diligence and effective communication"
+    ]
+  },
+  {
+    name: "Bwamba Jonah Ayuba",
+    role: "Chairman, Project And Research",
+    group: "Management Staff",
+    image: "/school-assets/chairman-project-research-bwamba-jonah-ayuba.jpg",
+    summary:
+      "Nigerian physicist, researcher, and academic associated with the Physics Department at the University of Abuja and the Sheda Science and Technology Complex.",
+    achievements: [
+      "Specializes in solid earth physics, geophysics, mineral exploration, structural mapping, and aeromagnetic data analysis",
+      "Has co-authored research on aeromagnetic and aeroradiometric data interpretation for mineral resource assessment"
+    ]
+  },
+  {
+    name: "Mrs. Eleta Marie Ainegbhaode",
+    role: "Exam And Assessment",
+    group: "Management Staff",
+    image: "/school-assets/exam-assessment-eleta-marie-ainegbhaode.jpg",
+    summary:
+      "Experienced examination and assessment officer with a background in natural and applied sciences, polymer technology, education, and chemistry teaching.",
+    achievements: [
+      "Studied at Olivet Baptist Certificate, Auchi Polytechnic, and completed a Post Graduate Diploma in Education",
+      "Has been teaching for more than 18 years with strong classroom and assessment experience"
+    ]
+  },
+  {
+    name: "Mr. Dogara Kaura",
+    role: "Dean of Student Affairs",
+    group: "Management Staff",
+    image: "/school-assets/dean-student-affairs-dogara-kaura.jpg",
+    summary:
+      "Dean of Student Affairs with training across agriculture, environmental science, education, administration, and planning.",
+    achievements: [
+      "Holds National Diploma and HND qualifications, a B.Sc. in Environmental Science, a PGDE, and a Master's in Education Administration and Planning",
+      "Brings experience from area council service and part-time lecturing in health science education"
+    ]
+  },
+  {
+    name: "Mr. Samuel Denis Ibrahim",
+    role: "IT/SIWES Coordinator",
+    group: "Management Staff",
+    image: "/school-assets/it-siwes-coordinator-samuel-denis-ibrahim.jpg",
+    summary:
+      "Graduate of the University of Abuja, environmentalist, educator, and coordinator supporting IT, SIWES, and clinical-posting preparation.",
+    achievements: [
+      "Coordinates practical posting readiness and student exposure to health-sector experience",
+      "Promotes learning, research, travel, environmental health, and modern health-care system awareness"
+    ]
+  },
+  {
     name: "Mr. Femi Monday Jezh",
     role: "HOD, Medical Laboratory Science",
-    group: "Academic Leadership",
+    group: "Departmental HODs",
     image: "/school-assets/hod-medical-lab-femi-monday.jpg",
     summary:
       "Leads the Medical Laboratory Science department with focus on practical diagnostic training and laboratory discipline.",
@@ -226,7 +298,7 @@ export const leadershipProfiles = [
   {
     name: "Mal. Tijjani Zuhairu",
     role: "HOD, Community Health Science",
-    group: "Academic Leadership",
+    group: "Departmental HODs",
     image: "/school-assets/hod-community-health-tillani-zuhairu.jpg",
     summary:
       "Leads Community Health Science training with emphasis on primary healthcare, community service, and student competence.",
@@ -234,6 +306,45 @@ export const leadershipProfiles = [
       "Coordinates community health science instruction",
       "Supports training for healthcare service in local communities"
     ]
+  },
+  {
+    name: "Mr. Samson Jairus Nyada",
+    role: "HOD, Pharmacy Department",
+    group: "Departmental HODs",
+    image: "/school-assets/hod-pharmacy-samson-jairus-nyada.jpg",
+    summary:
+      "Leads the Pharmacy Department with attention to practical learning, student discipline, examination readiness, and professional development.",
+    achievements: [
+      "Coordinates pharmacy department teaching, practical supervision, and academic expectations",
+      "Supports student affairs, IT coordination, and examination duties for stronger academic service"
+    ]
+  }
+];
+
+export const departmentLeadership = [
+  {
+    department: "Medical Laboratory Science",
+    name: "Mr. Femi Monday Jezh",
+    role: "HOD, Medical Laboratory Science",
+    image: "/school-assets/hod-medical-lab-femi-monday.jpg",
+    welcome:
+      "Welcome to Medical Laboratory Science. Our department trains students in safe laboratory practice, diagnostic support, specimen handling, and disciplined professional conduct."
+  },
+  {
+    department: "Community Health Science",
+    name: "Mal. Tijjani Zuhairu",
+    role: "HOD, Community Health Science",
+    image: "/school-assets/hod-community-health-tillani-zuhairu.jpg",
+    welcome:
+      "Welcome to Community Health Science. We prepare students for primary healthcare service, prevention, community outreach, and responsible support for families and local communities."
+  },
+  {
+    department: "Pharmacy Department",
+    name: "Mr. Samson Jairus Nyada",
+    role: "HOD, Pharmacy Department",
+    image: "/school-assets/hod-pharmacy-samson-jairus-nyada.jpg",
+    welcome:
+      "Welcome to the Pharmacy Department. We focus on medicine handling, dispensing support, patient service, inventory awareness, and the professional discipline expected in pharmacy practice."
   }
 ];
 

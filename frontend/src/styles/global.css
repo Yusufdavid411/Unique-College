@@ -1059,6 +1059,56 @@ td span,
   color: var(--blue-800);
 }
 
+.department-leadership-section {
+  background: #ffffff;
+}
+
+.hod-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 22px;
+}
+
+.hod-card {
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  min-height: 100%;
+  background: #ffffff;
+  border: 1px solid var(--line-strong);
+  border-radius: 8px;
+  box-shadow: 0 12px 30px rgba(11, 45, 74, 0.08);
+}
+
+.hod-card img {
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  object-fit: cover;
+  object-position: center top;
+  background: #f4f8fb;
+}
+
+.hod-card-body {
+  display: grid;
+  gap: 10px;
+  padding: 22px;
+}
+
+.hod-card h3 {
+  margin: 0;
+  color: var(--blue-800);
+}
+
+.hod-card strong {
+  color: var(--ink);
+  font-weight: 900;
+}
+
+.hod-card p {
+  margin: 0;
+  color: var(--muted);
+}
+
 .process-list {
   display: grid;
   gap: 14px;
@@ -1507,6 +1557,7 @@ th {
   .cards-grid,
   .gallery-grid,
   .leadership-grid,
+  .hod-grid,
   .leadership-strip,
   .admin-stats {
     grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -1601,6 +1652,7 @@ th {
   .stats-band,
   .cta-band,
   .leadership-grid,
+  .hod-grid,
   .leadership-strip,
   .site-footer,
   .application-form,
