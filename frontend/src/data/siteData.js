@@ -145,13 +145,20 @@ export const programs = [
     requirements: generalRequirements,
     summary:
       "Training for health awareness, behavior change communication, outreach planning, and community health promotion."
+  },
+  {
+    title: "Artificial Intelligence in Healthcare System Management",
+    duration: "Effective Next Year",
+    requirements: generalRequirements,
+    summary:
+      "A future-focused programme introducing AI-supported healthcare administration, health data systems, digital decision support, and responsible technology use in healthcare management."
   }
 ];
 
 export const stats = [
   [schoolInfo.registrationNumber, "Registered Institution"],
   ["2026/2027", "Admission Open"],
-  ["6", "ND Programmes"],
+  ["7", "Programmes"],
   ["6 Semesters", "Programme Duration"]
 ];
 
@@ -198,14 +205,14 @@ export const leadershipProfiles = [
     group: "Advisory Board",
     image: "/school-assets/advisory-board-chairman.jpg",
     summary:
-      "Professor of Clinical Psychology, Department of Psychology, PMB 1022, Keffi, Nigeria.",
+      "Professor of Clinical Psychology and Advisory Board Chairman, supporting academic quality, professional standards, and institutional development.",
     achievements: [
       "Provides advisory leadership on academic quality and professional standards",
       "Supports institutional development through senior academic experience"
     ]
   },
   {
-    name: "Mr. Femi Monday",
+    name: "Mr. Femi Monday Jezh",
     role: "HOD, Medical Laboratory Science",
     group: "Academic Leadership",
     image: "/school-assets/hod-medical-lab-femi-monday.jpg",
@@ -217,7 +224,7 @@ export const leadershipProfiles = [
     ]
   },
   {
-    name: "Tillani Zuhairu",
+    name: "Mal. Tijjani Zuhairu",
     role: "HOD, Community Health Science",
     group: "Academic Leadership",
     image: "/school-assets/hod-community-health-tillani-zuhairu.jpg",
@@ -234,7 +241,7 @@ export const sampleNews = [
   {
     title: "Admission is open for the 2026/2027 academic session",
     excerpt:
-      "Unique College of Health Science and Technology, Kwali-Abuja is accepting applications into CHEW, Pharmacy Technician, MLT, HIM, Public Health Science, and Health Promotion Science ND programmes."
+      "Unique College of Health Science and Technology, Kwali-Abuja is accepting applications into its health science programmes, with Artificial Intelligence in Healthcare System Management announced to take effect next year."
   },
   {
     title: "Applications are received online",

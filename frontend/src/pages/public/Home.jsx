@@ -115,7 +115,7 @@ export default function Home() {
         {[
           [Microscope, "Medical Laboratory Training", "Diagnostic support skills and safe laboratory practice."],
           [Activity, "Primary Health Care Focus", "Health personnel prepared for meaningful service in communities."],
-          [BookOpen, "Six ND Programmes", "Updated academic options with 6-semester programme duration."],
+          [BookOpen, "Seven Programmes", "Updated academic options including Artificial Intelligence in Healthcare System Management, effective next year."],
           [ShieldCheck, "Approved Institution", `${schoolInfo.registrationNumber} with provisional approval in FCT-Abuja.`]
         ].map(([Icon, title, text]) => (
           <article className="feature-card" key={title}>
