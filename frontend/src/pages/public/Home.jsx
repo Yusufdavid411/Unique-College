@@ -83,7 +83,7 @@ export default function Home() {
       <section className="section leadership-preview-section">
         <div className="section-heading">
           <span className="eyebrow">Leadership & Administration</span>
-          <h2>Meet The Team Guiding Unique College.</h2>
+          <h2>The Principal Officers</h2>
         </div>
         <div className="leadership-strip">
           {leadershipProfiles.slice(0, 4).map((profile) => (
