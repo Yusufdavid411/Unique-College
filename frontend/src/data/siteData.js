@@ -9,7 +9,7 @@ export const schoolInfo = {
   phoneDisplay: "+234 909 283 5595, +234 813 531 2799",
   website: "uniquecollegekwali.vercel.app",
   motto: "Excellence in Impacting Knowledge",
-  admissionSession: "2026/2027 academic session",
+  admissionSession: "2026/2027 Academic Session",
   established: "September 7, 2024",
   registrationNumber: "RC-7901067",
   approval:
@@ -149,10 +149,10 @@ export const programs = [
 ];
 
 export const stats = [
-  [schoolInfo.registrationNumber, "Registered institution"],
-  ["2026/2027", "Admission open"],
-  ["6", "ND programmes"],
-  ["6 semesters", "Programme duration"]
+  [schoolInfo.registrationNumber, "Registered Institution"],
+  ["2026/2027", "Admission Open"],
+  ["6", "ND Programmes"],
+  ["6 Semesters", "Programme Duration"]
 ];
 
 export const leadershipProfiles = [
@@ -169,18 +169,6 @@ export const leadershipProfiles = [
     ]
   },
   {
-    name: "Danjuma Christopher",
-    role: "Registrar",
-    group: "Management Staff",
-    image: "/school-assets/registrar-danjuma-christopher.jpg",
-    summary:
-      "Coordinates registry operations, student records, admissions documentation, and institutional administrative processes.",
-    achievements: [
-      "Supports admission and academic records administration",
-      "Strengthens communication between students, staff, and management"
-    ]
-  },
-  {
     name: "Prof. Zaruwa Moses Zira",
     role: "Chairman, Governing Council",
     group: "Governing Council",
@@ -190,6 +178,18 @@ export const leadershipProfiles = [
     achievements: [
       "Supports academic development, infrastructural growth, staff capacity building, and regulatory compliance",
       "Holds advanced training and qualifications across biochemistry, pharmacy, higher education management, and clinical psychology"
+    ]
+  },
+  {
+    name: "Danjuma Christopher",
+    role: "Registrar",
+    group: "Management Staff",
+    image: "/school-assets/registrar-danjuma-christopher.jpg",
+    summary:
+      "Coordinates registry operations, student records, admissions documentation, and institutional administrative processes.",
+    achievements: [
+      "Supports admission and academic records administration",
+      "Strengthens communication between students, staff, and management"
     ]
   },
   {

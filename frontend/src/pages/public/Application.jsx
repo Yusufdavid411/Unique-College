@@ -57,7 +57,7 @@ export default function Application() {
   return (
     <>
       <Seo title="Application" description="Submit your Unique College student application online." />
-      <section className="page-hero compact"><span className="eyebrow">Application</span><h1>Submit your student application.</h1></section>
+      <section className="page-hero compact"><span className="eyebrow">Application</span><h1>Submit Your Student Application.</h1></section>
       <section className="section narrow">
         <form className="form-panel application-form" onSubmit={submit}>
           <input required placeholder="Full name" value={form.fullName} onChange={(e) => setForm({ ...form, fullName: e.target.value })} />

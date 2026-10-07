@@ -7,7 +7,7 @@ export default function About() {
       <Seo title="About" description="Mission, vision, history, accreditation, and leadership of Unique College." />
       <section className="page-hero compact">
         <span className="eyebrow">About Unique College</span>
-        <h1>{schoolInfo.motto} in health science education.</h1>
+        <h1>{schoolInfo.motto} In Health Science Education.</h1>
       </section>
       <section className="section leadership-section about-leadership">
         <div className="leader-portrait">
@@ -26,7 +26,7 @@ export default function About() {
       <section className="section split-section">
         <div className="stack">
           <article>
-            <h2>About us</h2>
+            <h2>About Us</h2>
             <p>{schoolInfo.about}</p>
             <p>{schoolInfo.profile}</p>
           </article>

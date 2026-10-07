@@ -19,7 +19,7 @@ export default function News() {
   return (
     <>
       <Seo title="News" description="News and announcements from Unique College." />
-      <section className="page-hero compact"><span className="eyebrow">News</span><h1>Articles, announcements, and academic updates.</h1></section>
+      <section className="page-hero compact"><span className="eyebrow">News</span><h1>Articles, Announcements, And Academic Updates.</h1></section>
       <section className="section cards-grid">
         {!loading && !items.length && (
           <div className="empty-state">No published news yet. Please check back for official school announcements.</div>

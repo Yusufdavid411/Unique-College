@@ -34,7 +34,7 @@ export default function Contact() {
   return (
     <>
       <Seo title="Contact" description="Contact Unique College admissions and administration." />
-      <section className="page-hero compact"><span className="eyebrow">Contact</span><h1>Speak with admissions and administration.</h1></section>
+      <section className="page-hero compact"><span className="eyebrow">Contact</span><h1>Speak With Admissions And Administration.</h1></section>
       <section className="section contact-grid">
         <form className="form-panel" onSubmit={submit}>
           <input required placeholder="Full name" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />

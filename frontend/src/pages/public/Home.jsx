@@ -83,7 +83,7 @@ export default function Home() {
       <section className="section leadership-preview-section">
         <div className="section-heading">
           <span className="eyebrow">Leadership & Administration</span>
-          <h2>Meet the team guiding Unique College.</h2>
+          <h2>Meet The Team Guiding Unique College.</h2>
         </div>
         <div className="leadership-strip">
           {leadershipProfiles.slice(0, 4).map((profile) => (
@@ -103,8 +103,8 @@ export default function Home() {
 
       <section className="section split-section">
         <div>
-          <span className="eyebrow">About the institution</span>
-          <h2>Transforming lives through quality healthcare education.</h2>
+          <span className="eyebrow">About The Institution</span>
+          <h2>Transforming Lives Through Quality Healthcare Education.</h2>
           <p>{schoolInfo.profile}</p>
           <Link className="text-link" to="/about">Read about our mission <ArrowRight size={16} /></Link>
         </div>
@@ -113,10 +113,10 @@ export default function Home() {
 
       <section className="section feature-grid">
         {[
-          [Microscope, "Medical laboratory training", "Diagnostic support skills and safe laboratory practice."],
-          [Activity, "Primary health care focus", "Health personnel prepared for meaningful service in communities."],
-          [BookOpen, "Six ND programmes", "Updated academic options with 4-semester programme duration."],
-          [ShieldCheck, "Approved institution", `${schoolInfo.registrationNumber} with provisional approval in FCT-Abuja.`]
+          [Microscope, "Medical Laboratory Training", "Diagnostic support skills and safe laboratory practice."],
+          [Activity, "Primary Health Care Focus", "Health personnel prepared for meaningful service in communities."],
+          [BookOpen, "Six ND Programmes", "Updated academic options with 6-semester programme duration."],
+          [ShieldCheck, "Approved Institution", `${schoolInfo.registrationNumber} with provisional approval in FCT-Abuja.`]
         ].map(([Icon, title, text]) => (
           <article className="feature-card" key={title}>
             <Icon size={26} />
@@ -129,7 +129,7 @@ export default function Home() {
       <section className="section">
         <div className="section-heading">
           <span className="eyebrow">Courses</span>
-          <h2>Available programmes</h2>
+          <h2>Available Programmes</h2>
         </div>
         <div className="cards-grid">
           {programs.slice(0, 3).map((program) => (
@@ -157,7 +157,7 @@ export default function Home() {
       <section className="section">
         <div className="section-heading">
           <span className="eyebrow">News</span>
-          <h2>Latest institutional updates</h2>
+          <h2>Latest Institutional Updates</h2>
         </div>
         {!newsLoading && !news.length && (
           <div className="empty-state">No published news yet. Updates added from the admin dashboard will appear here.</div>
@@ -184,7 +184,7 @@ export default function Home() {
       </section>
 
       <section className="cta-band">
-        <h2>Ready to apply for {schoolInfo.admissionSession}?</h2>
+        <h2>Ready To Apply For {schoolInfo.admissionSession}?</h2>
         <Link className="button primary" to="/apply">Apply for admission</Link>
       </section>
     </>

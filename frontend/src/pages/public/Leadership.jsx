@@ -11,19 +11,19 @@ const groupedProfiles = leadershipProfiles.slice(1).reduce((groups, profile) => 
 
 const groupHeadings = {
   "Management Staff": {
-    title: "Registry and management team",
+    title: "Registry And Management Team",
     text: "Administrative officers supporting records, admissions, coordination, and day-to-day institutional service."
   },
   "Governing Council": {
-    title: "Governance and council oversight",
+    title: "Governance And Council Oversight",
     text: "Council leadership providing policy direction, accountability, and strategic guidance for sustainable growth."
   },
   "Advisory Board": {
-    title: "Advisory board guidance",
+    title: "Advisory Board Guidance",
     text: "Senior academic and professional advisers supporting standards, quality, and institutional development."
   },
   "Academic Leadership": {
-    title: "Departmental academic heads",
+    title: "Departmental Academic Heads",
     text: "Heads of department coordinating teaching, practical learning, and student professional readiness."
   }
 };
@@ -37,7 +37,7 @@ export default function Leadership() {
       />
       <section className="page-hero compact leadership-hero">
         <span className="eyebrow">Leadership & Administration</span>
-        <h1>Meet the people guiding {schoolInfo.shortName}.</h1>
+        <h1>The Principal Officers</h1>
         <p>Our leadership team brings together governance, administration, academic supervision, and professional health science experience.</p>
       </section>
 

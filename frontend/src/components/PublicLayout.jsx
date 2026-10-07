@@ -47,7 +47,7 @@ export default function PublicLayout() {
           <img src={assetPaths.logo} alt="Unique College logo" loading="lazy" />
           <div>
             <strong>{schoolInfo.name}</strong>
-            <p>{schoolInfo.motto}. Transforming lives through quality healthcare education.</p>
+            <p>{schoolInfo.motto}. Transforming Lives Through Quality Healthcare Education.</p>
           </div>
         </div>
         <div className="footer-contact-list">
