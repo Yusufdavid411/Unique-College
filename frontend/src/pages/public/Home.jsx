@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { Activity, ArrowRight, BookOpen, CheckCircle2, Microscope, ShieldCheck } from "lucide-react";
 import { api, assetUrl } from "../../api/client.js";
+import ResponsiveCarousel from "../../components/ResponsiveCarousel.jsx";
 import Seo from "../../components/Seo.jsx";
 import { assetPaths, heroSlides, leadershipProfiles, leadershipWelcome, programs, schoolInfo, stats } from "../../data/siteData.js";
 
@@ -85,8 +86,15 @@ export default function Home() {
           <span className="eyebrow">Leadership & Administration</span>
           <h2>The Principal Officers</h2>
         </div>
-        <div className="leadership-strip">
-          {leadershipProfiles.slice(0, 4).map((profile) => (
+        <ResponsiveCarousel
+          className="leadership-strip"
+          items={leadershipProfiles.slice(0, 4)}
+          getKey={(profile) => `${profile.name}-${profile.role}`}
+          ariaLabel="Principal officers"
+          desktopColumns={4}
+          autoPlay
+          interval={4500}
+          renderItem={(profile) => (
             <article className="mini-leader-card" key={`${profile.name}-${profile.role}`}>
               <img src={profile.image} alt={profile.name} loading="lazy" />
               <div>
@@ -94,10 +102,10 @@ export default function Home() {
                 <span>{profile.role}</span>
               </div>
             </article>
-          ))}
-        </div>
+          )}
+        />
         <div className="section-action">
-          <Link className="text-link" to="/leadership">View leadership profiles <ArrowRight size={16} /></Link>
+          <Link className="button primary" to="/leadership">View all leaders <ArrowRight size={16} /></Link>
         </div>
       </section>
 
@@ -131,15 +139,18 @@ export default function Home() {
           <span className="eyebrow">Courses</span>
           <h2>Available Programmes</h2>
         </div>
-        <div className="cards-grid">
-          {programs.slice(0, 3).map((program) => (
+        <ResponsiveCarousel
+          items={programs.slice(0, 3)}
+          getKey={(program) => program.title}
+          ariaLabel="Featured programmes"
+          renderItem={(program) => (
             <article className="program-card" key={program.title}>
               <h3>{program.title}</h3>
               <p>{program.summary}</p>
-          <span>{program.duration}</span>
+              <span>{program.duration}</span>
             </article>
-          ))}
-        </div>
+          )}
+        />
         <div className="section-action">
           <Link className="text-link" to="/courses">See all courses <ArrowRight size={16} /></Link>
         </div>
@@ -162,8 +173,11 @@ export default function Home() {
         {!newsLoading && !news.length && (
           <div className="empty-state">No published news yet. Updates added from the admin dashboard will appear here.</div>
         )}
-        <div className="cards-grid">
-          {news.map((item) => (
+        <ResponsiveCarousel
+          items={news}
+          getKey={(item) => item.id}
+          ariaLabel="Latest institutional updates"
+          renderItem={(item) => (
             <article className="news-card news-card-media" key={item.id}>
               {item.imagePath && !hiddenNewsImages.includes(item.id) && (
                 <img
@@ -176,8 +190,8 @@ export default function Home() {
               <h3>{item.title}</h3>
               <p>{item.excerpt}</p>
             </article>
-          ))}
-        </div>
+          )}
+        />
         <div className="section-action">
           <Link className="text-link" to="/news">See more news <ArrowRight size={16} /></Link>
         </div>
