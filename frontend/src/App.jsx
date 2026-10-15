@@ -1,4 +1,4 @@
-import { Route, Routes } from "react-router-dom";
+import { Navigate, Route, Routes } from "react-router-dom";
 import PublicLayout from "./components/PublicLayout.jsx";
 import ProtectedRoute from "./components/ProtectedRoute.jsx";
 import AdminLayout from "./components/AdminLayout.jsx";
@@ -25,7 +25,8 @@ export default function App() {
       <Route element={<PublicLayout />}>
         <Route index element={<Home />} />
         <Route path="about" element={<About />} />
-        <Route path="leadership" element={<Leadership />} />
+        <Route path="leadership" element={<Navigate to="/leadership/board" replace />} />
+        <Route path="leadership/:category" element={<Leadership />} />
         <Route path="courses" element={<Courses />} />
         <Route path="admission" element={<Admission />} />
         <Route path="contact" element={<Contact />} />

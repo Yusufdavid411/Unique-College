@@ -105,7 +105,7 @@ export default function Home() {
           )}
         />
         <div className="section-action">
-          <Link className="button primary" to="/leadership">View all leaders <ArrowRight size={16} /></Link>
+          <Link className="button primary" to="/leadership/board">Explore leadership <ArrowRight size={16} /></Link>
         </div>
       </section>
 

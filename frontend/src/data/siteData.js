@@ -200,18 +200,6 @@ export const leadershipProfiles = [
     ]
   },
   {
-    name: "Prof. Andrew Ezeudayan Zamani",
-    role: "Advisory Board Chairman",
-    group: "Board Members",
-    image: "/school-assets/advisory-board-chairman.jpg",
-    summary:
-      "Professor of Clinical Psychology and Advisory Board Chairman, supporting academic quality, professional standards, and institutional development.",
-    achievements: [
-      "Provides advisory leadership on academic quality and professional standards",
-      "Supports institutional development through senior academic experience"
-    ]
-  },
-  {
     name: "Mr. Usman Karuma Shuaib",
     role: "Dean of Student Studies",
     group: "Management Staff",
