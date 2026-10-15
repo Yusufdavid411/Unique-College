@@ -1,5 +1,5 @@
 import { NavLink, Outlet, Link, useLocation } from "react-router-dom";
-import { BriefcaseBusiness, ChevronDown, GraduationCap, Landmark, Mail, MapPin, Menu, Phone } from "lucide-react";
+import { BriefcaseBusiness, ChevronDown, Crown, GraduationCap, Landmark, Mail, MapPin, Menu, Phone } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { assetPaths, schoolInfo } from "../data/siteData.js";
 
@@ -14,6 +14,7 @@ const navItems = [
 ];
 
 const leadershipLinks = [
+  ["Executive Leadership", "/leadership/executive", Crown],
   ["Governing Board", "/leadership/board", Landmark],
   ["Management Staff", "/leadership/management", BriefcaseBusiness],
   ["Heads of Departments", "/leadership/hods", GraduationCap]

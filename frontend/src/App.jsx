@@ -25,7 +25,7 @@ export default function App() {
       <Route element={<PublicLayout />}>
         <Route index element={<Home />} />
         <Route path="about" element={<About />} />
-        <Route path="leadership" element={<Navigate to="/leadership/board" replace />} />
+        <Route path="leadership" element={<Navigate to="/leadership/executive" replace />} />
         <Route path="leadership/:category" element={<Leadership />} />
         <Route path="courses" element={<Courses />} />
         <Route path="admission" element={<Admission />} />

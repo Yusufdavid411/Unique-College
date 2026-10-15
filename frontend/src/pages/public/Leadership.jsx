@@ -10,6 +10,12 @@ const profilesByGroup = leadershipProfiles.reduce((groups, profile) => {
 }, {});
 
 const leadershipCategories = {
+  executive: {
+    group: "Executive Leadership",
+    label: "Executive Leadership",
+    title: "Executive Leadership",
+    text: "Meet the executive officer providing the college's institutional vision, strategic direction, and commitment to academic excellence."
+  },
   board: {
     group: "Board Members",
     label: "Governing Board",
@@ -34,7 +40,7 @@ export default function Leadership() {
   const { category } = useParams();
   const selectedCategory = leadershipCategories[category];
 
-  if (!selectedCategory) return <Navigate to="/leadership/board" replace />;
+  if (!selectedCategory) return <Navigate to="/leadership/executive" replace />;
 
   const selectedProfiles = profilesByGroup[selectedCategory.group] || [];
 
