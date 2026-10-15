@@ -1,4 +1,4 @@
-import { Award, BriefcaseBusiness, ChevronDown } from "lucide-react";
+import { Award, BriefcaseBusiness, ChevronDown, Maximize2 } from "lucide-react";
 
 function createPreview(summary, maxLength = 110) {
   if (summary.length <= maxLength) return summary;
@@ -7,10 +7,18 @@ function createPreview(summary, maxLength = 110) {
   return `${shortened}…`;
 }
 
-export default function LeadershipProfileCard({ profile }) {
+export default function LeadershipProfileCard({ profile, onOpenPortrait }) {
   return (
     <article className="leadership-card">
-      <img src={profile.image} alt={profile.name} loading="lazy" />
+      <button
+        className="leadership-image-button"
+        type="button"
+        onClick={onOpenPortrait}
+        aria-label={`View full portrait of ${profile.name}`}
+      >
+        <img src={profile.image} alt={profile.name} loading="lazy" />
+        <span className="leadership-image-action"><Maximize2 size={16} />View portrait</span>
+      </button>
       <div className="leadership-card-body">
         <span className="leadership-tag"><BriefcaseBusiness size={15} />{profile.group}</span>
         <h3>{profile.name}</h3>

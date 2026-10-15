@@ -1,4 +1,6 @@
+import { useEffect, useState } from "react";
 import { Navigate, useParams } from "react-router-dom";
+import LeadershipImageLightbox from "../../components/LeadershipImageLightbox.jsx";
 import LeadershipProfileCard from "../../components/LeadershipProfileCard.jsx";
 import Seo from "../../components/Seo.jsx";
 import { leadershipProfiles } from "../../data/siteData.js";
@@ -38,7 +40,12 @@ const leadershipCategories = {
 
 export default function Leadership() {
   const { category } = useParams();
+  const [selectedPortrait, setSelectedPortrait] = useState(null);
   const selectedCategory = leadershipCategories[category];
+
+  useEffect(() => {
+    setSelectedPortrait(null);
+  }, [category]);
 
   if (!selectedCategory) return <Navigate to="/leadership/executive" replace />;
 
@@ -62,16 +69,29 @@ export default function Leadership() {
             <div>
               <span className="eyebrow">Leadership Directory</span>
               <h2>Meet Our {selectedCategory.title}</h2>
-              <p>Open any profile to read more about the officer's experience and responsibilities.</p>
+              <p>Open a profile for more details, or select a portrait to view the full leadership gallery.</p>
             </div>
           </div>
           <div className="leadership-grid">
-            {selectedProfiles.map((profile) => (
-              <LeadershipProfileCard profile={profile} key={`${profile.name}-${profile.role}`} />
+            {selectedProfiles.map((profile, index) => (
+              <LeadershipProfileCard
+                profile={profile}
+                onOpenPortrait={() => setSelectedPortrait(index)}
+                key={`${profile.name}-${profile.role}`}
+              />
             ))}
           </div>
         </div>
       </section>
+
+      {selectedPortrait !== null && (
+        <LeadershipImageLightbox
+          profiles={selectedProfiles}
+          currentIndex={selectedPortrait}
+          onChange={setSelectedPortrait}
+          onClose={() => setSelectedPortrait(null)}
+        />
+      )}
     </>
   );
 }
