@@ -1180,75 +1180,161 @@ td span,
   gap: 24px;
 }
 
-.course-list {
-  display: grid;
-  gap: 16px;
-}
-
-.course-row {
-  display: grid;
-  grid-template-columns: 1.3fr .45fr 1fr;
-  gap: 24px;
-  padding: 26px;
-  border: 1px solid var(--line-strong);
-  border-radius: 8px;
-  background: #ffffff;
-  box-shadow: 0 12px 30px rgba(11, 45, 74, 0.08);
-}
-
-.course-row strong {
-  display: block;
-  color: var(--blue-800);
-}
-
-.department-leadership-section {
+.course-directory-section {
   background: #ffffff;
 }
 
-.hod-grid {
+.course-card-grid {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 22px;
+  align-items: start;
 }
 
-.hod-card {
+.course-card {
+  position: relative;
   overflow: hidden;
   display: flex;
   flex-direction: column;
-  min-height: 100%;
+  min-height: 330px;
+  padding: clamp(24px, 3vw, 34px);
   background: #ffffff;
   border: 1px solid var(--line-strong);
-  border-radius: 8px;
+  border-radius: 10px;
   box-shadow: 0 12px 30px rgba(11, 45, 74, 0.08);
+  transition: transform .25s ease, box-shadow .25s ease, border-color .25s ease;
 }
 
-.hod-card img {
-  width: 100%;
-  aspect-ratio: 4 / 3;
-  object-fit: cover;
-  object-position: center top;
-  background: #f4f8fb;
+.course-card::before {
+  content: "";
+  position: absolute;
+  inset: 0 0 auto;
+  height: 4px;
+  background: linear-gradient(90deg, var(--blue-700), var(--cyan-500), var(--green-500));
 }
 
-.hod-card-body {
+.course-card:hover {
+  transform: translateY(-4px);
+  border-color: rgba(10, 109, 180, .45);
+  box-shadow: var(--shadow);
+}
+
+.course-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  margin-bottom: 24px;
+}
+
+.course-card-icon {
   display: grid;
-  gap: 10px;
-  padding: 22px;
+  place-items: center;
+  width: 50px;
+  height: 50px;
+  color: var(--blue-700);
+  background: var(--blue-100);
+  border-radius: 10px;
 }
 
-.hod-card h3 {
-  margin: 0;
+.course-card-number {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 900;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
+
+.course-card h2 {
+  margin-bottom: 12px;
   color: var(--blue-800);
+  font-size: clamp(23px, 3vw, 31px);
 }
 
-.hod-card strong {
-  color: var(--ink);
+.course-card-summary {
+  margin-bottom: 20px;
+}
+
+.course-duration {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  width: fit-content;
+  margin-bottom: 22px;
+  padding: 8px 11px;
+  color: var(--blue-800);
+  background: #f0f8fc;
+  border-radius: 999px;
+  font-size: 13px;
+  font-weight: 850;
+}
+
+.course-details {
+  margin-top: auto;
+  border-top: 1px solid var(--line);
+}
+
+.course-details summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding-top: 18px;
+  color: var(--blue-700);
+  cursor: pointer;
+  list-style: none;
   font-weight: 900;
 }
 
-.hod-card p {
-  margin: 0;
-  color: var(--muted);
+.course-details summary::-webkit-details-marker {
+  display: none;
+}
+
+.course-details summary:focus-visible {
+  outline: 3px solid rgba(10, 109, 180, .24);
+  outline-offset: 4px;
+  border-radius: 4px;
+}
+
+.course-details summary svg {
+  flex: 0 0 auto;
+  transition: transform .22s ease;
+}
+
+.course-details[open] summary svg {
+  transform: rotate(180deg);
+}
+
+.course-details-content {
+  display: grid;
+  gap: 20px;
+  padding-top: 20px;
+}
+
+.course-detail-row {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  padding: 18px;
+  background: linear-gradient(145deg, #f8fcff, #eef7fb);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+}
+
+.course-detail-row > svg {
+  flex: 0 0 auto;
+  margin-top: 2px;
+  color: var(--green-500);
+}
+
+.course-detail-row strong {
+  display: block;
+  margin-bottom: 6px;
+  color: var(--blue-800);
+}
+
+.course-detail-row p {
+  margin-bottom: 0;
 }
 
 .process-list {
@@ -1699,7 +1785,6 @@ th {
   .cards-grid,
   .gallery-grid,
   .leadership-grid,
-  .hod-grid,
   .admin-stats {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
@@ -1716,7 +1801,7 @@ th {
     grid-template-columns: 1fr;
   }
 
-  .course-row {
+  .course-card-grid {
     grid-template-columns: 1fr;
   }
 }
@@ -1816,7 +1901,6 @@ th {
   .stats-band,
   .cta-band,
   .leadership-grid,
-  .hod-grid,
   .site-footer,
   .application-form,
   .admin-shell {

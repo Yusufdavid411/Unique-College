@@ -1,6 +1,6 @@
-import { GraduationCap } from "lucide-react";
+import CourseCard from "../../components/CourseCard.jsx";
 import Seo from "../../components/Seo.jsx";
-import { departmentLeadership, programs } from "../../data/siteData.js";
+import { programs } from "../../data/siteData.js";
 
 export default function Courses() {
   return (
@@ -9,44 +9,20 @@ export default function Courses() {
       <section className="page-hero compact">
         <span className="eyebrow">Programmes</span>
         <h1>Health Science Programmes Designed For Practical Healthcare Service.</h1>
+        <p>Explore each programme at your own pace and open the details only when you need admission information.</p>
       </section>
-      <section className="section department-leadership-section">
+
+      <section className="section course-directory-section">
         <div className="section-heading">
-          <span className="eyebrow">Department Leadership</span>
-          <h2>Meet The HODs</h2>
-          <p>Each department is guided by a Head of Department who introduces the academic focus, practical expectations, and student support structure.</p>
+          <span className="eyebrow">Academic Programmes</span>
+          <h2>Choose Your Area Of Study</h2>
+          <p>Review the programme overview first, then expand a card to see its admission requirements and application link.</p>
         </div>
-        <div className="hod-grid">
-          {departmentLeadership.map((leader) => (
-            <article className="hod-card" key={leader.department}>
-              <img src={leader.image} alt={leader.name} loading="lazy" />
-              <div className="hod-card-body">
-                <span className="leadership-tag"><GraduationCap size={15} />{leader.department}</span>
-                <h3>{leader.name}</h3>
-                <strong>{leader.role}</strong>
-                <p>{leader.welcome}</p>
-              </div>
-            </article>
+        <div className="course-card-grid">
+          {programs.map((program, index) => (
+            <CourseCard program={program} index={index} key={program.title} />
           ))}
         </div>
-      </section>
-      <section className="section course-list">
-        {programs.map((program) => (
-          <article className="course-row" key={program.title}>
-            <div>
-              <h2>{program.title}</h2>
-              <p>{program.summary}</p>
-            </div>
-            <div>
-              <strong>Duration</strong>
-              <span>{program.duration}</span>
-            </div>
-            <div>
-              <strong>Requirements</strong>
-              <span>{program.requirements}</span>
-            </div>
-          </article>
-        ))}
       </section>
     </>
   );
