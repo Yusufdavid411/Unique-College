@@ -740,57 +740,141 @@ select:disabled {
     url("/school-assets/campus-courtyard.jpg") center / cover;
 }
 
-.leadership-feature {
-  display: grid;
-  grid-template-columns: minmax(280px, 380px) minmax(0, 1fr);
-  gap: clamp(30px, 6vw, 80px);
-  align-items: center;
+.leadership-directory-section {
   background: #ffffff;
 }
 
-.leadership-feature-image {
-  overflow: hidden;
-  border-radius: 8px;
-  border: 1px solid var(--line-strong);
-  box-shadow: var(--shadow);
-  background: #071b34;
+.leadership-toolbar {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(300px, 390px);
+  gap: clamp(32px, 7vw, 96px);
+  align-items: end;
+  padding-bottom: 34px;
+  border-bottom: 1px solid var(--line);
 }
 
-.leadership-feature-image img {
-  width: 100%;
-  aspect-ratio: 2 / 3;
-  object-fit: contain;
-  background: #071b34;
-}
-
-.leadership-feature-copy strong {
-  display: inline-flex;
-  margin-bottom: 18px;
+.leadership-toolbar h2,
+.leadership-results-heading h2 {
+  margin-bottom: 12px;
   color: var(--blue-800);
-  font-size: 18px;
+}
+
+.leadership-toolbar p,
+.leadership-results-heading p {
+  max-width: 720px;
+  margin-bottom: 0;
+}
+
+.leadership-select-field {
+  display: grid;
+  gap: 9px;
+}
+
+.leadership-select-field > span {
+  color: var(--blue-800);
   font-weight: 900;
 }
 
-.leadership-feature-copy p {
-  max-width: 760px;
-  font-size: 18px;
+.leadership-select-control {
+  position: relative;
+  display: flex;
+  align-items: center;
+  min-height: 56px;
+  color: var(--blue-700);
+  background: #ffffff;
+  border: 1px solid var(--line-strong);
+  border-radius: 8px;
+  box-shadow: 0 12px 30px rgba(11, 45, 74, .08);
 }
 
-.leadership-group-section {
-  background: #ffffff;
+.leadership-select-control > svg:first-child {
+  position: absolute;
+  left: 16px;
+  pointer-events: none;
+}
+
+.leadership-select-control > svg:last-child {
+  position: absolute;
+  right: 16px;
+  pointer-events: none;
+}
+
+.leadership-select-control select {
+  width: 100%;
+  min-height: 56px;
+  padding: 0 48px;
+  appearance: none;
+  color: var(--ink);
+  background: transparent;
+  border: 0;
+  outline: 0;
+  cursor: pointer;
+  font: inherit;
+  font-weight: 800;
+}
+
+.leadership-select-control:focus-within {
+  border-color: var(--blue-700);
+  box-shadow: 0 0 0 4px rgba(10, 109, 180, .12);
+}
+
+.leadership-empty-state {
+  display: grid;
+  justify-items: center;
+  max-width: 760px;
+  margin: 36px auto 0;
+  padding: 52px 28px;
+  text-align: center;
+  color: var(--blue-700);
+  background: linear-gradient(145deg, #f8fcff, #eef7fb);
+  border: 1px dashed rgba(10, 109, 180, .38);
+  border-radius: 8px;
+}
+
+.leadership-empty-state h3 {
+  margin: 14px 0 8px;
+  color: var(--blue-800);
+}
+
+.leadership-empty-state p {
+  max-width: 560px;
+  margin-bottom: 0;
+}
+
+.leadership-results {
+  margin-top: 44px;
+  animation: fadeUp .45s ease both;
+}
+
+.leadership-results-heading {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 24px;
+  margin-bottom: 28px;
+}
+
+.leadership-result-count {
+  flex: 0 0 auto;
+  padding: 9px 13px;
+  color: var(--blue-800);
+  background: var(--blue-100);
+  border-radius: 999px;
+  font-size: 13px;
+  font-weight: 900;
 }
 
 .leadership-grid {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 22px;
+  align-items: start;
 }
 
 .leadership-card {
   overflow: hidden;
   display: flex;
   flex-direction: column;
-  min-height: 100%;
   background: #ffffff;
   border: 1px solid var(--line-strong);
   border-radius: 8px;
@@ -806,7 +890,7 @@ select:disabled {
 
 .leadership-card img {
   width: 100%;
-  aspect-ratio: 3 / 4;
+  aspect-ratio: 4 / 3;
   object-fit: cover;
   object-position: center top;
   background: #f4f8fb;
@@ -831,19 +915,74 @@ select:disabled {
   font-weight: 900;
 }
 
-.leadership-card p {
+.leadership-card-preview,
+.leadership-details-content p {
   color: var(--muted);
 }
 
-.leadership-card ul {
+.leadership-card-preview {
+  min-height: 52px;
+  margin-bottom: 20px;
+}
+
+.leadership-card-preview:has(+ .leadership-details[open]) {
+  display: none;
+}
+
+.leadership-details {
+  margin-top: auto;
+  border-top: 1px solid var(--line);
+}
+
+.leadership-details summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 16px 0 0;
+  color: var(--blue-700);
+  cursor: pointer;
+  list-style: none;
+  font-weight: 900;
+}
+
+.leadership-details summary::-webkit-details-marker {
+  display: none;
+}
+
+.leadership-details summary:focus-visible {
+  outline: 3px solid rgba(10, 109, 180, .24);
+  outline-offset: 4px;
+  border-radius: 4px;
+}
+
+.leadership-details summary svg {
+  flex: 0 0 auto;
+  transition: transform .22s ease;
+}
+
+.leadership-details[open] summary svg {
+  transform: rotate(180deg);
+}
+
+.leadership-details-content {
+  padding-top: 18px;
+}
+
+.leadership-details-content h4 {
+  margin: 20px 0 12px;
+  color: var(--blue-800);
+}
+
+.leadership-details-content ul {
   display: grid;
   gap: 10px;
-  margin: auto 0 0;
+  margin: 0;
   padding: 0;
   list-style: none;
 }
 
-.leadership-card li {
+.leadership-details-content li {
   display: flex;
   gap: 8px;
   align-items: flex-start;
@@ -852,7 +991,7 @@ select:disabled {
   font-weight: 800;
 }
 
-.leadership-card li svg {
+.leadership-details-content li svg {
   flex: 0 0 auto;
   color: var(--green-500);
   margin-top: 3px;
@@ -1581,6 +1720,7 @@ th {
   .split-section,
   .leadership-section,
   .leadership-feature,
+  .leadership-toolbar,
   .contact-grid,
   .admin-two-col {
     grid-template-columns: 1fr;
@@ -1813,6 +1953,15 @@ th {
   .page-hero {
     padding-left: 18px;
     padding-right: 18px;
+  }
+
+  .leadership-results-heading {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .leadership-select-control select {
+    font-size: 15px;
   }
 
   .admin-sidebar nav {
