@@ -845,16 +845,6 @@ select:disabled {
   margin-bottom: 28px;
 }
 
-.leadership-result-count {
-  flex: 0 0 auto;
-  padding: 9px 13px;
-  color: var(--blue-800);
-  background: var(--blue-100);
-  border-radius: 999px;
-  font-size: 13px;
-  font-weight: 900;
-}
-
 .leadership-grid {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));

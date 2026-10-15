@@ -64,9 +64,6 @@ export default function Leadership() {
               <h2>Meet Our {selectedCategory.title}</h2>
               <p>Open any profile to read more about the officer's experience and responsibilities.</p>
             </div>
-            <span className="leadership-result-count">
-              {selectedProfiles.length} {selectedProfiles.length === 1 ? "profile" : "profiles"}
-            </span>
           </div>
           <div className="leadership-grid">
             {selectedProfiles.map((profile) => (
