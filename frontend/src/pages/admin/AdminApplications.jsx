@@ -1,86 +1,139 @@
-import { useEffect, useState } from "react";
-import AdminNotice from "../../components/AdminNotice.jsx";
-import LoadingButton from "../../components/LoadingButton.jsx";
-import { api, apiErrorMessage, assetUrl } from "../../api/client.js";
+import { useCallback, useEffect, useState } from "react";
+import { Eye, FileCheck2, Printer, X } from "lucide-react";
+import { api, assetUrl } from "../../api/client.js";
+
+const statusOptions = ["DRAFT", "SUBMITTED", "REVIEWED", "RETURNED", "INTERVIEW_SCHEDULED", "ACCEPTED", "ADMITTED", "REJECTED"];
+const readableStatus = (value) => (value || "PENDING").replaceAll("_", " ").toLowerCase().replace(/\b\w/g, (letter) => letter.toUpperCase());
+const formatDate = (value) => (value ? new Date(value).toLocaleDateString() : "—");
 
 export default function AdminApplications() {
-  const [items, setItems] = useState([]);
+  const [applications, setApplications] = useState([]);
+  const [selectedApplication, setSelectedApplication] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [busyId, setBusyId] = useState("");
-  const [notice, setNotice] = useState({ type: "", message: "" });
+  const [saving, setSaving] = useState(false);
+  const [feedback, setFeedback] = useState("");
+  const [credentials, setCredentials] = useState(null);
 
-  function load() {
+  const loadApplications = useCallback(async () => {
     setLoading(true);
-    api
-      .get("/applications")
-      .then((res) => setItems(res.data.data))
-      .catch((error) => setNotice({ type: "error", message: apiErrorMessage(error, "Applications could not be loaded.") }))
-      .finally(() => setLoading(false));
-  }
-
-  useEffect(load, []);
-
-  async function updateStatus(id, status) {
-    setBusyId(id);
-    setNotice({ type: "", message: "" });
     try {
-      await api.patch(`/applications/${id}/status`, { status, reviewNote: "" });
-      setNotice({ type: "success", message: "Application status updated." });
-      load();
-    } catch (error) {
-      setNotice({ type: "error", message: apiErrorMessage(error, "Application status could not be updated.") });
+      const { data } = await api.get("/applications");
+      setApplications(data.data || []);
+    } catch {
+      setFeedback("Unable to load applications. Please try again.");
     } finally {
-      setBusyId("");
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => { loadApplications(); }, [loadApplications]);
+
+  async function openApplication(applicationId) {
+    setFeedback("");
+    setCredentials(null);
+    try {
+      const { data } = await api.get(`/applications/${applicationId}`);
+      setSelectedApplication(data.data);
+    } catch {
+      setFeedback("Unable to open this application.");
     }
   }
 
-  async function remove(id) {
-    setBusyId(id);
-    setNotice({ type: "", message: "" });
+  async function updateApplicationStatus(event) {
+    event.preventDefault();
+    if (!selectedApplication) return;
+    const formData = new FormData(event.currentTarget);
+    setSaving(true);
+    setFeedback("");
     try {
-      await api.delete(`/applications/${id}`);
-      setNotice({ type: "success", message: "Application deleted." });
-      load();
+      const { data } = await api.patch(`/applications/${selectedApplication.id}/status`, {
+        status: formData.get("status"),
+        reviewNote: formData.get("reviewNote"),
+      });
+      setSelectedApplication(data.data.application);
+      setCredentials(data.data.credentials || null);
+      setFeedback("Application review saved.");
+      loadApplications();
     } catch (error) {
-      setNotice({ type: "error", message: apiErrorMessage(error, "Application could not be deleted.") });
+      setFeedback(error.response?.data?.message || "Unable to save the application review.");
     } finally {
-      setBusyId("");
+      setSaving(false);
     }
   }
+
+  async function updateDocument(documentId, reviewStatus) {
+    if (!selectedApplication) return;
+    try {
+      const { data } = await api.patch(`/applications/${selectedApplication.id}/documents/${documentId}`, { reviewStatus });
+      await openApplication(selectedApplication.id);
+    } catch {
+      setFeedback("Unable to update the document review.");
+    }
+  }
+
+  async function updatePayment(paymentId, status) {
+    if (!selectedApplication) return;
+    try {
+      const { data } = await api.patch(`/applications/${selectedApplication.id}/payments/${paymentId}`, { status });
+      await openApplication(selectedApplication.id);
+    } catch {
+      setFeedback("Unable to update the payment review.");
+    }
+  }
+
+  const details = selectedApplication?.details || {};
 
   return (
     <div className="admin-page">
-      <header className="admin-header"><span className="eyebrow">Admissions</span><h1>Manage applications</h1></header>
-      <AdminNotice type={notice.type}>{notice.message}</AdminNotice>
-      <div className="table-wrap">
-        <table>
-          <thead><tr><th>Name</th><th>Course</th><th>Phone</th><th>Status</th><th>Passport</th><th>Action</th></tr></thead>
-          <tbody>
-            {loading && <tr><td colSpan="6">Loading applications...</td></tr>}
-            {!loading && !items.length && <tr><td colSpan="6">No applications have been submitted yet.</td></tr>}
-            {!loading && items.map((item) => (
-              <tr key={item.id}>
-                <td><strong>{item.fullName}</strong><span>{item.email}</span></td>
-                <td>{item.courseOfInterest}</td>
-                <td>{item.phoneNumber}</td>
-                <td><span className={`status ${item.status.toLowerCase()}`}>{item.status}</span></td>
-                <td>{item.passportPath ? <a href={assetUrl(item.passportPath)} target="_blank" rel="noreferrer">View</a> : "None"}</td>
-                <td className="table-actions">
-                  <select value={item.status} disabled={busyId === item.id} onChange={(e) => updateStatus(item.id, e.target.value)}>
-                    <option value="PENDING">Pending</option>
-                    <option value="REVIEWED">Reviewed</option>
-                    <option value="ACCEPTED">Accepted</option>
-                    <option value="REJECTED">Rejected</option>
-                  </select>
-                  <LoadingButton className="danger-button" loading={busyId === item.id} loadingText="Working..." onClick={() => remove(item.id)}>
-                    Delete
-                  </LoadingButton>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+      <div className="admin-page__header">
+        <div>
+          <span className="eyebrow">Admissions office</span>
+          <h1>Applications</h1>
+          <p>Review applications, supporting documents, and payment evidence before making an admission decision.</p>
+        </div>
       </div>
+      {feedback && <div className="admin-feedback">{feedback}</div>}
+
+      <div className="admin-table-card">
+        <div className="admin-table-card__heading"><h2>Applicant queue</h2><span>{applications.length} records</span></div>
+        <div className="admin-table-wrap">
+          <table>
+            <thead><tr><th>Applicant</th><th>Programme</th><th>Submitted</th><th>Status</th><th aria-label="Actions" /></tr></thead>
+            <tbody>
+              {loading ? <tr><td colSpan="5">Loading applications…</td></tr> : applications.length ? applications.map((application) => (
+                <tr key={application.id}>
+                  <td><strong>{application.fullName}</strong><small>{application.email}</small></td>
+                  <td>{application.courseOfInterest || "Not selected"}</td>
+                  <td>{formatDate(application.submittedAt || application.createdAt)}</td>
+                  <td><span className={`status-chip status-chip--${application.status.toLowerCase()}`}>{readableStatus(application.status)}</span></td>
+                  <td><button className="icon-button" type="button" onClick={() => openApplication(application.id)} aria-label={`Review ${application.fullName}`}><Eye size={18} /></button></td>
+                </tr>
+              )) : <tr><td colSpan="5">No applications have been received yet.</td></tr>}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      {selectedApplication && (
+        <div className="application-review-backdrop" role="presentation">
+          <section className="application-review-panel" role="dialog" aria-modal="true" aria-labelledby="application-review-title">
+            <div className="application-review-panel__header">
+              <div><span className="eyebrow">Application review</span><h2 id="application-review-title">{selectedApplication.fullName}</h2><p>{selectedApplication.applicationNumber || "Application number pending"} · {selectedApplication.courseOfInterest || "Programme pending"}</p></div>
+              <div className="application-review-panel__actions"><button className="icon-button" type="button" onClick={() => window.print()} aria-label="Print application"><Printer size={18} /></button><button className="icon-button" type="button" onClick={() => setSelectedApplication(null)} aria-label="Close application"><X size={18} /></button></div>
+            </div>
+            <div className="application-review-panel__content">
+              <div className="application-review-grid">
+                <article><h3>Applicant details</h3><dl><div><dt>Email</dt><dd>{selectedApplication.email}</dd></div><div><dt>Phone</dt><dd>{selectedApplication.phone || "—"}</dd></div><div><dt>Date of birth</dt><dd>{formatDate(selectedApplication.dateOfBirth)}</dd></div><div><dt>Address</dt><dd>{selectedApplication.address || "—"}</dd></div><div><dt>Guardian</dt><dd>{details.guardian?.name || "—"}</dd></div><div><dt>Guardian phone</dt><dd>{details.guardian?.phone || "—"}</dd></div></dl></article>
+                <article><h3>Education</h3>{details.education?.length ? <ul className="review-list">{details.education.map((record, index) => <li key={`${record.subject}-${index}`}><strong>{record.subject}</strong><span>{record.grade} · {record.examBody} {record.year}</span></li>)}</ul> : <p className="muted-copy">No education records supplied.</p>}</article>
+              </div>
+              <article className="review-section"><h3><FileCheck2 size={18} /> Supporting documents</h3>{selectedApplication.documents?.length ? <div className="review-items">{selectedApplication.documents.map((document) => <div key={document.id} className="review-item"><a href={assetUrl(document.path)} target="_blank" rel="noreferrer">{readableStatus(document.type)}</a><select value={document.reviewStatus} onChange={(event) => updateDocument(document.id, event.target.value)}><option value="PENDING">Pending</option><option value="VERIFIED">Verified</option><option value="REJECTED">Rejected</option></select></div>)}</div> : <p className="muted-copy">No documents uploaded.</p>}</article>
+              <article className="review-section"><h3>Payment evidence</h3>{selectedApplication.payments?.length ? <div className="review-items">{selectedApplication.payments.map((payment) => <div key={payment.id} className="review-item"><span><strong>{readableStatus(payment.type)}</strong> · ₦{Number(payment.amount).toLocaleString()} {payment.reference ? `(${payment.reference})` : ""}</span><select value={payment.status} onChange={(event) => updatePayment(payment.id, event.target.value)}><option value="PENDING">Pending</option><option value="VERIFIED">Verified</option><option value="REJECTED">Rejected</option></select></div>)}</div> : <p className="muted-copy">No payment evidence submitted.</p>}</article>
+              <form className="application-review-form" onSubmit={updateApplicationStatus}><label>Decision status<select name="status" defaultValue={selectedApplication.status}>{statusOptions.map((status) => <option key={status} value={status}>{readableStatus(status)}</option>)}</select></label><label>Review note<textarea name="reviewNote" rows="3" defaultValue={selectedApplication.reviewNote || ""} placeholder="Visible internally and to the applicant where appropriate." /></label><button className="button button--primary" type="submit" disabled={saving}>{saving ? "Saving…" : "Save decision"}</button></form>
+              {credentials && <div className="admission-credentials"><strong>Student portal credentials created</strong><span>Username: {credentials.portalUsername}</span><span>Temporary password: {credentials.temporaryPassword}</span><small>Share this securely. The student must change the temporary password on first sign-in.</small></div>}
+            </div>
+          </section>
+        </div>
+      )}
     </div>
   );
 }

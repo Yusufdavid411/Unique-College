@@ -1,10 +1,10 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { Activity, ArrowRight, BookOpen, CheckCircle2, Microscope, ShieldCheck } from "lucide-react";
+import { Activity, ArrowRight, BookOpen, Microscope, ShieldCheck } from "lucide-react";
 import { api, assetUrl } from "../../api/client.js";
 import ResponsiveCarousel from "../../components/ResponsiveCarousel.jsx";
 import Seo from "../../components/Seo.jsx";
-import { assetPaths, heroSlides, leadershipProfiles, leadershipWelcome, programs, schoolInfo, stats } from "../../data/siteData.js";
+import { assetPaths, heroSlides, programs, schoolInfo, stats } from "../../data/siteData.js";
 
 export default function Home() {
   const [news, setNews] = useState([]);
@@ -55,57 +55,9 @@ export default function Home() {
           <h1>{schoolInfo.name} {schoolInfo.location}</h1>
           <p>{schoolInfo.motto}. Practical healthcare education for community health, pharmacy technology, medical laboratory technology, health information management, public health, and health promotion.</p>
           <div className="hero-actions">
-            <Link className="button primary" to="/apply">Start Application <ArrowRight size={18} /></Link>
+            <Link className="button primary" to="/applicant/register">Start Application <ArrowRight size={18} /></Link>
             <Link className="button ghost" to="/courses">Explore Courses</Link>
           </div>
-        </div>
-      </section>
-
-      <section className="section leadership-section">
-        <div className="leader-portrait">
-          <img src={leadershipWelcome.image} alt={leadershipWelcome.name} loading="lazy" />
-          <div>
-            <strong>{leadershipWelcome.name}</strong>
-            <span>{leadershipWelcome.role}</span>
-          </div>
-        </div>
-        <div className="leader-copy">
-          <span className="eyebrow">{leadershipWelcome.label}</span>
-          <h2>{leadershipWelcome.title}</h2>
-          {leadershipWelcome.paragraphs.map((paragraph) => <p key={paragraph}>{paragraph}</p>)}
-          <div className="leader-points">
-            {leadershipWelcome.points.map((point) => (
-              <span key={point}><CheckCircle2 size={20} />{point}</span>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      <section className="section leadership-preview-section">
-        <div className="section-heading">
-          <span className="eyebrow">Leadership & Administration</span>
-          <h2>The Principal Officers</h2>
-        </div>
-        <ResponsiveCarousel
-          className="leadership-strip"
-          items={leadershipProfiles.slice(0, 4)}
-          getKey={(profile) => `${profile.name}-${profile.role}`}
-          ariaLabel="Principal officers"
-          desktopColumns={4}
-          autoPlay
-          interval={4500}
-          renderItem={(profile) => (
-            <article className="mini-leader-card" key={`${profile.name}-${profile.role}`}>
-              <img src={profile.image} alt={profile.name} loading="lazy" />
-              <div>
-                <strong>{profile.name}</strong>
-                <span>{profile.role}</span>
-              </div>
-            </article>
-          )}
-        />
-        <div className="section-action">
-          <Link className="button primary" to="/leadership/board">Explore leadership <ArrowRight size={16} /></Link>
         </div>
       </section>
 
@@ -199,7 +151,7 @@ export default function Home() {
 
       <section className="cta-band">
         <h2>Ready To Apply For {schoolInfo.admissionSession}?</h2>
-        <Link className="button primary" to="/apply">Apply for admission</Link>
+        <Link className="button primary" to="/applicant/register">Apply for admission</Link>
       </section>
     </>
   );

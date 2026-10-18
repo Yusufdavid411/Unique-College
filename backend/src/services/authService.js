@@ -8,8 +8,19 @@ function publicUser(user) {
     id: user.id,
     name: user.name,
     email: user.email,
-    role: user.role
+    role: user.role,
+    portalUsername: user.portalUsername,
+    officialEmail: user.officialEmail,
+    mustChangePassword: user.mustChangePassword
   };
+}
+
+function signInResult(user) {
+  const token = jwt.sign({ sub: user.id, role: user.role }, env.jwtSecret, {
+    expiresIn: env.jwtExpiresIn
+  });
+
+  return { token, user: publicUser(user) };
 }
 
 export async function loginAdmin(email, password) {
@@ -28,11 +39,41 @@ export async function loginAdmin(email, password) {
     throw error;
   }
 
-  const token = jwt.sign({ sub: user.id, role: user.role }, env.jwtSecret, {
-    expiresIn: env.jwtExpiresIn
+  if (user.role !== "ADMIN") {
+    const error = new Error("Administrator access required");
+    error.statusCode = 403;
+    throw error;
+  }
+
+  return signInResult(user);
+}
+
+export async function loginApplicant(identifier, password) {
+  const normalizedIdentifier = identifier.trim().toLowerCase();
+  const user = await prisma.user.findFirst({
+    where: {
+      OR: [
+        { email: normalizedIdentifier },
+        { portalUsername: identifier.trim() },
+        { officialEmail: normalizedIdentifier }
+      ]
+    }
   });
 
-  return { token, user: publicUser(user) };
+  if (!user || !user.isActive || !["APPLICANT", "STUDENT"].includes(user.role)) {
+    const error = new Error("Invalid applicant login details");
+    error.statusCode = 401;
+    throw error;
+  }
+
+  const isMatch = await bcrypt.compare(password, user.passwordHash);
+  if (!isMatch) {
+    const error = new Error("Invalid applicant login details");
+    error.statusCode = 401;
+    throw error;
+  }
+
+  return signInResult(user);
 }
 
 export function toPublicUser(user) {

@@ -30,12 +30,27 @@ export function AuthProvider({ children }) {
     setUser(response.data.data.user);
   }
 
+  async function applicantLogin(identifier, password) {
+    const response = await api.post("/auth/applicant/login", { identifier, password });
+    localStorage.setItem("unique_college_token", response.data.data.token);
+    setUser(response.data.data.user);
+  }
+
+  async function registerApplicant(payload) {
+    const response = await api.post("/applicant/register", payload);
+    localStorage.setItem("unique_college_token", response.data.data.token);
+    setUser(response.data.data.user);
+  }
+
   function logout() {
     localStorage.removeItem("unique_college_token");
     setUser(null);
   }
 
-  const value = useMemo(() => ({ user, loading, login, logout }), [user, loading]);
+  const value = useMemo(
+    () => ({ user, loading, login, applicantLogin, registerApplicant, logout }),
+    [user, loading]
+  );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }

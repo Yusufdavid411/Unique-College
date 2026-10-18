@@ -16,6 +16,11 @@ export default function LeadershipProfileCard({ profile, onOpenPortrait }) {
         onClick={onOpenPortrait}
         aria-label={`View full portrait of ${profile.name}`}
       >
+        <span
+          className="leadership-image-backdrop"
+          style={{ backgroundImage: `url(${profile.image})` }}
+          aria-hidden="true"
+        />
         <img src={profile.image} alt={profile.name} loading="lazy" />
         <span className="leadership-image-action"><Maximize2 size={16} />View portrait</span>
       </button>

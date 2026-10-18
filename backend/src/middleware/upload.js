@@ -3,6 +3,7 @@ import multer from "multer";
 import { uploadFolders } from "../config/uploads.js";
 
 const allowedImageTypes = ["image/jpeg", "image/png", "image/webp", "image/jpg"];
+const allowedDocumentTypes = [...allowedImageTypes, "application/pdf"];
 
 function storageFor(folderName) {
   return multer.diskStorage({
@@ -26,6 +27,19 @@ export function imageUpload(folderName) {
   return multer({
     storage: storageFor(folderName),
     fileFilter: imageFilter,
+    limits: { fileSize: 10 * 1024 * 1024 }
+  });
+}
+
+export function documentUpload(folderName = "documents") {
+  return multer({
+    storage: storageFor(folderName),
+    fileFilter(req, file, cb) {
+      if (!allowedDocumentTypes.includes(file.mimetype)) {
+        return cb(new Error("Only PDF, JPG, PNG, and WEBP files are allowed"));
+      }
+      cb(null, true);
+    },
     limits: { fileSize: 10 * 1024 * 1024 }
   });
 }

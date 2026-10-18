@@ -2,6 +2,7 @@ import { Navigate, Route, Routes } from "react-router-dom";
 import PublicLayout from "./components/PublicLayout.jsx";
 import ProtectedRoute from "./components/ProtectedRoute.jsx";
 import AdminLayout from "./components/AdminLayout.jsx";
+import ApplicantLayout from "./components/ApplicantLayout.jsx";
 import Home from "./pages/public/Home.jsx";
 import About from "./pages/public/About.jsx";
 import Leadership from "./pages/public/Leadership.jsx";
@@ -10,7 +11,12 @@ import Admission from "./pages/public/Admission.jsx";
 import Contact from "./pages/public/Contact.jsx";
 import Gallery from "./pages/public/Gallery.jsx";
 import News from "./pages/public/News.jsx";
-import Application from "./pages/public/Application.jsx";
+import ApplicantAccess from "./pages/applicant/ApplicantAccess.jsx";
+import ApplicantDashboard from "./pages/applicant/ApplicantDashboard.jsx";
+import ApplicantApplicationForm from "./pages/applicant/ApplicantApplicationForm.jsx";
+import ApplicantDocuments from "./pages/applicant/ApplicantDocuments.jsx";
+import ApplicantPayments from "./pages/applicant/ApplicantPayments.jsx";
+import ApplicantPrintCentre from "./pages/applicant/ApplicantPrintCentre.jsx";
 import AdminLogin from "./pages/admin/AdminLogin.jsx";
 import AdminDashboard from "./pages/admin/AdminDashboard.jsx";
 import AdminApplications from "./pages/admin/AdminApplications.jsx";
@@ -32,14 +38,26 @@ export default function App() {
         <Route path="contact" element={<Contact />} />
         <Route path="gallery" element={<Gallery />} />
         <Route path="news" element={<News />} />
-        <Route path="apply" element={<Application />} />
-        <Route path="application" element={<Application />} />
+        <Route path="apply" element={<Navigate to="/applicant/register" replace />} />
+        <Route path="application" element={<Navigate to="/applicant/register" replace />} />
+      </Route>
+      <Route path="/applicant/login" element={<ApplicantAccess />} />
+      <Route path="/applicant/register" element={<ApplicantAccess />} />
+      <Route
+        path="/applicant"
+        element={<ProtectedRoute roles={["APPLICANT", "STUDENT"]} redirectTo="/applicant/login"><ApplicantLayout /></ProtectedRoute>}
+      >
+        <Route index element={<ApplicantDashboard />} />
+        <Route path="application" element={<ApplicantApplicationForm />} />
+        <Route path="documents" element={<ApplicantDocuments />} />
+        <Route path="payments" element={<ApplicantPayments />} />
+        <Route path="print" element={<ApplicantPrintCentre />} />
       </Route>
       <Route path="/admin/login" element={<AdminLogin />} />
       <Route
         path="/admin"
         element={
-          <ProtectedRoute>
+          <ProtectedRoute roles={["ADMIN"]}>
             <AdminLayout />
           </ProtectedRoute>
         }

@@ -106,7 +106,7 @@ export default function PublicLayout() {
           {navItems.slice(2).map(([label, path]) => (
             <NavLink key={path} to={path} onClick={closeNavigation}>{label}</NavLink>
           ))}
-          <Link className="nav-cta" to="/apply" onClick={closeNavigation}>Apply</Link>
+          <Link className="nav-cta" to="/applicant/register" onClick={closeNavigation}>Applicant Portal</Link>
         </nav>
       </header>
       <main>
