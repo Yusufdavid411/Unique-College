@@ -1,12 +1,12 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { Activity, ArrowRight, BookOpen, Microscope, ShieldCheck } from "lucide-react";
+import { Activity, ArrowRight, BookOpen, CheckCircle2, Microscope, ShieldCheck } from "lucide-react";
 import { api, assetUrl } from "../../api/client.js";
 import ResponsiveCarousel from "../../components/ResponsiveCarousel.jsx";
 import Seo from "../../components/Seo.jsx";
 import EventsPreview from "../../components/EventsPreview.jsx";
 import { useAdmissions } from "../../context/AdmissionsContext.jsx";
-import { assetPaths, heroSlides, programs, schoolInfo, stats } from "../../data/siteData.js";
+import { assetPaths, heroSlides, leadershipWelcome, programs, schoolInfo, stats } from "../../data/siteData.js";
 
 export default function Home() {
   const { policy } = useAdmissions();
@@ -60,6 +60,26 @@ export default function Home() {
           <div className="hero-actions">
             <Link className="button primary" to="/admission">{policy?.open ? "Start application" : "Admissions information"} <ArrowRight size={18} /></Link>
             <Link className="button ghost" to="/courses">Explore Courses</Link>
+          </div>
+        </div>
+      </section>
+
+      <section className="section leadership-section">
+        <div className="leader-portrait">
+          <img src={leadershipWelcome.image} alt={leadershipWelcome.name} loading="lazy" />
+          <div>
+            <strong>{leadershipWelcome.name}</strong>
+            <span>{leadershipWelcome.role}</span>
+          </div>
+        </div>
+        <div className="leader-copy">
+          <span className="eyebrow">{leadershipWelcome.label}</span>
+          <h2>{leadershipWelcome.title}</h2>
+          {leadershipWelcome.paragraphs.map((paragraph) => <p key={paragraph}>{paragraph}</p>)}
+          <div className="leader-points">
+            {leadershipWelcome.points.map((point) => (
+              <span key={point}><CheckCircle2 size={20} />{point}</span>
+            ))}
           </div>
         </div>
       </section>
