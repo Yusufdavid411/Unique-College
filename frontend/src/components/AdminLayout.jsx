@@ -13,7 +13,8 @@ const items = [
   ["Settings", "/admin/settings", Settings],
   ["Roles", "/admin/roles", Users],
   ["Staff accounts", "/admin/users", Users],
-  ["Audit history", "/admin/audit", LayoutDashboard]
+  ["Audit history", "/admin/audit", LayoutDashboard],
+  ["Account security", "/admin/security", Settings]
 ];
 
 export default function AdminLayout() {

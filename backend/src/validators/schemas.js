@@ -1,6 +1,7 @@
 import { z } from "zod";
 
 const optionalString = z.string().trim().optional().or(z.literal(""));
+const optionalDate = z.string().refine((value) => !value || !Number.isNaN(Date.parse(value)), "Invalid date").optional();
 const publicationBoolean = z.union([z.boolean(), z.enum(["true", "false"]).transform((value) => value === "true")]);
 
 export const loginSchema = z.object({
@@ -87,7 +88,7 @@ export const applicantDocumentSchema = z.object({
 export const applicantPaymentSchema = z.object({
   body: z.object({
     type: z.enum(["APPLICATION_FEE", "ACCEPTANCE_FEE", "SCHOOL_FEE", "OTHER"]),
-    amount: z.coerce.number().positive(),
+    amount: z.coerce.number().positive().max(10000000).multipleOf(0.01),
     reference: z.string().trim().min(3),
     paidAt: z.string().refine((value) => !value || !Number.isNaN(Date.parse(value)), "Invalid date").optional().or(z.literal(""))
   }),
@@ -167,10 +168,10 @@ export const statusSchema = z.object({
   body: z.object({
     status: z.enum(["DRAFT", "PENDING", "SUBMITTED", "REVIEWED", "RETURNED", "INTERVIEW_SCHEDULED", "ACCEPTED", "ADMITTED", "REJECTED"]),
     reviewNote: optionalString,
-    interviewDate: optionalString,
+    interviewDate: optionalDate,
     entranceExamScore: z.coerce.number().min(0).max(100).optional(),
     interviewScore: z.coerce.number().min(0).max(100).optional(),
-    dateResumed: optionalString
+    dateResumed: optionalDate
   }),
   query: z.object({}).passthrough(),
   params: z.object({ id: z.string().uuid() })

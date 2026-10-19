@@ -6,6 +6,9 @@ import { asyncHandler } from "../utils/asyncHandler.js";
 import { fileMetadata } from "../services/uploadService.js";
 import { hasPermission } from "../services/permissions.js";
 import { auditedMutation } from "../services/audit.js";
+import { Prisma } from "@prisma/client";
+import { canReviewTransition, hasVerifiedAdmissionDocuments, reviewStatusesFor } from "../services/admissionWorkflow.js";
+import { formAccessFor } from "../services/formAccess.js";
 
 const applicationDetails = {
   applicant: { select: { id: true, name: true, email: true, role: true, portalUsername: true, officialEmail: true } },
@@ -63,7 +66,7 @@ export const getApplication = asyncHandler(async (req, res) => {
   if (!application) {
     return res.status(404).json({ success: false, message: "Application not found" });
   }
-  ok(res, application);
+  ok(res, { ...application, allowedStatuses: reviewStatusesFor(application.status) });
 });
 
 export const updateApplicationStatus = asyncHandler(async (req, res) => {
@@ -72,19 +75,23 @@ export const updateApplicationStatus = asyncHandler(async (req, res) => {
   }
   const current = await prisma.application.findUnique({
     where: { id: req.params.id },
-    include: { applicant: true }
+    include: { applicant: true, documents: true, payments: true }
   });
   if (!current) return res.status(404).json({ success: false, message: "Application not found" });
+  if (!canReviewTransition(current.status, req.body.status)) return res.status(409).json({ success: false, message: "This decision is not available from the current application status" });
+  if (req.body.status === "ADMITTED" && current.status !== "ADMITTED" && (!current.applicant || !current.declarationAccepted || !formAccessFor(current).unlocked || !hasVerifiedAdmissionDocuments(current.documents))) {
+    return res.status(422).json({ success: false, message: "Admission requires an applicant account, verified form payment, declaration, and verified supporting documents" });
+  }
 
   let credentials = null;
   let passwordHash = null;
   const data = {
     status: req.body.status,
     reviewNote: req.body.reviewNote || null,
-    interviewDate: req.body.interviewDate ? new Date(req.body.interviewDate) : null,
+    ...(req.body.interviewDate !== undefined ? { interviewDate: req.body.interviewDate ? new Date(req.body.interviewDate) : null } : {}),
     entranceExamScore: req.body.entranceExamScore,
     interviewScore: req.body.interviewScore,
-    dateResumed: req.body.dateResumed ? new Date(req.body.dateResumed) : null
+    ...(req.body.dateResumed !== undefined ? { dateResumed: req.body.dateResumed ? new Date(req.body.dateResumed) : null } : {})
   };
 
   if (req.body.status === "ADMITTED" && current.applicant && current.status !== "ADMITTED") {
@@ -108,11 +115,12 @@ export const updateApplicationStatus = asyncHandler(async (req, res) => {
         }
       });
     }
-    const updated = await transaction.application.update({
-      where: { id: req.params.id },
-      data,
-      include: applicationDetails
+    const changed = await transaction.application.updateMany({
+      where: { id: req.params.id, status: current.status, updatedAt: current.updatedAt },
+      data
     });
+    if (!changed.count) throw Object.assign(new Error("This application changed during review. Reload it before saving."), { statusCode: 409 });
+    const updated = await transaction.application.findUnique({ where: { id: req.params.id }, include: applicationDetails });
     await transaction.applicationStatusHistory.create({
       data: {
         applicationId: current.id,
@@ -125,7 +133,7 @@ export const updateApplicationStatus = asyncHandler(async (req, res) => {
     return updated;
   });
 
-  ok(res, { application, credentials }, credentials ? "Applicant admitted and student credentials created" : "Application status updated");
+  ok(res, { application: { ...application, allowedStatuses: reviewStatusesFor(application.status) }, credentials }, credentials ? "Applicant admitted and student credentials created" : "Application status updated");
 });
 
 export const reviewApplicationDocument = asyncHandler(async (req, res) => {
@@ -145,6 +153,10 @@ export const reviewApplicationPayment = asyncHandler(async (req, res) => {
     where: { id: req.params.paymentId, applicationId: req.params.id }
   });
   if (!payment) return res.status(404).json({ success: false, message: "Payment not found" });
+  if (payment.type === "APPLICATION_FEE" && req.body.status === "VERIFIED") {
+    const application = await prisma.application.findUnique({ where: { id: req.params.id } });
+    if (application.formFeeAmount !== null && !new Prisma.Decimal(payment.amount).equals(application.formFeeAmount)) return res.status(422).json({ success: false, message: "The recorded amount must match the applicant's quoted form fee before verification" });
+  }
   const updated = await auditedMutation(prisma, { actorId: req.user.id, action: "payment.review:" + req.body.status, targetType: "payment", targetId: payment.id }, (transaction) => transaction.payment.update({
     where: { id: payment.id },
     data: {

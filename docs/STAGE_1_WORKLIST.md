@@ -10,9 +10,11 @@ flags, shared admissions availability, portable local backup tooling, and CI wit
 a PostgreSQL service. Google Drive archival design is documented in ARCHIVE_DESIGN.md.
 
 A dedicated Vercel API project, Neon database and private Blob store have been
-created. The six current Prisma migrations were successfully applied and core
-tables are reachable. API deployment and public news publishing verification are
-the next acceptance checks. The older Render database has not been imported or
+created. The first six Prisma migrations were successfully applied and core
+tables are reachable. Live API readiness and news publication/unpublication with
+private image storage passed HTTP verification. The additive seventh migration
+is applied in production and introduces the quoted application fee. Both API and
+frontend admission updates are deployed. The older Render database has not been imported or
 deleted. The historical worklist below is retained as planning context; completed
 items above should not be rebuilt.
 
@@ -27,26 +29,29 @@ items above should not be rebuilt.
 
 ## Required before Stage 1 is considered stable
 
-1. Restore the live PostgreSQL connection and run the Prisma migration against the
-   correct environment.
-2. Implement normalized role/permission assignments and audit logging.
-3. Introduce portable object-storage adapters and migrate uploaded content away from
-   host-local disk in production.
-4. Configure Neon runtime/migration URLs, secrets, CORS origins, and subdomains.
+1. The quoted-form-fee update is released. Registration precedes payment so
+   applicants can track evidence; detailed forms unlock after verification.
+2. Role/permission assignments and transactional audit logging are implemented.
+3. Portable local/S3/private-Blob adapters are implemented; production uses Blob.
+4. Neon URLs, secrets and CORS are configured. Complete custom portal/API DNS.
 5. Add an approved payment gateway after the school supplies its provider account,
    fee amounts, payment policy, and receipt wording. Current evidence upload is
    manual verification, not card/bank checkout.
-6. Add PDF receipt, application-form, and admission-letter generation with access
-   checks and a printable applicant/admin view.
-7. Add automated API tests for auth, applicant access isolation, admissions review,
-   and file authorization.
-8. Add database dump/restore and storage-manifest backup procedures.
-9. Implement Google Drive archive OAuth, integrity checks, archive index, and
-   restoration controls; do not delete primary copies automatically.
+6. Applicant/admin application records and payment records support browser Print /
+   Save PDF. Pending evidence is explicitly not a confirmed receipt. School approval
+   of receipt wording and admission-letter content is still required.
+7. Eighteen checks passed against an isolated PostgreSQL test database, including
+   payment unlocking, price changes, file access, transactional rollback, guarded
+   admission approval, credential hand-off and old-session invalidation.
+   GitHub Actions cannot start because the GitHub account has a billing lock.
+8. Dump/restore and storage-manifest procedures exist; perform a recovery drill
+   before describing disaster recovery as verified. Review dependency advisories.
+9. Google Drive archival architecture is documented for Stage 1. OAuth and actual
+   archive/restore execution remain deferred; never delete the only copy.
 
 ## Decisions needed from the school
 
-- Neon project owner and production database connection details.
+- Whether historical Render records need importing; the old database is untouched.
 - Chosen payment provider and merchant account.
 - Official programme list, application/acceptance fee rules, and receipt format.
 - Official email provider and whether student mailboxes should be provisioned.

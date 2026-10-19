@@ -6,6 +6,18 @@ share one Neon PostgreSQL database. Assign public/admin domains to the frontend
 project and api.uniquecollegekwali.edu.ng to the backend project. Later staff/student
 UIs call this same API. Root-domain routing for future portals is not yet enabled.
 
+For the current CLI-managed API project, the uploaded backend folder is the project
+root, so its dashboard Root Directory is unset. Always select the backend config
+explicitly to avoid inheriting the frontend build configuration:
+
+```powershell
+npx vercel deploy --prod --yes --cwd backend --local-config "$PWD/backend/vercel.json" --scope yusufdavid411s-projects
+```
+
+If connecting this API project directly to GitHub later, set Root Directory to
+`backend` and adjust the CLI upload strategy accordingly. The frontend project
+continues using the repository root and its own `vercel.json`.
+
 The API exports the Express application using Vercel's recognised src/app.js entry.
 backend/vercel.json generates Prisma Client during build. Run migrations separately
 against the approved database before releasing; migrations are deliberately not

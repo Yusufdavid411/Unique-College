@@ -22,8 +22,8 @@ Keep evidence-based manual verification available only through authorised financ
 ## Availability controls implemented now
 
 Administrators can open or close new applications and publish a closure message
-under Site settings. Both applicant registration and the legacy application endpoint
-enforce the policy before processing uploads. Existing applicants keep access to
+under Site settings. Applicant registration enforces the policy; the legacy public
+application endpoint is retired with HTTP 410. Existing applicants keep access to
 their accounts, drafts, submissions, and tracking. Closing new applications does
 not revoke purchased forms; a separate submission deadline will be designed with
 intake records. Unconfigured admissions default to closed. Database failure does
@@ -31,9 +31,9 @@ not bypass the policy.
 
 ## Still pending
 
-The form-purchase gate, checkout, verified-payment unlocking, intake-specific prices,
-and submission deadlines await the backend foundation and the school's approved fee
-and merchant configuration. The current portal remains a draft/evidence workflow;
+Hosted checkout, intake-specific pricing and submission deadlines await approved
+school policy and merchant configuration. The current portal supports a quoted
+form-purchase gate with manual finance verification;
 do not advertise it as live online checkout. Do not invent fee amounts or create a
 merchant account on the school's behalf.
 
@@ -44,3 +44,12 @@ merchant account on the school's behalf.
 - Paystack signed webhooks: https://paystack.com/docs/payments/webhooks/
 
 Paystack is a researched example, not a committed provider choice.
+
+## Implementation checkpoint — 19 October 2026
+
+Paid forms now use a fee quoted at registration and unlock only after an exact
+application-fee payment is verified by an authorised reviewer. Account creation
+precedes payment so applicants can track evidence; the detailed form and document
+upload remain locked until verification. School instructions and the approved fee
+must be configured before opening admissions. This is manual payment review, not
+live hosted checkout. Applicants and administrators can print application records.

@@ -3,6 +3,7 @@ import { useState } from "react";
 import { api, apiErrorMessage, assetUrl } from "../../api/client.js";
 import LoadingButton from "../../components/LoadingButton.jsx";
 import PrivateFileButton from "../../components/PrivateFileButton.jsx";
+import FormPurchaseRequired from "../../components/FormPurchaseRequired.jsx";
 import { useApplicant } from "../../context/ApplicantContext.jsx";
 
 const documentTypes = [
@@ -14,11 +15,12 @@ const documentTypes = [
 ];
 
 export default function ApplicantDocuments() {
-  const { application, loading, refresh } = useApplicant();
+  const { application, formAccess, loading, refresh } = useApplicant();
   const [busy, setBusy] = useState("");
   const [notice, setNotice] = useState({ type: "", message: "" });
   if (loading) return <div className="portal-loading">Loading documents...</div>;
   if (!application) return <div className="portal-error">Applicant record could not be loaded.</div>;
+  if (!formAccess.unlocked) return <FormPurchaseRequired amount={formAccess.amount} />;
 
   const editable = ["DRAFT", "RETURNED"].includes(application.status);
 

@@ -10,7 +10,9 @@ export const readAdmissionsPolicy = asyncHandler(async (req, res) => {
 });
 
 export const saveAdmissionsPolicy = asyncHandler(async (req, res) => {
-  const policy = z.object({ open: z.boolean(), message: z.string().trim().min(5).max(500) }).parse(req.body);
+  const policy = z.object({ open: z.boolean(), message: z.string().trim().min(5).max(500), applicationFee: z.number().finite().min(0).max(10000000).multipleOf(0.01).nullable().default(null), paymentInstructions: z.string().trim().max(3000).default("") })
+    .refine((value) => !value.open || value.applicationFee !== null, { message: "Set the approved application fee before opening admissions", path: ["applicationFee"] })
+    .refine((value) => !value.open || !value.applicationFee || value.paymentInstructions.length >= 10, { message: "Provide the school's official payment instructions before opening paid admissions", path: ["paymentInstructions"] }).parse(req.body);
   await auditedMutation(prisma, { actorId: req.user.id, action: policy.open ? "admissions.opened" : "admissions.closed", targetType: "setting" }, (transaction) => transaction.siteSetting.upsert({
     where: { key: admissionsPolicyKey },
     update: { value: JSON.stringify(policy), group: "admissions" },

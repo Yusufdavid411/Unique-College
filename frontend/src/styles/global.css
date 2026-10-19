@@ -3578,6 +3578,8 @@ th {
   padding: 8px 0;
 }
 
+.admin-application-print { display: none; }
+
 .permission-option input[type="checkbox"] {
   width: 18px;
   height: 18px;
@@ -4111,6 +4113,14 @@ th {
     padding: 0;
     background: #fff;
   }
+
+  .admin-sidebar,
+  .application-review-panel__content > :not(.admin-application-print) {
+    display: none !important;
+  }
+
+  .admin-application-print { display: block; }
+  .admin-shell { display: block; }
 
   .application-review-panel {
     width: auto;

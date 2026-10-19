@@ -1,9 +1,10 @@
 import { Banknote, CheckCircle2, Clock3, Printer, UploadCloud, XCircle } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { api, apiErrorMessage, assetUrl } from "../../api/client.js";
 import LoadingButton from "../../components/LoadingButton.jsx";
 import PrivateFileButton from "../../components/PrivateFileButton.jsx";
 import { useApplicant } from "../../context/ApplicantContext.jsx";
+import { useAdmissions } from "../../context/AdmissionsContext.jsx";
 
 const typeLabels = {
   APPLICATION_FEE: "Application fee",
@@ -13,11 +14,15 @@ const typeLabels = {
 };
 
 export default function ApplicantPayments() {
-  const { application, loading, refresh } = useApplicant();
+  const { application, formAccess, loading, refresh } = useApplicant();
+  const { policy } = useAdmissions();
   const [proof, setProof] = useState(null);
   const [form, setForm] = useState({ type: "APPLICATION_FEE", amount: "", reference: "", paidAt: "" });
   const [busy, setBusy] = useState(false);
   const [notice, setNotice] = useState({ type: "", message: "" });
+  useEffect(() => {
+    if (formAccess.amount !== null && !formAccess.unlocked) setForm((current) => ({ ...current, type: "APPLICATION_FEE", amount: formAccess.amount }));
+  }, [formAccess.amount, formAccess.unlocked]);
   if (loading) return <div className="portal-loading">Loading payments...</div>;
   if (!application) return <div className="portal-error">Applicant record could not be loaded.</div>;
 
@@ -48,6 +53,7 @@ export default function ApplicantPayments() {
     <div className="portal-page">
       <header className="portal-page-header"><div><span className="eyebrow">Payments and receipts</span><h1>Payment records</h1><p>Record only payments made through an account or method officially supplied by the school.</p></div></header>
       <div className="portal-alert warning"><strong>Payment safety</strong><p>Do not pay into a personal account. This page records evidence for verification; it does not process card payments yet.</p></div>
+      {formAccess.amount !== null && <div className="portal-alert"><strong>Your quoted form price: NGN {Number(formAccess.amount).toLocaleString("en-NG", { minimumFractionDigits: 2 })}</strong><p style={{ whiteSpace: "pre-wrap" }}>{policy?.paymentInstructions || "Contact the admissions office for the official payment instructions before paying."}</p><p>{formAccess.unlocked ? "Your form is unlocked." : "Submit application-fee evidence below. Your form unlocks after verification."}</p></div>}
       {notice.message && <p className={`form-status ${notice.type}`}>{notice.message}</p>}
 
       <div className="payment-layout">

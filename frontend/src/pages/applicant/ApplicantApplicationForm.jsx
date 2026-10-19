@@ -2,6 +2,7 @@ import { Plus, Save, Send, Trash2 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { api, apiErrorMessage } from "../../api/client.js";
 import LoadingButton from "../../components/LoadingButton.jsx";
+import FormPurchaseRequired from "../../components/FormPurchaseRequired.jsx";
 import { useApplicant } from "../../context/ApplicantContext.jsx";
 import { programs } from "../../data/siteData.js";
 
@@ -40,7 +41,7 @@ function toForm(application) {
 }
 
 export default function ApplicantApplicationForm() {
-  const { application, loading, refresh } = useApplicant();
+  const { application, formAccess, loading, refresh } = useApplicant();
   const [form, setForm] = useState(() => toForm(null));
   const [busy, setBusy] = useState("");
   const [notice, setNotice] = useState({ type: "", message: "" });
@@ -48,6 +49,7 @@ export default function ApplicantApplicationForm() {
   useEffect(() => { if (application) setForm(toForm(application)); }, [application]);
   if (loading) return <div className="portal-loading">Loading application form...</div>;
   if (!application) return <div className="portal-error">Application record could not be loaded.</div>;
+  if (!formAccess.unlocked) return <FormPurchaseRequired amount={formAccess.amount} />;
 
   const editable = ["DRAFT", "RETURNED"].includes(application.status);
   const update = (event) => {
@@ -115,7 +117,7 @@ export default function ApplicantApplicationForm() {
           <div className="education-table">
             <div className="education-row heading"><span>Subject</span><span>Grade</span><span>Exam body</span><span>Year</span><span /></div>
             {form.educationRecords.map((record, index) => (
-              <div className="education-row" key={`${record.subject}-${index}`}>
+              <div className="education-row" key={index}>
                 <input aria-label={`Subject ${index + 1}`} value={record.subject} onChange={(event) => updateEducation(index, "subject", event.target.value)} required />
                 <input aria-label={`Grade ${index + 1}`} value={record.grade} onChange={(event) => updateEducation(index, "grade", event.target.value)} required={index < 5} />
                 <select aria-label={`Exam body ${index + 1}`} value={record.examBody} onChange={(event) => updateEducation(index, "examBody", event.target.value)} required={index < 5}><option value="">Select</option><option>WAEC</option><option>NECO</option><option>GCE</option><option>NABTEB</option><option>Other</option></select>

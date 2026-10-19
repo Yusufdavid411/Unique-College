@@ -5,9 +5,12 @@ import { created, ok } from "../utils/apiResponse.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
 import { fileMetadata } from "../services/uploadService.js";
 import { loginApplicant, toPublicUser } from "../services/authService.js";
+import { formAccessFor } from "../services/formAccess.js";
+import { Prisma } from "@prisma/client";
+import { requiredAdmissionDocuments } from "../services/admissionWorkflow.js";
 
 const editableStatuses = ["DRAFT", "RETURNED"];
-const requiredDocumentTypes = ["PASSPORT", "BIRTH_CERTIFICATE", "NATIONAL_ID", "EDUCATIONAL_RESULT"];
+const requiredDocumentTypes = requiredAdmissionDocuments;
 
 function applicationNumber() {
   return `UCHK-${new Date().getFullYear()}-${crypto.randomBytes(3).toString("hex").toUpperCase()}`;
@@ -55,6 +58,7 @@ export const registerApplicant = asyncHandler(async (req, res) => {
       application: {
         create: {
           applicationNumber: number,
+          formFeeAmount: req.admissionsPolicy.applicationFee,
           fullName: req.body.fullName,
           email,
           phoneNumber: req.body.phoneNumber,
@@ -77,7 +81,7 @@ export const registerApplicant = asyncHandler(async (req, res) => {
 
 export const getApplicantDashboard = asyncHandler(async (req, res) => {
   const application = await getApplicantApplication(req.user.id);
-  ok(res, { application, user: toPublicUser(req.user) });
+  ok(res, { application, user: toPublicUser(req.user), formAccess: formAccessFor(application) });
 });
 
 export const updateApplicantApplication = asyncHandler(async (req, res) => {
@@ -222,6 +226,9 @@ export const deleteApplicantDocument = asyncHandler(async (req, res) => {
 export const recordApplicantPayment = asyncHandler(async (req, res) => {
   if (!req.file) return res.status(400).json({ success: false, message: "Payment evidence is required" });
   const application = await getApplicantApplication(req.user.id);
+  if (req.body.type === "APPLICATION_FEE" && application.formFeeAmount !== null && !new Prisma.Decimal(req.body.amount).equals(application.formFeeAmount)) return res.status(422).json({ success: false, message: "Record the exact form fee quoted on your account" });
+  if (req.body.type === "ACCEPTANCE_FEE" && !["ACCEPTED", "ADMITTED"].includes(application.status)) return res.status(409).json({ success: false, message: "Acceptance payment is available after an admission offer" });
+  if (req.body.type === "SCHOOL_FEE" && application.status !== "ADMITTED") return res.status(409).json({ success: false, message: "School-fee records are available after admission" });
   const duplicate = await prisma.payment.findUnique({ where: { reference: req.body.reference } });
   if (duplicate) return res.status(409).json({ success: false, message: "This payment reference has already been recorded" });
 

@@ -9,7 +9,8 @@ const links = [
   ["Application form", "/applicant/application", ClipboardList],
   ["Documents", "/applicant/documents", FileCheck2],
   ["Payments", "/applicant/payments", CreditCard],
-  ["Print centre", "/applicant/print", Printer]
+  ["Print centre", "/applicant/print", Printer],
+  ["Account security", "/applicant/security", FileCheck2]
 ];
 
 export default function ApplicantLayout() {

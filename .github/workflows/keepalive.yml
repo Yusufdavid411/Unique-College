@@ -1,4 +1,4 @@
-name: Keep Production Database Awake
+name: Production API readiness
 
 on:
   schedule:
@@ -10,4 +10,4 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Touch database health endpoint
-        run: curl --fail --show-error --silent https://unique-college-api.onrender.com/api/health/db
+        run: curl --fail --show-error --silent --max-time 30 https://unique-college-api.vercel.app/api/health/db

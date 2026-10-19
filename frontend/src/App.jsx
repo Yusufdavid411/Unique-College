@@ -29,6 +29,7 @@ import AdminAudit from "./pages/admin/AdminAudit.jsx";
 import AdminEvents from "./pages/admin/AdminEvents.jsx";
 import AdminUsers from "./pages/admin/AdminUsers.jsx";
 import Events from "./pages/public/Events.jsx";
+import ChangePassword from "./components/ChangePassword.jsx";
 
 export default function App() {
   return (
@@ -58,6 +59,7 @@ export default function App() {
         <Route path="documents" element={<ApplicantDocuments />} />
         <Route path="payments" element={<ApplicantPayments />} />
         <Route path="print" element={<ApplicantPrintCentre />} />
+        <Route path="security" element={<ChangePassword />} />
       </Route>
       <Route path="/admin/login" element={<AdminLogin />} />
       <Route
@@ -78,6 +80,7 @@ export default function App() {
         <Route path="audit" element={<AdminAudit />} />
         <Route path="events" element={<AdminEvents />} />
         <Route path="users" element={<AdminUsers />} />
+        <Route path="security" element={<ChangePassword />} />
       </Route>
     </Routes>
   );

@@ -121,6 +121,7 @@ model Application {
   id                    String            @id @default(uuid())
   applicantId           String?           @unique
   applicationNumber     String?           @unique
+  formFeeAmount         Decimal?          @db.Decimal(12, 2)
   fullName              String
   surname               String?
   firstName             String?

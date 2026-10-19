@@ -1,6 +1,7 @@
 import { ArrowRight, CheckCircle2, Circle, Clock3, CreditCard, FileCheck2, FileText, GraduationCap } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useApplicant } from "../../context/ApplicantContext.jsx";
+import FormPurchaseRequired from "../../components/FormPurchaseRequired.jsx";
 
 const statusText = {
   DRAFT: "Draft",
@@ -15,7 +16,7 @@ const statusText = {
 };
 
 export default function ApplicantDashboard() {
-  const { application, loading, error } = useApplicant();
+  const { application, formAccess, loading, error } = useApplicant();
   if (loading) return <div className="portal-loading">Loading your admission record...</div>;
   if (!application) return <div className="portal-error">{error || "Applicant record not found."}</div>;
 
@@ -35,6 +36,7 @@ export default function ApplicantDashboard() {
       </header>
 
       {error && <p className="form-status error">{error}</p>}
+      {!formAccess.unlocked && <FormPurchaseRequired amount={formAccess.amount} />}
       {application.reviewNote && <div className="portal-alert"><strong>Admissions note</strong><p>{application.reviewNote}</p></div>}
 
       <section className="portal-progress-card">
