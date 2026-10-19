@@ -1,6 +1,9 @@
 import axios from "axios";
+import { sessionScope, sessionToken } from "./session.js";
 
 export const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
+export const FILE_TRANSFER_TIMEOUT = 240000;
+export const MAX_UPLOAD_BYTES = 4 * 1024 * 1024;
 
 export const api = axios.create({
   baseURL: `${API_BASE_URL}/api`,
@@ -8,8 +11,9 @@ export const api = axios.create({
 });
 
 api.interceptors.request.use((config) => {
-  const token = localStorage.getItem("unique_college_token");
-  if (token) {
+  if (config.data instanceof FormData) config.timeout = FILE_TRANSFER_TIMEOUT;
+  const token = sessionToken(sessionScope(window.location.pathname));
+  if (token && !config.headers.Authorization) {
     config.headers.Authorization = `Bearer ${token}`;
   }
   return config;
@@ -32,7 +36,7 @@ export function apiErrorMessage(error, fallback = "Something went wrong. Please 
     return details ? `${response.message || fallback}. ${details}` : response.message || fallback;
   }
 
-  if (response?.message) return response.message;
+  if (typeof response?.message === "string") return response.message;
   if (error.code === "ECONNABORTED") return "The server took too long to respond. Please try again.";
   if (!error.response) return "The server could not be reached. Please wait a moment and try again.";
 

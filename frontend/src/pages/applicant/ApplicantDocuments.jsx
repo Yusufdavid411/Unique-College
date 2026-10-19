@@ -1,6 +1,6 @@
 import { CheckCircle2, FileText, UploadCloud, XCircle } from "lucide-react";
 import { useState } from "react";
-import { api, apiErrorMessage, assetUrl } from "../../api/client.js";
+import { api, apiErrorMessage, MAX_UPLOAD_BYTES } from "../../api/client.js";
 import LoadingButton from "../../components/LoadingButton.jsx";
 import PrivateFileButton from "../../components/PrivateFileButton.jsx";
 import FormPurchaseRequired from "../../components/FormPurchaseRequired.jsx";
@@ -26,6 +26,7 @@ export default function ApplicantDocuments() {
 
   async function upload(type, label, file) {
     if (!file) return;
+    if (file.size > MAX_UPLOAD_BYTES) return setNotice({ type: "error", message: "Choose a document of 4 MB or less." });
     setBusy(type);
     setNotice({ type: "", message: "" });
     const data = new FormData();
@@ -45,7 +46,7 @@ export default function ApplicantDocuments() {
 
   return (
     <div className="portal-page">
-      <header className="portal-page-header"><div><span className="eyebrow">Credentials</span><h1>Supporting documents</h1><p>Upload clear scans. Each file can be reviewed independently by admissions.</p></div></header>
+      <header className="portal-page-header"><div><span className="eyebrow">Credentials</span><h1>Supporting documents</h1><p>Upload clear scans, up to 4 MB each. Admissions reviews each document independently.</p></div></header>
       {!editable && <div className="portal-alert"><strong>Uploads locked during review</strong><p>Admissions will return your application if any replacement is required.</p></div>}
       {notice.message && <p className={`form-status ${notice.type}`}>{notice.message}</p>}
       <section className="document-upload-grid">

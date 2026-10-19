@@ -1,56 +1,68 @@
-import { createContext, useContext, useEffect, useMemo, useState } from "react";
+import { createContext, useContext, useEffect, useState } from "react";
+import { useLocation } from "react-router-dom";
 import { api } from "../api/client.js";
+import { clearSession, saveSession, scopeForUser, sessionKey, sessionScope, sessionToken } from "../api/session.js";
 
 const AuthContext = createContext(null);
 
 export function AuthProvider({ children }) {
-  const [user, setUser] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const { pathname } = useLocation();
+  const scope = sessionScope(pathname);
+  const [session, setSession] = useState({ scope, user: null, loading: true });
 
   useEffect(() => {
-    const token = localStorage.getItem("unique_college_token");
-    if (!token) {
-      setLoading(false);
-      return;
+    let version = 0;
+    let active = true;
+    async function sync() {
+      const current = ++version;
+      const token = sessionToken(scope);
+      setSession({ scope, user: null, loading: Boolean(token) });
+      if (!token) return;
+      try {
+        const response = await api.get("/auth/me", { headers: { Authorization: `Bearer ${token}` } });
+        if (!active || current !== version) return;
+        const user = response.data.data.user;
+        const verifiedScope = scopeForUser(user);
+        if (verifiedScope) saveSession(verifiedScope, token);
+        setSession({ scope, user: verifiedScope === scope ? user : null, loading: false });
+      } catch (error) {
+        if (!active || current !== version) return;
+        if ([401, 403].includes(error.response?.status)) clearSession(scope);
+        setSession({ scope, user: null, loading: false });
+      }
     }
-
-    api
-      .get("/auth/me")
-      .then((response) => setUser(response.data.data.user))
-      .catch(() => {
-        localStorage.removeItem("unique_college_token");
-        setUser(null);
-      })
-      .finally(() => setLoading(false));
-  }, []);
+    const onStorage = (event) => {
+      if (event.key === sessionKey(scope) || event.key === "unique_college_token" || event.key === null) sync();
+    };
+    sync();
+    window.addEventListener("storage", onStorage);
+    return () => { active = false; window.removeEventListener("storage", onStorage); };
+  }, [scope]);
 
   async function login(email, password) {
     const response = await api.post("/auth/login", { email, password });
-    localStorage.setItem("unique_college_token", response.data.data.token);
-    setUser(response.data.data.user);
+    saveSession("admin", response.data.data.token);
+    setSession({ scope: "admin", user: response.data.data.user, loading: false });
   }
 
   async function applicantLogin(identifier, password) {
     const response = await api.post("/auth/applicant/login", { identifier, password });
-    localStorage.setItem("unique_college_token", response.data.data.token);
-    setUser(response.data.data.user);
+    saveSession("applicant", response.data.data.token);
+    setSession({ scope: "applicant", user: response.data.data.user, loading: false });
   }
 
   async function registerApplicant(payload) {
     const response = await api.post("/applicant/register", payload);
-    localStorage.setItem("unique_college_token", response.data.data.token);
-    setUser(response.data.data.user);
+    saveSession("applicant", response.data.data.token);
+    setSession({ scope: "applicant", user: response.data.data.user, loading: false });
   }
 
   function logout() {
-    localStorage.removeItem("unique_college_token");
-    setUser(null);
+    clearSession(scope);
+    setSession({ scope, user: null, loading: false });
   }
 
-  const value = useMemo(
-    () => ({ user, loading, login, applicantLogin, registerApplicant, logout }),
-    [user, loading]
-  );
+  const value = { user: session.scope === scope ? session.user : null, loading: session.scope !== scope || session.loading, login, applicantLogin, registerApplicant, logout };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }

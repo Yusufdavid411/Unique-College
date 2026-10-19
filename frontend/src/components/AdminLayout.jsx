@@ -1,5 +1,6 @@
 import { NavLink, Outlet, useNavigate } from "react-router-dom";
-import { Images, LayoutDashboard, LogOut, MessageSquare, Newspaper, Settings, Users } from "lucide-react";
+import { Images, LayoutDashboard, LogOut, Menu, MessageSquare, Newspaper, Settings, Users, X } from "lucide-react";
+import { useState } from "react";
 import { useAuth } from "../context/AuthContext.jsx";
 import { assetPaths } from "../data/siteData.js";
 
@@ -20,6 +21,7 @@ const items = [
 export default function AdminLayout() {
   const { logout, user } = useAuth();
   const navigate = useNavigate();
+  const [menuOpen, setMenuOpen] = useState(false);
 
   function handleLogout() {
     logout();
@@ -28,7 +30,7 @@ export default function AdminLayout() {
 
   return (
     <div className="admin-shell">
-      <aside className="admin-sidebar">
+      <aside className={`admin-sidebar${menuOpen ? " mobile-menu-open" : ""}`}>
         <div className="admin-brand">
           <img src={assetPaths.logo} alt="Unique College logo" />
           <div>
@@ -36,9 +38,10 @@ export default function AdminLayout() {
             <span>{user?.name}</span>
           </div>
         </div>
-        <nav>
+        <button className="admin-menu-toggle" type="button" aria-label={menuOpen ? "Close admin navigation" : "Open admin navigation"} aria-expanded={menuOpen} aria-controls="admin-navigation" onClick={() => setMenuOpen((open) => !open)}>{menuOpen ? <X size={22} /> : <Menu size={22} />}</button>
+        <nav id="admin-navigation" aria-label="Admin navigation">
           {items.map(([label, path, Icon]) => (
-            <NavLink key={path} to={path} end={path === "/admin"}>
+            <NavLink key={path} to={path} end={path === "/admin"} onClick={() => setMenuOpen(false)}>
               <Icon size={18} />
               {label}
             </NavLink>

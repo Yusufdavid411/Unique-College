@@ -153,18 +153,24 @@ export const reviewApplicationPayment = asyncHandler(async (req, res) => {
     where: { id: req.params.paymentId, applicationId: req.params.id }
   });
   if (!payment) return res.status(404).json({ success: false, message: "Payment not found" });
+  if (payment.status === "CANCELLED") return res.status(409).json({ success: false, message: "This receipt was withdrawn by the applicant" });
   if (payment.type === "APPLICATION_FEE" && req.body.status === "VERIFIED") {
     const application = await prisma.application.findUnique({ where: { id: req.params.id } });
     if (application.formFeeAmount !== null && !new Prisma.Decimal(payment.amount).equals(application.formFeeAmount)) return res.status(422).json({ success: false, message: "The recorded amount must match the applicant's quoted form fee before verification" });
   }
-  const updated = await auditedMutation(prisma, { actorId: req.user.id, action: "payment.review:" + req.body.status, targetType: "payment", targetId: payment.id }, (transaction) => transaction.payment.update({
-    where: { id: payment.id },
-    data: {
+  const updated = await auditedMutation(prisma, { actorId: req.user.id, action: "payment.review:" + req.body.status, targetType: "payment", targetId: payment.id }, async (transaction) => {
+    if (req.body.status === "PENDING" && payment.status !== "PENDING") {
+      const pending = await transaction.payment.findFirst({ where: { applicationId: payment.applicationId, status: "PENDING", id: { not: payment.id } }, select: { id: true } });
+      if (pending) throw Object.assign(new Error("Another receipt is already awaiting review"), { statusCode: 409 });
+    }
+    const changed = await transaction.payment.updateMany({ where: { id: payment.id, status: payment.status, updatedAt: payment.updatedAt }, data: {
       status: req.body.status,
       reviewNote: req.body.reviewNote || null,
       verifiedAt: req.body.status === "VERIFIED" ? new Date() : null
-    }
-  }));
+    } });
+    if (!changed.count) throw Object.assign(new Error("The receipt changed. Reload it before reviewing."), { statusCode: 409 });
+    return transaction.payment.findUnique({ where: { id: payment.id } });
+  }, { isolationLevel: "Serializable", timeout: 15000 });
   ok(res, updated, "Payment review updated");
 });
 

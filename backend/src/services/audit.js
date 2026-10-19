@@ -1,4 +1,4 @@
-export async function auditedMutation(database, event, mutation) {
+export async function auditedMutation(database, event, mutation, options) {
   return database.$transaction(async (transaction) => {
     const result = await mutation(transaction);
     await transaction.auditLog.create({
@@ -10,5 +10,5 @@ export async function auditedMutation(database, event, mutation) {
       }
     });
     return result;
-  });
+  }, options);
 }

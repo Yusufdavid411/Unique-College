@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import AdminNotice from "../../components/AdminNotice.jsx";
 import { api, apiErrorMessage } from "../../api/client.js";
 
@@ -7,13 +7,16 @@ export default function AdminDashboard() {
   const [loading, setLoading] = useState(true);
   const [notice, setNotice] = useState("");
 
-  useEffect(() => {
+  const load = useCallback(() => {
+    setLoading(true);
+    setNotice("");
     api
       .get("/dashboard/stats")
       .then((res) => setStats(res.data.data))
       .catch((error) => setNotice(apiErrorMessage(error, "Dashboard stats could not be loaded.")))
       .finally(() => setLoading(false));
   }, []);
+  useEffect(load, [load]);
 
   const items = [
     ["Applications", stats.applications || 0],
@@ -28,11 +31,12 @@ export default function AdminDashboard() {
     <div className="admin-page">
       <header className="admin-header"><span className="eyebrow">Dashboard</span><h1>Overview</h1></header>
       <AdminNotice type="error">{notice}</AdminNotice>
-      <div className="admin-stats">
+      {notice && <button className="button secondary" type="button" onClick={load}>Try again</button>}
+      {!notice && <div className="admin-stats">
         {items.map(([label, value]) => (
           <article className="stat-card" key={label}><strong>{loading ? "..." : value}</strong><span>{label}</span></article>
         ))}
-      </div>
+      </div>}
     </div>
   );
 }

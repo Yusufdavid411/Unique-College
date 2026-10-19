@@ -8,6 +8,8 @@ import { loginApplicant, toPublicUser } from "../services/authService.js";
 import { formAccessFor } from "../services/formAccess.js";
 import { Prisma } from "@prisma/client";
 import { requiredAdmissionDocuments } from "../services/admissionWorkflow.js";
+import { createPendingPayment, pendingReceiptMessage } from "../services/paymentSubmission.js";
+import { auditedMutation } from "../services/audit.js";
 
 const editableStatuses = ["DRAFT", "RETURNED"];
 const requiredDocumentTypes = requiredAdmissionDocuments;
@@ -229,13 +231,11 @@ export const recordApplicantPayment = asyncHandler(async (req, res) => {
   if (req.body.type === "APPLICATION_FEE" && application.formFeeAmount !== null && !new Prisma.Decimal(req.body.amount).equals(application.formFeeAmount)) return res.status(422).json({ success: false, message: "Record the exact form fee quoted on your account" });
   if (req.body.type === "ACCEPTANCE_FEE" && !["ACCEPTED", "ADMITTED"].includes(application.status)) return res.status(409).json({ success: false, message: "Acceptance payment is available after an admission offer" });
   if (req.body.type === "SCHOOL_FEE" && application.status !== "ADMITTED") return res.status(409).json({ success: false, message: "School-fee records are available after admission" });
-  const duplicate = await prisma.payment.findUnique({ where: { reference: req.body.reference } });
+  const duplicate = await prisma.payment.findFirst({ where: { reference: req.body.reference, status: { in: ["PENDING", "VERIFIED"] } } });
   if (duplicate) return res.status(409).json({ success: false, message: "This payment reference has already been recorded" });
 
   const metadata = fileMetadata(req.file, "documents");
-  const payment = await prisma.payment.create({
-    data: {
-      applicationId: application.id,
+  const payment = await createPendingPayment(prisma, application.id, {
       type: req.body.type,
       amount: req.body.amount,
       reference: req.body.reference,
@@ -243,7 +243,24 @@ export const recordApplicantPayment = asyncHandler(async (req, res) => {
       proofPath: metadata.path,
       proofFileType: metadata.fileType,
       proofFileSize: metadata.fileSize
-    }
   });
   created(res, payment, "Payment evidence submitted for verification");
+});
+
+export const requireNoPendingReceipt = asyncHandler(async (req, res, next) => {
+  const pending = await prisma.payment.findFirst({ where: { application: { applicantId: req.user.id }, status: "PENDING" }, select: { id: true } });
+  if (pending) return res.status(409).json({ success: false, message: pendingReceiptMessage });
+  next();
+});
+
+export const withdrawApplicantPayment = asyncHandler(async (req, res) => {
+  const payment = await prisma.payment.findFirst({ where: { id: req.params.paymentId, application: { applicantId: req.user.id } } });
+  if (!payment) return res.status(404).json({ success: false, message: "Payment not found" });
+  if (!["PENDING", "REJECTED"].includes(payment.status)) return res.status(409).json({ success: false, message: "Only pending or rejected receipts can be removed" });
+  const updated = await auditedMutation(prisma, { actorId: req.user.id, action: "payment.withdrawn", targetType: "payment", targetId: payment.id }, async (transaction) => {
+    const changed = await transaction.payment.updateMany({ where: { id: payment.id, status: payment.status, updatedAt: payment.updatedAt }, data: { status: "CANCELLED", reviewNote: "Withdrawn by applicant" } });
+    if (!changed.count) throw Object.assign(new Error("The payment changed during review. Refresh your history."), { statusCode: 409 });
+    return transaction.payment.findUnique({ where: { id: payment.id } });
+  });
+  ok(res, updated, "Receipt removed. You can upload a replacement.");
 });

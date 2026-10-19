@@ -1826,10 +1826,35 @@ textarea {
   gap: 22px;
   padding: 24px;
   color: white;
-  overflow: hidden;
+  overflow-y: auto;
   background:
     linear-gradient(180deg, rgba(8, 47, 79, .98), rgba(6, 29, 50, .96)),
     url("/school-assets/campus-courtyard.jpg") center / cover;
+}
+
+.admin-menu-toggle { display: none; }
+
+.app-recovery {
+  display: grid;
+  min-height: 100svh;
+  padding: 24px;
+  place-items: center;
+  color: white;
+  background: #06375f;
+}
+
+.app-recovery > div { width: min(520px, 100%); }
+.app-recovery h1 { color: white; font-size: 30px; }
+.app-recovery a { display: inline-block; margin: 16px; text-decoration: underline; }
+.app-recovery button { padding: 12px 18px; border: 0; border-radius: 8px; cursor: pointer; }
+
+@media (max-width: 820px) {
+  .admin-shell .admin-sidebar { position: relative; height: auto; min-height: 76px; gap: 0; padding: 16px; }
+  .admin-sidebar .admin-brand { padding-right: 52px; }
+  .admin-sidebar .admin-menu-toggle { position: absolute; top: 18px; right: 18px; display: grid; place-items: center; width: 42px; height: 42px; border: 1px solid #7890a8; border-radius: 8px; background: transparent; color: white; }
+  .admin-shell .admin-sidebar nav, .admin-sidebar .sidebar-logout { display: none; }
+  .admin-shell .admin-sidebar.mobile-menu-open nav { display: grid; margin-top: 20px; }
+  .admin-sidebar.mobile-menu-open .sidebar-logout { display: flex; margin-top: 16px; }
 }
 
 .admin-brand {
@@ -3077,12 +3102,42 @@ th {
 
 .payment-history article {
   display: grid;
-  grid-template-columns: auto minmax(0, 1fr) auto;
+  grid-template-columns: 40px minmax(0, 1fr);
   gap: 12px;
   align-items: center;
   padding: 14px;
   background: #f7fafc;
   border-radius: 10px;
+}
+
+.payment-history article > div {
+  min-width: 0;
+}
+
+.payment-history .private-file-control,
+.payment-receipt-actions {
+  grid-column: 1 / -1;
+  min-width: 0;
+}
+
+.private-file-control {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+  max-width: 100%;
+}
+
+.private-file-error {
+  color: #a32121;
+  overflow-wrap: anywhere;
+}
+
+.payment-receipt-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 12px;
 }
 
 .payment-status-icon {
@@ -3471,7 +3526,7 @@ th {
   }
 
   .payment-history article {
-    grid-template-columns: auto minmax(0, 1fr);
+    grid-template-columns: 40px minmax(0, 1fr);
   }
 
   .payment-history article > a {

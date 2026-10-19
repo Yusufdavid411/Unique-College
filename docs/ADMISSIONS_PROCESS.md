@@ -53,3 +53,26 @@ precedes payment so applicants can track evidence; the detailed form and documen
 upload remain locked until verification. School instructions and the approved fee
 must be configured before opening admissions. This is manual payment review, not
 live hosted checkout. Applicants and administrators can print application records.
+
+## Receipt submission safeguards
+
+An applicant can have only one receipt awaiting review, across all payment types.
+The API checks before accepting the upload and again in a serializable transaction
+to protect against concurrent requests. The portal disables submission while a
+receipt is pending. Applicants may remove pending or rejected evidence and upload
+a replacement; rejection also permits resubmission without removal. Removal marks
+the payment CANCELLED, retaining its file and an audit event for staff. Verified
+receipts cannot be removed by applicants, and verified form fees cannot be paid
+again. Only authorised staff can verify payment and unlock the form.
+
+Migration 202610190006_receipt_withdrawal adds the cancellation status and replaces
+global reference uniqueness with a partial unique index for PENDING/VERIFIED
+references. Rejected or withdrawn evidence can be corrected using the same genuine
+bank reference. Preserve this SQL index when migrating databases; Prisma db push
+is not a substitute for the migration history.
+
+File transfers use a four-minute client timeout and show progress when available;
+ordinary API requests retain the shorter timeout. After an uncertain receipt
+submission the portal refreshes payment history rather than automatically posting
+again. Admin and applicant sessions now use separate browser-storage keys, so
+signing into one portal does not silently replace the other's credentials.

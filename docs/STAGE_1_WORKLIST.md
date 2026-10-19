@@ -52,6 +52,28 @@ items above should not be rebuilt.
 9. Google Drive archival architecture is documented for Stage 1. OAuth and actual
    archive/restore execution remain deferred; never delete the only copy.
 
+## Receipt reliability checkpoint — 19 October 2026
+
+- Pending receipts block another upload in both the interface and the API,
+  including concurrent submissions. Withdrawal preserves evidence and audit history.
+- Rejected/withdrawn receipts permit a corrected submission using the same bank
+  reference; verified form-fee payments cannot be submitted twice.
+- Admin and applicant browser sessions are isolated. Mobile receipt cards use a
+  bounded icon column and wrapping content; admin navigation collapses on mobile.
+- File transfers have progress and a longer client timeout; error boundaries,
+  startup recovery and unknown-route recovery replace otherwise blank screens.
+- Local verification: 22 automated checks passed; two PostgreSQL integration checks
+  were skipped without INTEGRATION_DATABASE_URL. The extended lifecycle test covers
+  withdrawal, resubmission after rejection, and verified-receipt protection.
+- Migration 202610190006_receipt_withdrawal was applied first to the isolated
+  test database, then production, with index and migration-checksum verification.
+  Workstation TCP connectivity blocked Prisma Migrate, so the exact checked-in SQL
+  and its Prisma history entry were executed atomically over Neon's authenticated
+  HTTPS SQL connection. Prisma remains the application ORM and migration authority.
+- Browser verification used fictional records at mobile and desktop widths,
+  including separate simultaneous applicant/admin sessions. This is not a claim
+  that a real applicant receipt has been reviewed or changed during testing.
+
 ## Decisions needed from the school
 
 - Whether historical Render records need importing; the old database is untouched.

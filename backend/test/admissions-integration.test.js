@@ -17,6 +17,7 @@ test("applicant purchase, closure and admission approval enforce the full accoun
   let applicant;
   let application;
   let proofPath;
+  const proofPaths = [];
   const previousPolicy = await prisma.siteSetting.findUnique({ where: { key: "admissions_policy" } });
   const server = app.listen(0, "127.0.0.1");
   await new Promise((resolve) => server.once("listening", resolve));
@@ -44,12 +45,29 @@ test("applicant purchase, closure and admission approval enforce the full accoun
     payment.set("proof", new Blob(["%PDF-1.7\nTest evidence"], { type: "application/pdf" }), "proof.pdf");
     const evidence = await call("/applicant/payments", "POST", payment, session.token);
     assert.equal(evidence.status, 201);
-    const recorded = (await evidence.json()).data;
+    let recorded = (await evidence.json()).data;
     proofPath = recorded.proofPath;
+    proofPaths.push(proofPath);
+    assert.equal((await call("/applicant/payments", "POST", undefined, session.token)).status, 409);
+    assert.equal((await call("/applicant/payments/" + recorded.id, "DELETE", undefined, adminToken)).status, 403);
+    assert.equal((await call("/applicant/payments/" + recorded.id, "DELETE", undefined, session.token)).status, 200);
+    assert.equal((await prisma.payment.findUnique({ where: { id: recorded.id } })).status, "CANCELLED");
+    assert.equal((await call("/applications/" + application.id + "/payments/" + recorded.id, "PATCH", { status: "VERIFIED" }, adminToken)).status, 409);
+    const replacement = await call("/applicant/payments", "POST", payment, session.token);
+    assert.equal(replacement.status, 201);
+    recorded = (await replacement.json()).data;
+    proofPaths.push(recorded.proofPath);
+    assert.equal((await call("/applications/" + application.id + "/payments/" + recorded.id, "PATCH", { status: "REJECTED" }, adminToken)).status, 200);
+    const retry = await call("/applicant/payments", "POST", payment, session.token);
+    assert.equal(retry.status, 201);
+    recorded = (await retry.json()).data;
+    proofPaths.push(recorded.proofPath);
     dashboard = (await (await call("/applicant/dashboard", "GET", undefined, session.token)).json()).data;
     assert.equal(dashboard.formAccess.unlocked, false);
     const review = await call("/applications/" + application.id + "/payments/" + recorded.id, "PATCH", { status: "VERIFIED" }, adminToken);
     assert.equal(review.status, 200);
+    assert.equal((await call("/applicant/payments/" + recorded.id, "DELETE", undefined, session.token)).status, 409);
+    assert.equal((await call("/applicant/payments", "POST", payment, session.token)).status, 409);
     dashboard = (await (await call("/applicant/dashboard", "GET", undefined, session.token)).json()).data;
     assert.equal(dashboard.formAccess.unlocked, true);
     assert.equal(Number(dashboard.formAccess.amount), 5000);
@@ -76,14 +94,17 @@ test("applicant purchase, closure and admission approval enforce the full accoun
     assert.equal((await repeated.json()).data.credentials, null);
   } finally {
     if (application) await prisma.application.delete({ where: { id: application.id } });
-    if (applicant) await prisma.user.delete({ where: { id: applicant.id } });
+    if (applicant) {
+      await prisma.auditLog.deleteMany({ where: { actorId: applicant.id } });
+      await prisma.user.delete({ where: { id: applicant.id } });
+    }
     if (staff) {
       await prisma.auditLog.deleteMany({ where: { actorId: staff.id } });
       await prisma.user.delete({ where: { id: staff.id } });
     }
     if (previousPolicy) await prisma.siteSetting.update({ where: { key: "admissions_policy" }, data: { value: previousPolicy.value, group: previousPolicy.group } });
     else await prisma.siteSetting.deleteMany({ where: { key: "admissions_policy" } });
-    if (proofPath) { const local = resolveUploadPath(uploadRoot, proofPath); if (local) await fs.unlink(local).catch(() => {}); }
+    for (const path of proofPaths) { const local = resolveUploadPath(uploadRoot, path); if (local) await fs.unlink(local).catch(() => {}); }
     await new Promise((resolve) => server.close(resolve));
     await prisma.$disconnect();
   }

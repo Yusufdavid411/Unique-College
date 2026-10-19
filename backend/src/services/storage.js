@@ -50,11 +50,13 @@ export async function sendStoredFile(storedPath, res, download = false) {
     return;
   }
   if (provider === "blob") {
-    const result = await get(storedPath.slice("/uploads/".length), { access: "private", useCache: false });
+    const result = await get(storedPath.slice("/uploads/".length), { access: "private", useCache: true });
     if (!result || result.statusCode !== 200) return res.sendStatus(404);
+    if (result.blob?.size != null) res.set("Content-Length", String(result.blob.size));
     await pipeline(result.stream, res);
     return;
   }
   const result = await s3Client().send(new GetObjectCommand({ Bucket: process.env.S3_BUCKET, Key: storedPath.slice("/uploads/".length) }));
+  if (result.ContentLength != null) res.set("Content-Length", String(result.ContentLength));
   await pipeline(result.Body, res);
 }

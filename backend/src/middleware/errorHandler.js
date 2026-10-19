@@ -15,6 +15,7 @@ export function errorHandler(error, req, res, next) {
     return res.status(503).json({ success: false, message: "The service is temporarily unavailable. Please try again shortly." });
   }
   if (error.code === "P2002") return res.status(409).json({ success: false, message: "A record with these details already exists" });
+  if (error.code === "P2034") return res.status(409).json({ success: false, message: "The record changed during another request. Refresh before trying again." });
   if (error.code === "P2025") return res.status(404).json({ success: false, message: "Record not found" });
   if (error.message?.startsWith("Origin not allowed by CORS")) {
     return res.status(403).json({

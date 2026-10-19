@@ -30,6 +30,7 @@ import AdminEvents from "./pages/admin/AdminEvents.jsx";
 import AdminUsers from "./pages/admin/AdminUsers.jsx";
 import Events from "./pages/public/Events.jsx";
 import ChangePassword from "./components/ChangePassword.jsx";
+import { RecoveryScreen } from "./components/AppErrorBoundary.jsx";
 
 export default function App() {
   return (
@@ -82,6 +83,7 @@ export default function App() {
         <Route path="users" element={<AdminUsers />} />
         <Route path="security" element={<ChangePassword />} />
       </Route>
+      <Route path="*" element={<RecoveryScreen title="Page not found" message="This address is not available. Return to the homepage to continue." />} />
     </Routes>
   );
 }

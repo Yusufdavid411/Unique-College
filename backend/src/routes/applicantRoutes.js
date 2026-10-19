@@ -6,7 +6,9 @@ import {
   registerApplicant,
   submitApplicantApplication,
   updateApplicantApplication,
-  uploadApplicantDocument
+  uploadApplicantDocument,
+  requireNoPendingReceipt,
+  withdrawApplicantPayment
 } from "../controllers/applicantController.js";
 import { requireAuth, requireRole } from "../middleware/auth.js";
 import { requireAdmissionsOpen } from "../services/admissionsPolicy.js";
@@ -30,6 +32,7 @@ router.patch("/application", requireFormAccess, validate(applicantApplicationSch
 router.post("/application/submit", requireFormAccess, submitApplicantApplication);
 router.post("/documents", requireFormAccess, upload.single("file"), validate(applicantDocumentSchema), uploadApplicantDocument);
 router.delete("/documents/:documentId", deleteApplicantDocument);
-router.post("/payments", upload.single("proof"), validate(applicantPaymentSchema), recordApplicantPayment);
+router.post("/payments", requireNoPendingReceipt, upload.single("proof"), validate(applicantPaymentSchema), recordApplicantPayment);
+router.delete("/payments/:paymentId", withdrawApplicantPayment);
 
 export default router;
