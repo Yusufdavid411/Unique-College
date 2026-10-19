@@ -9,6 +9,8 @@
     />
     <meta name="color-scheme" content="light only" />
     <meta name="theme-color" content="#0a5ea8" />
+    <script>if (/^\/applicant\/(register|login)\/?$/.test(location.pathname)) document.documentElement.setAttribute("data-applicant-access", "true");</script>
+    <style>html[data-applicant-access],html[data-applicant-access] body,html[data-applicant-access] #root{margin:0;min-height:100svh;background:#06375f}</style>
     <link rel="icon" type="image/jpeg" href="/school-assets/logo-new.jpg" />
     <link rel="apple-touch-icon" href="/school-assets/logo-new.jpg" />
     <title>Unique College</title>

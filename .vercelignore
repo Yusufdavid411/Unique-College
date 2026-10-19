@@ -4,3 +4,5 @@ skills-lock.json
 **/.env*
 admin-access.local.md
 **/node_modules/
+backups/
+**/*.dump

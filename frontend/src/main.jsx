@@ -6,12 +6,19 @@ import { AuthProvider } from "./context/AuthContext.jsx";
 import { AdmissionsProvider } from "./context/AdmissionsContext.jsx";
 import "./styles/global.css";
 
-createRoot(document.getElementById("root")).render(
-  <React.StrictMode>
+function ApplicationRoot() {
+  React.useLayoutEffect(() => {
+    document.documentElement.removeAttribute("data-applicant-access");
+  }, []);
+  return (
     <BrowserRouter>
       <AuthProvider>
         <AdmissionsProvider><App /></AdmissionsProvider>
       </AuthProvider>
     </BrowserRouter>
-  </React.StrictMode>
+  );
+}
+
+createRoot(document.getElementById("root")).render(
+  <React.StrictMode><ApplicationRoot /></React.StrictMode>
 );
