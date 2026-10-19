@@ -45,7 +45,10 @@ items above should not be rebuilt.
    admission approval, credential hand-off and old-session invalidation.
    GitHub Actions cannot start because the GitHub account has a billing lock.
 8. Dump/restore and storage-manifest procedures exist; perform a recovery drill
-   before describing disaster recovery as verified. Review dependency advisories.
+   before describing disaster recovery as verified. Non-forced updates cleared
+   root/frontend dependency advisories. Backend advisories remain in Prisma's
+   configuration merger and nodemon's watcher dependencies; do not force a Prisma
+   major migration or downgrade nodemon merely to suppress audit output.
 9. Google Drive archival architecture is documented for Stage 1. OAuth and actual
    archive/restore execution remain deferred; never delete the only copy.
 

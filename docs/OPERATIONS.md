@@ -13,13 +13,10 @@
 6. Run npm run db:check from backend, then verify API health/db, sign-in,
    publishing, private downloads, admissions control, role management and audit.
 
-Runtime availability has not yet been verified against the production database.
-No schema changes have been applied remotely by these repository changes.
-
-Update (19 October 2026): the six current migrations have now been applied to a
-new dedicated Unique College Neon database, and its core tables are accessible.
-The historical statements above describe the original deployment audit. The older
-Render database is preserved and has not been imported or deleted.
+Verified 19 October 2026: seven migrations are applied to the dedicated Unique
+College Neon database. The Vercel API passes database readiness, administrator
+sign-in, news/image publishing and unpublishing checks. The website uses that API.
+The older Render database is preserved and has not been imported or deleted.
 
 ## Applicant files
 
@@ -27,7 +24,8 @@ The old blanket static upload route has been replaced. Only images referenced by
 published news/gallery are public. Other files use GET /api/files?path=... with a
 Bearer token. Owners and admissions reviewers can download applicant records.
 Content managers can download CMS images. Responses disable private-file caching.
-Files remain on the configured UPLOAD_ROOT volume until object storage is configured.
+Production uses private Vercel Blob; local development uses UPLOAD_ROOT unless
+another portable storage adapter is configured.
 Previously public URLs cannot retract copies already downloaded by third parties.
 
 ## Passwords
@@ -59,12 +57,18 @@ Copy uploads to its test UPLOAD_ROOT, validate checksums against the manifest, r
 db:check and smoke-test the app using that isolated connection. Do not restore over
 production until a separate recovery plan and backup are approved.
 
+This local-volume backup command deliberately refuses S3/Blob mode: it cannot
+silently omit production objects and report a complete backup. Export private
+objects separately with an authorised provider client and keep them with the
+database dump. A full production dump/object recovery drill is still outstanding;
+PostgreSQL client tools are not installed on this workstation.
+
 ## Remaining external configuration
 
-- Production database connection and migration verification.
-- Durable object storage for a Vercel-hosted API.
 - School payment merchant account and approved fee policy.
-- School Google OAuth configuration for archival.
+- School Google OAuth configuration before future archive execution.
 - Domain DNS and school mailbox provisioning.
+- GitHub Actions account billing lock prevents CI jobs from starting. Eighteen
+  tests passed separately against the isolated Neon test database.
 
 The UI now exposes Roles and Audit history in the existing admin dashboard.

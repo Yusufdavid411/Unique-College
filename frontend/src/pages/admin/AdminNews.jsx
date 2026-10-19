@@ -1,8 +1,8 @@
 import { useEffect, useState } from "react";
 import AdminNotice from "../../components/AdminNotice.jsx";
-import FallbackImage from "../../components/FallbackImage.jsx";
+import CmsImage from "../../components/CmsImage.jsx";
 import LoadingButton from "../../components/LoadingButton.jsx";
-import { api, apiErrorMessage, assetUrl } from "../../api/client.js";
+import { api, apiErrorMessage } from "../../api/client.js";
 import { assetPaths } from "../../data/siteData.js";
 
 const empty = { title: "", excerpt: "", content: "", isPublished: true };
@@ -77,9 +77,10 @@ export default function AdminNews() {
           {!loading && !items.length && <div className="empty-state">No news has been created yet.</div>}
           {!loading && items.map((item) => (
             <article className="admin-list-item" key={item.id}>
-              <FallbackImage
+              <CmsImage
                 className="admin-list-thumb"
-                src={assetUrl(item.imagePath)}
+                path={item.imagePath}
+                isPublished={item.isPublished}
                 fallback={assetPaths.admissionFlyer}
                 alt={item.title}
               />

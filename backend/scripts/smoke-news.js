@@ -47,6 +47,11 @@ try {
   assert.equal((await request("/news/public")).some((item) => item.id === news.id), false);
   assert.equal((await fetch(base + news.imagePath)).status, 404);
   console.log("Unpublishing hides both the news entry and its image.");
+  const draftPreview = await fetch(base + "/api/files?path=" + encodeURIComponent(news.imagePath), { headers: { Authorization: "Bearer " + token }, signal: AbortSignal.timeout(45000) });
+  assert.equal(draftPreview.status, 200);
+  assert.equal(draftPreview.headers.get("content-type").includes("image/jpeg"), true);
+  await draftPreview.arrayBuffer();
+  console.log("Unpublished images remain available to authorised CMS reviewers only.");
 } finally {
   if (createdId && token) {
     await request("/news/" + createdId, { method: "DELETE" });

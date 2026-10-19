@@ -1,8 +1,8 @@
 import { useEffect, useState } from "react";
 import AdminNotice from "../../components/AdminNotice.jsx";
-import FallbackImage from "../../components/FallbackImage.jsx";
+import CmsImage from "../../components/CmsImage.jsx";
 import LoadingButton from "../../components/LoadingButton.jsx";
-import { api, apiErrorMessage, assetUrl } from "../../api/client.js";
+import { api, apiErrorMessage } from "../../api/client.js";
 import { assetPaths } from "../../data/siteData.js";
 
 export default function AdminGallery() {
@@ -74,7 +74,7 @@ export default function AdminGallery() {
           {!loading && !items.length && <div className="empty-state">No gallery images have been uploaded yet.</div>}
           {!loading && items.map((item) => (
             <article key={item.id}>
-              <FallbackImage src={assetUrl(item.imagePath)} fallback={assetPaths.campusWide} alt={item.title} />
+              <CmsImage path={item.imagePath} isPublished={item.isPublished} fallback={assetPaths.campusWide} alt={item.title} />
               <div><strong>{item.title}</strong><span>{item.category}</span></div>
               <button type="button" disabled={submitting} onClick={() => { setEditing(item.id); setImage(null); setForm({ title: item.title, category: item.category, description: item.description || "", isPublished: item.isPublished }); }}>Edit</button>
               <LoadingButton className="list-button" loading={busyId === item.id} loadingText="Deleting..." onClick={() => remove(item.id)}>
