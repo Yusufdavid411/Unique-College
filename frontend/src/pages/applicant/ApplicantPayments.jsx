@@ -1,7 +1,7 @@
-import { Banknote, CheckCircle2, Clock3, Printer, UploadCloud, XCircle } from "lucide-react";
+import { Banknote, CheckCircle2, Clock3, UploadCloud, XCircle } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { api, apiErrorMessage, assetUrl } from "../../api/client.js";
+import { api, apiErrorMessage } from "../../api/client.js";
 import LoadingButton from "../../components/LoadingButton.jsx";
 import PrivateFileButton from "../../components/PrivateFileButton.jsx";
 import { useApplicant } from "../../context/ApplicantContext.jsx";
@@ -43,7 +43,7 @@ export default function ApplicantPayments() {
       setProof(null);
       formElement.reset();
       await refresh();
-      setNotice({ type: "success", message: "Payment evidence submitted for bursary verification." });
+      setNotice({ type: "success", message: "Receipt submitted. Awaiting admin verification." });
     } catch (error) {
       setNotice({ type: "error", message: apiErrorMessage(error, "Payment evidence could not be submitted.") });
     } finally {
@@ -53,26 +53,30 @@ export default function ApplicantPayments() {
 
   return (
     <div className="portal-page">
-      <header className="portal-page-header"><div><span className="eyebrow">Payments and receipts</span><h1>Payment records</h1><p>Record only payments made through an account or method officially supplied by the school.</p></div></header>
-      <div className="portal-alert warning"><strong>Payment safety</strong><p>Do not pay into a personal account. This page records evidence for verification; it does not process card payments yet.</p></div>
-      {formAccess.amount !== null && <div className="portal-alert"><strong>Your quoted form price: NGN {Number(formAccess.amount).toLocaleString("en-NG", { minimumFractionDigits: 2 })}</strong><p style={{ whiteSpace: "pre-wrap" }}>{policy?.paymentInstructions || "Contact the admissions office for the official payment instructions before paying."}</p><p>{formAccess.unlocked ? "Your form is unlocked." : "Submit application-fee evidence below. Your form unlocks after verification."}</p></div>}
+      <header className="portal-page-header"><div><span className="eyebrow">Payments and receipts</span><h1>Payments</h1></div></header>
+      <section className="portal-alert payment-bank-card" aria-labelledby="payment-bank-title">
+        {formAccess.amount !== null && <div><span className="eyebrow">Application fee</span><strong className="payment-fee-value">NGN {Number(formAccess.amount).toLocaleString("en-NG", { minimumFractionDigits: 2 })}</strong></div>}
+        <h2 id="payment-bank-title">Bank details</h2>
+        <p className="payment-bank-instructions">{policy?.paymentInstructions || "Contact admissions for payment details."}</p>
+        <p>{formAccess.unlocked ? "Your application form is available." : "Pay into this account and upload your receipt below."}</p>
+      </section>
       {notice.message && <p className={`form-status ${notice.type}`}>{notice.message}</p>}
 
       <div className="payment-layout">
         <form className="portal-form payment-form" onSubmit={submit}>
-          <fieldset><legend><span><Banknote size={19} /></span>Record a payment</legend>
+          <fieldset><legend><span><Banknote size={19} /></span>Upload receipt</legend>
             <label>Payment type<select value={form.type} onChange={(event) => setForm({ ...form, type: event.target.value })}>{Object.entries(typeLabels).map(([value, label]) => <option value={value} key={value}>{label}</option>)}</select></label>
             <label>Amount paid (NGN)<input type="number" min="1" step="0.01" value={form.amount} onChange={(event) => setForm({ ...form, amount: event.target.value })} required /></label>
             <label>Bank or transaction reference<input value={form.reference} onChange={(event) => setForm({ ...form, reference: event.target.value })} required /></label>
             <label>Date paid<input type="date" value={form.paidAt} onChange={(event) => setForm({ ...form, paidAt: event.target.value })} /></label>
-            <label className="document-dropzone"><UploadCloud /><span>{proof?.name || "Attach receipt or payment evidence"}</span><input type="file" accept="application/pdf,image/png,image/jpeg,image/webp" onChange={(event) => setProof(event.target.files?.[0] || null)} required /></label>
+            <label className="document-dropzone"><UploadCloud /><span>{proof?.name || "Choose payment receipt"}</span><input type="file" accept="application/pdf,image/png,image/jpeg,image/webp" onChange={(event) => setProof(event.target.files?.[0] || null)} required /></label>
             <LoadingButton type="submit" loading={busy} loadingText="Submitting...">Submit for verification</LoadingButton>
           </fieldset>
         </form>
 
         <section className="payment-history">
           <h2>Payment history</h2>
-          {!application.payments?.length && <div className="empty-state">No payment evidence has been submitted.</div>}
+          {!application.payments?.length && <div className="empty-state">No receipts uploaded yet.</div>}
           {application.payments?.map((payment) => (
             <article key={payment.id}>
               <span className={`payment-status-icon ${payment.status.toLowerCase()}`}>{payment.status === "VERIFIED" ? <CheckCircle2 /> : payment.status === "REJECTED" ? <XCircle /> : <Clock3 />}</span>
@@ -82,7 +86,7 @@ export default function ApplicantPayments() {
           ))}
         </section>
       </div>
-      <div className="applicant-next-step"><p id="payment-next-help">{formAccess.unlocked ? "Payment requirement confirmed. Continue to your application form." : "Next unlocks only after admin verification—not after uploading evidence."}</p><button className="button primary" type="button" disabled={!formAccess.unlocked || busy} aria-describedby="payment-next-help" onClick={() => navigate("/applicant/application")}>Next: Application form</button></div>
+      <div className="applicant-next-step"><p id="payment-next-help">{formAccess.unlocked ? "Continue to your application form." : "Continue after admin verifies your payment."}</p><button className="button primary" type="button" disabled={!formAccess.unlocked || busy} aria-describedby="payment-next-help" onClick={() => navigate("/applicant/application")}>Next: Application form</button></div>
     </div>
   );
 }

@@ -69,7 +69,7 @@ export default function AdminSettings() {
           </select></label>
           <label>Public message<textarea required minLength={5} maxLength={500} value={admissions.message} onChange={(event) => setAdmissions({ ...admissions, message: event.target.value })} /></label>
           <label>Approved form price (NGN)<input type="number" min="0" max="10000000" step="0.01" value={admissions.applicationFee ?? ""} onChange={(event) => setAdmissions({ ...admissions, applicationFee: event.target.value === "" ? null : Number(event.target.value) })} /></label>
-          <label>Official payment instructions<textarea maxLength={3000} rows={4} value={admissions.paymentInstructions || ""} onChange={(event) => setAdmissions({ ...admissions, paymentInstructions: event.target.value })} placeholder="Only the school's approved account and payment instructions." /></label>
+          <label>Bank details and payment instructions<textarea maxLength={3000} rows={5} value={admissions.paymentInstructions || ""} onChange={(event) => setAdmissions({ ...admissions, paymentInstructions: event.target.value })} placeholder="Bank name, account name, account number and payment instructions." /></label>
           <p>New applicants keep the quoted form price. A verified application-fee payment unlocks their full form. Set zero only if the school explicitly offers free forms.</p>
           <p>Closing admissions stops new registrations. Existing applicants retain access to their application and progress.</p>
           <LoadingButton type="submit" loading={savingAdmissions} loadingText="Saving...">Save admissions status</LoadingButton>
