@@ -4,7 +4,7 @@ import { prisma } from "../config/prisma.js";
 import { created, ok } from "../utils/apiResponse.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
 import { fileMetadata } from "../services/uploadService.js";
-import { loginApplicant } from "../services/authService.js";
+import { loginApplicant, toPublicUser } from "../services/authService.js";
 
 const editableStatuses = ["DRAFT", "RETURNED"];
 const requiredDocumentTypes = ["PASSPORT", "BIRTH_CERTIFICATE", "NATIONAL_ID", "EDUCATIONAL_RESULT"];
@@ -77,7 +77,7 @@ export const registerApplicant = asyncHandler(async (req, res) => {
 
 export const getApplicantDashboard = asyncHandler(async (req, res) => {
   const application = await getApplicantApplication(req.user.id);
-  ok(res, { application, user: req.user });
+  ok(res, { application, user: toPublicUser(req.user) });
 });
 
 export const updateApplicantApplication = asyncHandler(async (req, res) => {

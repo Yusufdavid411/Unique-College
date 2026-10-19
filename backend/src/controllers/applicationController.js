@@ -4,6 +4,7 @@ import { prisma } from "../config/prisma.js";
 import { created, ok } from "../utils/apiResponse.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
 import { fileMetadata } from "../services/uploadService.js";
+import { hasPermission } from "../services/permissions.js";
 
 const applicationDetails = {
   applicant: { select: { id: true, name: true, email: true, role: true, portalUsername: true, officialEmail: true } },
@@ -65,6 +66,9 @@ export const getApplication = asyncHandler(async (req, res) => {
 });
 
 export const updateApplicationStatus = asyncHandler(async (req, res) => {
+  if (["ACCEPTED", "ADMITTED"].includes(req.body.status) && !hasPermission(req.user, "applications.admit")) {
+    return res.status(403).json({ success: false, message: "Admission approval permission required" });
+  }
   const current = await prisma.application.findUnique({
     where: { id: req.params.id },
     include: { applicant: true }

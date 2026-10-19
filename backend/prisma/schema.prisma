@@ -77,8 +77,29 @@ model User {
   newsItems News[]
   galleryItems Gallery[]
   application Application?
+  roleAssignments UserRoleAssignment[]
 
   @@map("users")
+}
+
+model AccessRole {
+  id          String   @id @default(uuid())
+  name        String   @unique
+  permissions String[] @default([])
+  assignments UserRoleAssignment[]
+
+  @@map("access_roles")
+}
+
+model UserRoleAssignment {
+  userId String
+  roleId String
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role AccessRole @relation(fields: [roleId], references: [id], onDelete: Cascade)
+
+  @@id([userId, roleId])
+  @@index([roleId])
+  @@map("user_role_assignments")
 }
 
 model Application {

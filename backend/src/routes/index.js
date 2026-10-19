@@ -8,6 +8,7 @@ import dashboardRoutes from "./dashboardRoutes.js";
 import galleryRoutes from "./galleryRoutes.js";
 import newsRoutes from "./newsRoutes.js";
 import settingsRoutes from "./settingsRoutes.js";
+import roleRoutes from "./roleRoutes.js";
 
 const router = Router();
 
@@ -32,5 +33,6 @@ router.use("/dashboard", dashboardRoutes);
 router.use("/gallery", galleryRoutes);
 router.use("/news", newsRoutes);
 router.use("/settings", settingsRoutes);
+router.use("/roles", roleRoutes);
 
 export default router;

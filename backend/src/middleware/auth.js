@@ -1,6 +1,7 @@
 import jwt from "jsonwebtoken";
 import { env } from "../config/env.js";
 import { prisma } from "../config/prisma.js";
+import { hasPermission, roleInclude } from "../services/permissions.js";
 
 export async function requireAuth(req, res, next) {
   try {
@@ -12,7 +13,7 @@ export async function requireAuth(req, res, next) {
     }
 
     const payload = jwt.verify(token, env.jwtSecret);
-    const user = await prisma.user.findUnique({ where: { id: payload.sub } });
+    const user = await prisma.user.findUnique({ where: { id: payload.sub }, include: roleInclude });
 
     if (!user || !user.isActive) {
       return res.status(401).json({ success: false, message: "Invalid session" });
@@ -30,6 +31,13 @@ export function requireRole(...roles) {
     if (!req.user || !roles.includes(req.user.role)) {
       return res.status(403).json({ success: false, message: "Insufficient permission" });
     }
+    next();
+  };
+}
+
+export function requirePermission(permission) {
+  return (req, res, next) => {
+    if (!hasPermission(req.user, permission)) return res.status(403).json({ success: false, message: "Insufficient permission" });
     next();
   };
 }
