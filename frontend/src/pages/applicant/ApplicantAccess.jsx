@@ -1,9 +1,9 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { ArrowRight, CheckCircle2, Eye, EyeOff, LockKeyhole, ShieldCheck } from "lucide-react";
 import { Link, Navigate, useLocation, useNavigate } from "react-router-dom";
 import LoadingButton from "../../components/LoadingButton.jsx";
 import Seo from "../../components/Seo.jsx";
-import { apiErrorMessage } from "../../api/client.js";
+import { api, apiErrorMessage } from "../../api/client.js";
 import { useAuth } from "../../context/AuthContext.jsx";
 import { assetPaths } from "../../data/siteData.js";
 
@@ -14,10 +14,16 @@ export default function ApplicantAccess() {
   const isRegister = pathname.endsWith("register");
   const [showPassword, setShowPassword] = useState(false);
   const [busy, setBusy] = useState(false);
+  const [admissions, setAdmissions] = useState(null);
+  const [policyError, setPolicyError] = useState(false);
+  useEffect(() => {
+    api.get("/settings/admissions").then((response) => setAdmissions(response.data.data)).catch(() => setPolicyError(true));
+  }, []);
   const [error, setError] = useState("");
   const [form, setForm] = useState({ fullName: "", email: "", phoneNumber: "", identifier: "", password: "" });
 
   if (user && ["APPLICANT", "STUDENT"].includes(user.role)) return <Navigate to="/applicant" replace />;
+  if (isRegister && !admissions?.open) return <section className="section"><h1>{policyError ? "Admissions status unavailable" : admissions ? "Admissions closed" : "Checking admissions…"}</h1><p>{policyError ? "Please try again shortly. Existing applicants can still sign in." : admissions?.message}</p><Link className="button" to="/applicant/login">Existing applicant sign in</Link><Link to="/">Return to homepage</Link></section>;
 
   const update = (event) => setForm((current) => ({ ...current, [event.target.name]: event.target.value }));
 

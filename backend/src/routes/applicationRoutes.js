@@ -9,6 +9,7 @@ import {
   updateApplicationStatus
 } from "../controllers/applicationController.js";
 import { requireAuth, requireRole } from "../middleware/auth.js";
+import { requireAdmissionsOpen } from "../services/admissionsPolicy.js";
 import { imageUpload } from "../middleware/upload.js";
 import { validate } from "../middleware/validate.js";
 import { applicationSchema, documentReviewSchema, idParamSchema, paymentReviewSchema, statusSchema } from "../validators/schemas.js";
@@ -16,7 +17,7 @@ import { applicationSchema, documentReviewSchema, idParamSchema, paymentReviewSc
 const router = Router();
 const upload = imageUpload("applications");
 
-router.post("/", upload.single("passport"), validate(applicationSchema), createApplication);
+router.post("/", requireAdmissionsOpen, upload.single("passport"), validate(applicationSchema), createApplication);
 router.get("/", requireAuth, requireRole("ADMIN"), listApplications);
 router.get("/:id", requireAuth, requireRole("ADMIN"), validate(idParamSchema), getApplication);
 router.patch("/:id/status", requireAuth, requireRole("ADMIN"), validate(statusSchema), updateApplicationStatus);

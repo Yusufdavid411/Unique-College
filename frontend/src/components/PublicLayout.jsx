@@ -2,6 +2,7 @@ import { NavLink, Outlet, Link, useLocation } from "react-router-dom";
 import { BriefcaseBusiness, ChevronDown, Crown, GraduationCap, Landmark, Mail, MapPin, Menu, Phone } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { assetPaths, schoolInfo } from "../data/siteData.js";
+import { api } from "../api/client.js";
 
 const navItems = [
   ["Home", "/"],
@@ -21,10 +22,14 @@ const leadershipLinks = [
 ];
 
 export default function PublicLayout() {
+  const location = useLocation();
   const [open, setOpen] = useState(false);
+  const [admissions, setAdmissions] = useState(null);
+  useEffect(() => {
+    api.get("/settings/admissions").then((response) => setAdmissions(response.data.data)).catch(() => setAdmissions(null));
+  }, [location.pathname]);
   const [leadershipOpen, setLeadershipOpen] = useState(false);
   const leadershipMenuRef = useRef(null);
-  const location = useLocation();
   const isLeadershipRoute = location.pathname.startsWith("/leadership");
 
   useEffect(() => {
@@ -106,7 +111,7 @@ export default function PublicLayout() {
           {navItems.slice(2).map(([label, path]) => (
             <NavLink key={path} to={path} onClick={closeNavigation}>{label}</NavLink>
           ))}
-          <Link className="nav-cta" to="/applicant/register" onClick={closeNavigation}>Applicant Portal</Link>
+          <Link className="nav-cta" to={admissions?.open ? "/applicant/register" : "/applicant/login"} onClick={closeNavigation}>{admissions ? admissions.open ? "Apply now" : "Admissions closed" : "Applicant Portal"}</Link>
         </nav>
       </header>
       <main>

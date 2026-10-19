@@ -5,6 +5,8 @@ import { api, apiErrorMessage } from "../../api/client.js";
 
 export default function AdminSettings() {
   const [settings, setSettings] = useState([]);
+  const [admissions, setAdmissions] = useState(null);
+  const [savingAdmissions, setSavingAdmissions] = useState(false);
   const [form, setForm] = useState({ key: "", value: "", group: "general" });
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
@@ -20,6 +22,24 @@ export default function AdminSettings() {
   }
 
   useEffect(load, []);
+  useEffect(() => {
+    api.get("/settings/admissions").then((res) => setAdmissions(res.data.data))
+      .catch((error) => setNotice({ type: "error", message: apiErrorMessage(error) }));
+  }, []);
+
+  async function saveAdmissions(event) {
+    event.preventDefault();
+    setSavingAdmissions(true);
+    try {
+      await api.put("/settings/admissions", admissions);
+      setNotice({ type: "success", message: "Admissions availability saved. Existing applicants can still sign in." });
+      load();
+    } catch (error) {
+      setNotice({ type: "error", message: apiErrorMessage(error) });
+    } finally {
+      setSavingAdmissions(false);
+    }
+  }
 
   async function submit(event) {
     event.preventDefault();
@@ -42,6 +62,15 @@ export default function AdminSettings() {
       <section>
         <header className="admin-header"><span className="eyebrow">CMS</span><h1>Site settings</h1></header>
         <AdminNotice type={notice.type}>{notice.message}</AdminNotice>
+        {admissions && <form className="form-panel" onSubmit={saveAdmissions}>
+          <h2>Admissions availability</h2>
+          <label>Status<select value={String(admissions.open)} onChange={(event) => setAdmissions({ ...admissions, open: event.target.value === "true" })}>
+            <option value="false">Admissions closed</option><option value="true">Admissions open</option>
+          </select></label>
+          <label>Public message<textarea required minLength={5} maxLength={500} value={admissions.message} onChange={(event) => setAdmissions({ ...admissions, message: event.target.value })} /></label>
+          <p>Closing admissions stops new registrations. Existing applicants retain access to their application and progress.</p>
+          <LoadingButton type="submit" loading={savingAdmissions} loadingText="Saving...">Save admissions status</LoadingButton>
+        </form>}
         <div className="admin-list">
           {loading && <div className="empty-state">Loading settings...</div>}
           {!loading && !settings.length && <div className="empty-state">No settings have been saved yet.</div>}
