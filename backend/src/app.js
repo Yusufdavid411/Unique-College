@@ -4,7 +4,7 @@ import helmet from "helmet";
 import morgan from "morgan";
 import rateLimit from "express-rate-limit";
 import { env } from "./config/env.js";
-import { uploadRoot } from "./config/uploads.js";
+import { publicFile } from "./routes/fileRoutes.js";
 import routes from "./routes/index.js";
 import { errorHandler, notFound } from "./middleware/errorHandler.js";
 
@@ -18,8 +18,7 @@ const corsOptions = {
     if (!origin) return callback(null, true);
     const allowed =
       env.clientUrls.includes(origin) ||
-      /^https:\/\/[a-z0-9-]+\.vercel\.app$/i.test(origin) ||
-      /^http:\/\/(localhost|127\.0\.0\.1):\d+$/i.test(origin);
+      (env.nodeEnv !== "production" && /^http:\/\/(localhost|127\.0\.0\.1):\d+$/i.test(origin));
 
     return callback(allowed ? null : new Error(`Origin not allowed by CORS: ${origin}`), allowed);
   },
@@ -40,8 +39,10 @@ app.use(
   })
 );
 
-app.use("/uploads", express.static(uploadRoot));
+app.use("/uploads", publicFile);
 app.use("/api", routes);
 
 app.use(notFound);
 app.use(errorHandler);
+
+export default app;

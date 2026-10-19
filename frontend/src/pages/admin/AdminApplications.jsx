@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { Eye, FileCheck2, Printer, X } from "lucide-react";
-import { api, assetUrl } from "../../api/client.js";
+import { api } from "../../api/client.js";
+import PrivateFileButton from "../../components/PrivateFileButton.jsx";
 
 const statusOptions = ["DRAFT", "SUBMITTED", "REVIEWED", "RETURNED", "INTERVIEW_SCHEDULED", "ACCEPTED", "ADMITTED", "REJECTED"];
 const readableStatus = (value) => (value || "PENDING").replaceAll("_", " ").toLowerCase().replace(/\b\w/g, (letter) => letter.toUpperCase());
@@ -81,7 +82,7 @@ export default function AdminApplications() {
     }
   }
 
-  const details = selectedApplication?.details || {};
+  const details = { guardian: { name: selectedApplication?.guardianName, phone: selectedApplication?.guardianPhone }, education: selectedApplication?.educationRecords };
 
   return (
     <div className="admin-page">
@@ -123,10 +124,10 @@ export default function AdminApplications() {
             </div>
             <div className="application-review-panel__content">
               <div className="application-review-grid">
-                <article><h3>Applicant details</h3><dl><div><dt>Email</dt><dd>{selectedApplication.email}</dd></div><div><dt>Phone</dt><dd>{selectedApplication.phone || "—"}</dd></div><div><dt>Date of birth</dt><dd>{formatDate(selectedApplication.dateOfBirth)}</dd></div><div><dt>Address</dt><dd>{selectedApplication.address || "—"}</dd></div><div><dt>Guardian</dt><dd>{details.guardian?.name || "—"}</dd></div><div><dt>Guardian phone</dt><dd>{details.guardian?.phone || "—"}</dd></div></dl></article>
+                <article><h3>Applicant details</h3><dl><div><dt>Email</dt><dd>{selectedApplication.email}</dd></div><div><dt>Phone</dt><dd>{selectedApplication.phoneNumber || "—"}</dd></div><div><dt>Date of birth</dt><dd>{formatDate(selectedApplication.dateOfBirth)}</dd></div><div><dt>Address</dt><dd>{selectedApplication.address || "—"}</dd></div><div><dt>Guardian</dt><dd>{details.guardian?.name || "—"}</dd></div><div><dt>Guardian phone</dt><dd>{details.guardian?.phone || "—"}</dd></div></dl></article>
                 <article><h3>Education</h3>{details.education?.length ? <ul className="review-list">{details.education.map((record, index) => <li key={`${record.subject}-${index}`}><strong>{record.subject}</strong><span>{record.grade} · {record.examBody} {record.year}</span></li>)}</ul> : <p className="muted-copy">No education records supplied.</p>}</article>
               </div>
-              <article className="review-section"><h3><FileCheck2 size={18} /> Supporting documents</h3>{selectedApplication.documents?.length ? <div className="review-items">{selectedApplication.documents.map((document) => <div key={document.id} className="review-item"><a href={assetUrl(document.path)} target="_blank" rel="noreferrer">{readableStatus(document.type)}</a><select value={document.reviewStatus} onChange={(event) => updateDocument(document.id, event.target.value)}><option value="PENDING">Pending</option><option value="VERIFIED">Verified</option><option value="REJECTED">Rejected</option></select></div>)}</div> : <p className="muted-copy">No documents uploaded.</p>}</article>
+              <article className="review-section"><h3><FileCheck2 size={18} /> Supporting documents</h3>{selectedApplication.documents?.length ? <div className="review-items">{selectedApplication.documents.map((document) => <div key={document.id} className="review-item"><PrivateFileButton path={document.path}>{readableStatus(document.type)}</PrivateFileButton><label>Review status<select value={document.reviewStatus} onChange={(event) => updateDocument(document.id, event.target.value)}><option value="PENDING">Pending</option><option value="VERIFIED">Verified</option><option value="REJECTED">Rejected</option></select></label></div>)}</div> : <p className="muted-copy">No documents uploaded.</p>}</article>
               <article className="review-section"><h3>Payment evidence</h3>{selectedApplication.payments?.length ? <div className="review-items">{selectedApplication.payments.map((payment) => <div key={payment.id} className="review-item"><span><strong>{readableStatus(payment.type)}</strong> · ₦{Number(payment.amount).toLocaleString()} {payment.reference ? `(${payment.reference})` : ""}</span><select value={payment.status} onChange={(event) => updatePayment(payment.id, event.target.value)}><option value="PENDING">Pending</option><option value="VERIFIED">Verified</option><option value="REJECTED">Rejected</option></select></div>)}</div> : <p className="muted-copy">No payment evidence submitted.</p>}</article>
               <form className="application-review-form" onSubmit={updateApplicationStatus}><label>Decision status<select name="status" defaultValue={selectedApplication.status}>{statusOptions.map((status) => <option key={status} value={status}>{readableStatus(status)}</option>)}</select></label><label>Review note<textarea name="reviewNote" rows="3" defaultValue={selectedApplication.reviewNote || ""} placeholder="Visible internally and to the applicant where appropriate." /></label><button className="button button--primary" type="submit" disabled={saving}>{saving ? "Saving…" : "Save decision"}</button></form>
               {credentials && <div className="admission-credentials"><strong>Student portal credentials created</strong><span>Username: {credentials.portalUsername}</span><span>Temporary password: {credentials.temporaryPassword}</span><small>Share this securely. The student must change the temporary password on first sign-in.</small></div>}

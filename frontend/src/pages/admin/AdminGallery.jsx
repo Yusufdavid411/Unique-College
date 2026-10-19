@@ -9,6 +9,7 @@ export default function AdminGallery() {
   const [items, setItems] = useState([]);
   const [form, setForm] = useState({ title: "", category: "Labs", description: "", isPublished: true });
   const [image, setImage] = useState(null);
+  const [editing, setEditing] = useState("");
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [busyId, setBusyId] = useState("");
@@ -27,16 +28,19 @@ export default function AdminGallery() {
 
   async function submit(event) {
     event.preventDefault();
+    const formElement = event.currentTarget;
     setSubmitting(true);
     setNotice({ type: "", message: "" });
     const data = new FormData();
     Object.entries(form).forEach(([key, value]) => data.append(key, value));
     if (image) data.append("image", image);
     try {
-      await api.post("/gallery", data);
+      if (editing) await api.put("/gallery/" + editing, data);
+      else await api.post("/gallery", data);
+      setEditing("");
       setForm({ title: "", category: "Labs", description: "", isPublished: true });
       setImage(null);
-      event.currentTarget.reset();
+      formElement.reset();
       setNotice({ type: "success", message: "Gallery image saved." });
       load();
     } catch (error) {
@@ -72,6 +76,7 @@ export default function AdminGallery() {
             <article key={item.id}>
               <FallbackImage src={assetUrl(item.imagePath)} fallback={assetPaths.campusWide} alt={item.title} />
               <div><strong>{item.title}</strong><span>{item.category}</span></div>
+              <button type="button" disabled={submitting} onClick={() => { setEditing(item.id); setImage(null); setForm({ title: item.title, category: item.category, description: item.description || "", isPublished: item.isPublished }); }}>Edit</button>
               <LoadingButton className="list-button" loading={busyId === item.id} loadingText="Deleting..." onClick={() => remove(item.id)}>
                 Delete
               </LoadingButton>
@@ -79,14 +84,15 @@ export default function AdminGallery() {
           ))}
         </div>
       </section>
-      <form className="form-panel" onSubmit={submit}>
-        <h2>Upload image</h2>
+      <form key={editing || "new"} className="form-panel" onSubmit={submit}>
+        <h2>{editing ? "Edit gallery item" : "Upload image"}</h2>
         <input required placeholder="Title" value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} />
         <input required placeholder="Category" value={form.category} onChange={(e) => setForm({ ...form, category: e.target.value })} />
         <textarea rows="4" placeholder="Description" value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} />
-        <label className="file-field">Image<input required accept="image/png,image/jpeg,image/webp" type="file" onChange={(e) => setImage(e.target.files?.[0] || null)} /></label>
+        <label className="file-field">{editing ? "Replace image (optional)" : "Image"}<input required={!editing} accept="image/png,image/jpeg,image/webp" type="file" onChange={(e) => setImage(e.target.files?.[0] || null)} /></label>
         <label className="check-field"><input type="checkbox" checked={form.isPublished} onChange={(e) => setForm({ ...form, isPublished: e.target.checked })} /> Published</label>
         <LoadingButton type="submit" loading={submitting} loadingText="Saving image...">Save image</LoadingButton>
+        {editing && <button type="button" onClick={() => { setEditing(""); setForm({ title: "", category: "Labs", description: "", isPublished: true }); setImage(null); }}>Cancel edit</button>}
       </form>
     </div>
   );

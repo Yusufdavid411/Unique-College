@@ -3,6 +3,7 @@ import { created, ok } from "../utils/apiResponse.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
 import { fileMetadata } from "../services/uploadService.js";
 import { slugify } from "../utils/slugify.js";
+import { auditedMutation } from "../services/audit.js";
 
 async function uniqueSlug(title, existingId) {
   const base = slugify(title);
@@ -47,14 +48,14 @@ export const createNews = asyncHandler(async (req, res) => {
 
   const slug = await uniqueSlug(req.body.title);
   const metadata = fileMetadata(req.file, "documents");
-  const news = await prisma.news.create({
+  const news = await auditedMutation(prisma, { actorId: req.user.id, action: "news.created", targetType: "news" }, (transaction) => transaction.news.create({
     data: {
       ...req.body,
       imagePath: metadata.path,
       slug,
       authorId: req.user.id
     }
-  });
+  }));
   created(res, news, "News item created");
 });
 
@@ -70,14 +71,14 @@ export const updateNews = asyncHandler(async (req, res) => {
     data.imagePath = metadata.path;
   }
 
-  const news = await prisma.news.update({
+  const news = await auditedMutation(prisma, { actorId: req.user.id, action: "news.updated", targetType: "news", targetId: req.params.id }, (transaction) => transaction.news.update({
     where: { id: req.params.id },
     data
-  });
+  }));
   ok(res, news, "News item updated");
 });
 
 export const deleteNews = asyncHandler(async (req, res) => {
-  await prisma.news.delete({ where: { id: req.params.id } });
+  await auditedMutation(prisma, { actorId: req.user.id, action: "news.deleted", targetType: "news", targetId: req.params.id }, (transaction) => transaction.news.delete({ where: { id: req.params.id } }));
   ok(res, null, "News item deleted");
 });

@@ -1,7 +1,7 @@
 import "dotenv/config";
 import { PrismaClient } from "@prisma/client";
 
-const connection = process.env.DATABASE_URL;
+const connection = process.argv.includes("--direct") ? process.env.DIRECT_URL || process.env.DATABASE_URL_UNPOOLED || process.env.POSTGRES_URL_NON_POOLING : process.env.DATABASE_URL;
 if (!connection) {
   console.error("DATABASE_URL is missing. Configure the PostgreSQL runtime connection before starting the API.");
   process.exit(1);
@@ -16,7 +16,7 @@ try {
   process.exit(1);
 }
 
-const prisma = new PrismaClient();
+const prisma = new PrismaClient({ datasources: { db: { url: connection } } });
 try {
   await prisma.$queryRaw`SELECT 1`;
   console.log("PostgreSQL connectivity verified.");

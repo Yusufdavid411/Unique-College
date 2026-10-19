@@ -8,9 +8,13 @@ const prisma = new PrismaClient();
 
 async function main() {
   const email = process.env.ADMIN_EMAIL || "admin@uniquecollege.edu.ng";
-  const password = process.env.ADMIN_PASSWORD || "ChangeMe123!";
-  const passwordHash = await bcrypt.hash(password, 12);
   const resetPassword = process.env.ADMIN_RESET_PASSWORD === "true";
+  const existing = await prisma.user.findUnique({ where: { email } });
+  const password = process.env.ADMIN_PASSWORD;
+  if ((!existing || resetPassword) && (!password || password.length < 12)) {
+    throw new Error("Set ADMIN_PASSWORD to a unique password of at least 12 characters to create or reset the administrator.");
+  }
+  const passwordHash = !existing || resetPassword ? await bcrypt.hash(password, 12) : existing.passwordHash;
 
   await prisma.user.upsert({
     where: { email },

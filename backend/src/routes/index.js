@@ -10,6 +10,9 @@ import newsRoutes from "./newsRoutes.js";
 import settingsRoutes from "./settingsRoutes.js";
 import roleRoutes from "./roleRoutes.js";
 import auditRoutes from "./auditRoutes.js";
+import fileRoutes from "./fileRoutes.js";
+import eventRoutes from "./eventRoutes.js";
+import userRoutes from "./userRoutes.js";
 
 const router = Router();
 
@@ -36,5 +39,8 @@ router.use("/news", newsRoutes);
 router.use("/settings", settingsRoutes);
 router.use("/roles", roleRoutes);
 router.use("/audit", auditRoutes);
+router.use("/files", fileRoutes);
+router.use("/events", eventRoutes);
+router.use("/users", userRoutes);
 
 export default router;

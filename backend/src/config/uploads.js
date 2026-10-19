@@ -7,7 +7,7 @@ const __dirname = path.dirname(__filename);
 
 export const uploadRoot = process.env.UPLOAD_ROOT
   ? path.resolve(process.env.UPLOAD_ROOT)
-  : path.resolve(__dirname, "../../uploads");
+  : ["s3", "blob"].includes(process.env.STORAGE_PROVIDER) ? path.resolve(process.env.TMPDIR || process.env.TEMP || "/tmp", "unique-college-staging") : path.resolve(__dirname, "../../uploads");
 
 export const uploadFolders = {
   applications: path.join(uploadRoot, "applications"),

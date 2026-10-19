@@ -24,6 +24,11 @@ import AdminNews from "./pages/admin/AdminNews.jsx";
 import AdminGallery from "./pages/admin/AdminGallery.jsx";
 import AdminMessages from "./pages/admin/AdminMessages.jsx";
 import AdminSettings from "./pages/admin/AdminSettings.jsx";
+import AdminRoles from "./pages/admin/AdminRoles.jsx";
+import AdminAudit from "./pages/admin/AdminAudit.jsx";
+import AdminEvents from "./pages/admin/AdminEvents.jsx";
+import AdminUsers from "./pages/admin/AdminUsers.jsx";
+import Events from "./pages/public/Events.jsx";
 
 export default function App() {
   return (
@@ -38,6 +43,7 @@ export default function App() {
         <Route path="contact" element={<Contact />} />
         <Route path="gallery" element={<Gallery />} />
         <Route path="news" element={<News />} />
+        <Route path="events" element={<Events />} />
         <Route path="apply" element={<Navigate to="/applicant/register" replace />} />
         <Route path="application" element={<Navigate to="/applicant/register" replace />} />
       </Route>
@@ -68,6 +74,10 @@ export default function App() {
         <Route path="gallery" element={<AdminGallery />} />
         <Route path="messages" element={<AdminMessages />} />
         <Route path="settings" element={<AdminSettings />} />
+        <Route path="roles" element={<AdminRoles />} />
+        <Route path="audit" element={<AdminAudit />} />
+        <Route path="events" element={<AdminEvents />} />
+        <Route path="users" element={<AdminUsers />} />
       </Route>
     </Routes>
   );

@@ -2,6 +2,7 @@ import { CheckCircle2, FileText, UploadCloud, XCircle } from "lucide-react";
 import { useState } from "react";
 import { api, apiErrorMessage, assetUrl } from "../../api/client.js";
 import LoadingButton from "../../components/LoadingButton.jsx";
+import PrivateFileButton from "../../components/PrivateFileButton.jsx";
 import { useApplicant } from "../../context/ApplicantContext.jsx";
 
 const documentTypes = [
@@ -54,7 +55,7 @@ export default function ApplicantDocuments() {
               <div className="document-upload-heading"><span><FileText /></span><div><h2>{label}{required && <sup>Required</sup>}</h2><p>{help}</p></div></div>
               {uploaded.map((document) => (
                 <div className="uploaded-document" key={document.id}>
-                  <a href={assetUrl(document.path)} target="_blank" rel="noreferrer">{document.label}</a>
+                  <PrivateFileButton path={document.path}>{document.label}</PrivateFileButton>
                   <span className={`review-pill ${document.reviewStatus.toLowerCase()}`}>{document.reviewStatus === "VERIFIED" ? <CheckCircle2 /> : document.reviewStatus === "REJECTED" ? <XCircle /> : null}{document.reviewStatus}</span>
                 </div>
               ))}

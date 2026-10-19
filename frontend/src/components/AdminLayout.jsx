@@ -7,9 +7,13 @@ const items = [
   ["Overview", "/admin", LayoutDashboard],
   ["Applications", "/admin/applications", Users],
   ["News", "/admin/news", Newspaper],
+  ["Events", "/admin/events", LayoutDashboard],
   ["Gallery", "/admin/gallery", Images],
   ["Messages", "/admin/messages", MessageSquare],
-  ["Settings", "/admin/settings", Settings]
+  ["Settings", "/admin/settings", Settings],
+  ["Roles", "/admin/roles", Users],
+  ["Staff accounts", "/admin/users", Users],
+  ["Audit history", "/admin/audit", LayoutDashboard]
 ];
 
 export default function AdminLayout() {

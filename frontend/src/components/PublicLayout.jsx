@@ -2,7 +2,7 @@ import { NavLink, Outlet, Link, useLocation } from "react-router-dom";
 import { BriefcaseBusiness, ChevronDown, Crown, GraduationCap, Landmark, Mail, MapPin, Menu, Phone } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { assetPaths, schoolInfo } from "../data/siteData.js";
-import { api } from "../api/client.js";
+import { useAdmissions } from "../context/AdmissionsContext.jsx";
 
 const navItems = [
   ["Home", "/"],
@@ -11,6 +11,7 @@ const navItems = [
   ["Admission", "/admission"],
   ["Gallery", "/gallery"],
   ["News", "/news"],
+  ["Events", "/events"],
   ["Contact", "/contact"]
 ];
 
@@ -24,10 +25,7 @@ const leadershipLinks = [
 export default function PublicLayout() {
   const location = useLocation();
   const [open, setOpen] = useState(false);
-  const [admissions, setAdmissions] = useState(null);
-  useEffect(() => {
-    api.get("/settings/admissions").then((response) => setAdmissions(response.data.data)).catch(() => setAdmissions(null));
-  }, [location.pathname]);
+  const { policy: admissions } = useAdmissions();
   const [leadershipOpen, setLeadershipOpen] = useState(false);
   const leadershipMenuRef = useRef(null);
   const isLeadershipRoute = location.pathname.startsWith("/leadership");

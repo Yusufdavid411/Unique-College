@@ -18,3 +18,5 @@ gh-login-output.txt
 Thumbs.db
 .vercel
 .env*
+backups/
+*.dump

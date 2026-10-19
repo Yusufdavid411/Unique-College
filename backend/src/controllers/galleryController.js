@@ -2,6 +2,7 @@ import { prisma } from "../config/prisma.js";
 import { created, ok } from "../utils/apiResponse.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
 import { fileMetadata } from "../services/uploadService.js";
+import { auditedMutation } from "../services/audit.js";
 
 export const publicGallery = asyncHandler(async (req, res) => {
   const gallery = await prisma.gallery.findMany({
@@ -22,7 +23,7 @@ export const createGalleryItem = asyncHandler(async (req, res) => {
   }
 
   const metadata = fileMetadata(req.file, "gallery");
-  const item = await prisma.gallery.create({
+  const item = await auditedMutation(prisma, { actorId: req.user.id, action: "gallery.created", targetType: "gallery" }, (transaction) => transaction.gallery.create({
     data: {
       title: req.body.title,
       category: req.body.category,
@@ -33,7 +34,7 @@ export const createGalleryItem = asyncHandler(async (req, res) => {
       fileSize: metadata.fileSize,
       uploadedById: req.user.id
     }
-  });
+  }));
 
   created(res, item, "Gallery item created");
 });
@@ -53,15 +54,15 @@ export const updateGalleryItem = asyncHandler(async (req, res) => {
     data.fileSize = metadata.fileSize;
   }
 
-  const item = await prisma.gallery.update({
+  const item = await auditedMutation(prisma, { actorId: req.user.id, action: "gallery.updated", targetType: "gallery", targetId: req.params.id }, (transaction) => transaction.gallery.update({
     where: { id: req.params.id },
     data
-  });
+  }));
 
   ok(res, item, "Gallery item updated");
 });
 
 export const deleteGalleryItem = asyncHandler(async (req, res) => {
-  await prisma.gallery.delete({ where: { id: req.params.id } });
+  await auditedMutation(prisma, { actorId: req.user.id, action: "gallery.deleted", targetType: "gallery", targetId: req.params.id }, (transaction) => transaction.gallery.delete({ where: { id: req.params.id } }));
   ok(res, null, "Gallery item deleted");
 });

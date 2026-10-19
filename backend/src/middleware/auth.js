@@ -15,14 +15,20 @@ export async function requireAuth(req, res, next) {
     const payload = jwt.verify(token, env.jwtSecret);
     const user = await prisma.user.findUnique({ where: { id: payload.sub }, include: roleInclude });
 
-    if (!user || !user.isActive) {
+    if (!user || !user.isActive || (payload.version ?? 0) !== user.sessionVersion) {
       return res.status(401).json({ success: false, message: "Invalid session" });
     }
 
     req.user = user;
+    if (user.mustChangePassword && !(req.baseUrl === "/api/auth" && ["/me", "/password"].includes(req.path))) {
+      return res.status(403).json({ success: false, code: "PASSWORD_CHANGE_REQUIRED", message: "Change your temporary password before continuing" });
+    }
     next();
-  } catch {
-    return res.status(401).json({ success: false, message: "Invalid or expired token" });
+  } catch (error) {
+    if (["JsonWebTokenError", "TokenExpiredError", "NotBeforeError"].includes(error.name)) {
+      return res.status(401).json({ success: false, message: "Invalid or expired token" });
+    }
+    next(error);
   }
 }
 

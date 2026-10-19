@@ -103,7 +103,8 @@ export const updateApplicationStatus = asyncHandler(async (req, res) => {
           portalUsername: credentials.portalUsername,
           officialEmail: credentials.officialEmail,
           passwordHash,
-          mustChangePassword: true
+          mustChangePassword: true,
+          sessionVersion: { increment: 1 }
         }
       });
     }

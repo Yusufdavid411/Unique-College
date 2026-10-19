@@ -2,6 +2,7 @@ import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import { env } from "../config/env.js";
 import { prisma } from "../config/prisma.js";
+import { permissionsFor } from "./permissions.js";
 
 function publicUser(user) {
   return {
@@ -11,12 +12,13 @@ function publicUser(user) {
     role: user.role,
     portalUsername: user.portalUsername,
     officialEmail: user.officialEmail,
-    mustChangePassword: user.mustChangePassword
+    mustChangePassword: user.mustChangePassword,
+    permissions: permissionsFor(user)
   };
 }
 
 function signInResult(user) {
-  const token = jwt.sign({ sub: user.id, role: user.role }, env.jwtSecret, {
+  const token = jwt.sign({ sub: user.id, role: user.role, version: user.sessionVersion }, env.jwtSecret, {
     expiresIn: env.jwtExpiresIn
   });
 

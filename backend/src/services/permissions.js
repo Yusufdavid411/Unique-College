@@ -1,6 +1,6 @@
 export const permissionKeys = Object.freeze([
   "applications.read", "applications.review", "applications.admit",
-  "payments.verify", "content.manage", "settings.manage", "roles.manage", "audit.read"
+  "payments.verify", "content.manage", "settings.manage", "roles.manage", "audit.read", "users.manage"
 ]);
 
 export const roleInclude = { roleAssignments: { include: { role: true } } };

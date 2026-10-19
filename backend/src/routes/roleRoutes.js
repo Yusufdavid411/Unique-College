@@ -9,6 +9,15 @@ import { auditedMutation } from "../services/audit.js";
 
 const router = Router();
 router.use(requireAuth, requirePermission("roles.manage"));
+router.get("/users", asyncHandler(async (req, res) => {
+  const query = z.object({ search: z.string().trim().max(100).default("") }).parse(req.query);
+  const users = await prisma.user.findMany({
+    where: { role: { in: ["ADMIN", "STAFF"] }, ...(query.search ? { OR: [{ name: { contains: query.search, mode: "insensitive" } }, { email: { contains: query.search, mode: "insensitive" } }] } : {}) },
+    select: { id: true, name: true, email: true, role: true, isActive: true, roleAssignments: { select: { roleId: true } } },
+    orderBy: { name: "asc" }, take: 100
+  });
+  ok(res, users);
+}));
 router.get("/", asyncHandler(async (req, res) => {
   ok(res, { roles: await prisma.accessRole.findMany({ orderBy: { name: "asc" } }), permissions: permissionKeys });
 }));

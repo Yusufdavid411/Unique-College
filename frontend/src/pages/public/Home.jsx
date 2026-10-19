@@ -4,9 +4,12 @@ import { Activity, ArrowRight, BookOpen, Microscope, ShieldCheck } from "lucide-
 import { api, assetUrl } from "../../api/client.js";
 import ResponsiveCarousel from "../../components/ResponsiveCarousel.jsx";
 import Seo from "../../components/Seo.jsx";
+import EventsPreview from "../../components/EventsPreview.jsx";
+import { useAdmissions } from "../../context/AdmissionsContext.jsx";
 import { assetPaths, heroSlides, programs, schoolInfo, stats } from "../../data/siteData.js";
 
 export default function Home() {
+  const { policy } = useAdmissions();
   const [news, setNews] = useState([]);
   const [newsLoading, setNewsLoading] = useState(true);
   const [hiddenNewsImages, setHiddenNewsImages] = useState([]);
@@ -51,11 +54,11 @@ export default function Home() {
         </div>
         <div className="hero-overlay" />
         <div className="hero-content" key={activeHeroSlide}>
-          <span className="eyebrow">2026/2027 Admissions Are Now Open</span>
+          <span className="eyebrow">{policy ? policy.open ? "Admissions are open" : "Admissions are closed" : "Welcome to Unique College"}</span>
           <h1>{schoolInfo.name} {schoolInfo.location}</h1>
           <p>{schoolInfo.motto}. Practical healthcare education for community health, pharmacy technology, medical laboratory technology, health information management, public health, and health promotion.</p>
           <div className="hero-actions">
-            <Link className="button primary" to="/applicant/register">Start Application <ArrowRight size={18} /></Link>
+            <Link className="button primary" to="/admission">{policy?.open ? "Start application" : "Admissions information"} <ArrowRight size={18} /></Link>
             <Link className="button ghost" to="/courses">Explore Courses</Link>
           </div>
         </div>
@@ -70,6 +73,8 @@ export default function Home() {
         </div>
         <img src={assetPaths.campusGate} alt="Unique College campus entrance" loading="lazy" />
       </section>
+
+      <EventsPreview />
 
       <section className="section feature-grid">
         {[
@@ -150,8 +155,8 @@ export default function Home() {
       </section>
 
       <section className="cta-band">
-        <h2>Ready To Apply For {schoolInfo.admissionSession}?</h2>
-        <Link className="button primary" to="/applicant/register">Apply for admission</Link>
+        <h2>{policy?.open ? "Start your admission journey" : "Explore admissions at Unique College"}</h2>
+        <Link className="button primary" to="/admission">Admissions information</Link>
       </section>
     </>
   );

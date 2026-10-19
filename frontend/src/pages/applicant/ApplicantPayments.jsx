@@ -2,6 +2,7 @@ import { Banknote, CheckCircle2, Clock3, Printer, UploadCloud, XCircle } from "l
 import { useState } from "react";
 import { api, apiErrorMessage, assetUrl } from "../../api/client.js";
 import LoadingButton from "../../components/LoadingButton.jsx";
+import PrivateFileButton from "../../components/PrivateFileButton.jsx";
 import { useApplicant } from "../../context/ApplicantContext.jsx";
 
 const typeLabels = {
@@ -22,6 +23,7 @@ export default function ApplicantPayments() {
 
   async function submit(event) {
     event.preventDefault();
+    const formElement = event.currentTarget;
     if (!proof) return setNotice({ type: "error", message: "Please attach the payment receipt or evidence." });
     setBusy(true);
     setNotice({ type: "", message: "" });
@@ -32,7 +34,7 @@ export default function ApplicantPayments() {
       await api.post("/applicant/payments", data);
       setForm({ type: "APPLICATION_FEE", amount: "", reference: "", paidAt: "" });
       setProof(null);
-      event.currentTarget.reset();
+      formElement.reset();
       await refresh();
       setNotice({ type: "success", message: "Payment evidence submitted for bursary verification." });
     } catch (error) {
@@ -67,7 +69,7 @@ export default function ApplicantPayments() {
             <article key={payment.id}>
               <span className={`payment-status-icon ${payment.status.toLowerCase()}`}>{payment.status === "VERIFIED" ? <CheckCircle2 /> : payment.status === "REJECTED" ? <XCircle /> : <Clock3 />}</span>
               <div><strong>{typeLabels[payment.type] || payment.type}</strong><span>₦{Number(payment.amount).toLocaleString()} · {payment.reference}</span><small>{payment.status}{payment.reviewNote ? ` — ${payment.reviewNote}` : ""}</small></div>
-              <a href={assetUrl(payment.proofPath)} target="_blank" rel="noreferrer">Evidence</a>
+              <PrivateFileButton path={payment.proofPath}>Download evidence</PrivateFileButton>
             </article>
           ))}
         </section>

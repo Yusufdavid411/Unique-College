@@ -1,5 +1,21 @@
 # Stage 1 Worklist
 
+## Implementation checkpoint — 19 October 2026
+
+The repository now includes configurable access roles, role/staff administration
+screens, audit history, transactional audit writes, private applicant downloads,
+local/S3/private-Blob storage adapters, forced temporary-password change, JWT session
+revocation, event management/public listings, CMS editing, validated publication
+flags, shared admissions availability, portable local backup tooling, and CI with
+a PostgreSQL service. Google Drive archival design is documented in ARCHIVE_DESIGN.md.
+
+A dedicated Vercel API project, Neon database and private Blob store have been
+created. The six current Prisma migrations were successfully applied and core
+tables are reachable. API deployment and public news publishing verification are
+the next acceptance checks. The older Render database has not been imported or
+deleted. The historical worklist below is retained as planning context; completed
+items above should not be rebuilt.
+
 ## Completed or underway
 
 - Public website content and responsive leadership presentation.

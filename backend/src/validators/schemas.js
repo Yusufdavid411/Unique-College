@@ -1,6 +1,7 @@
 import { z } from "zod";
 
 const optionalString = z.string().trim().optional().or(z.literal(""));
+const publicationBoolean = z.union([z.boolean(), z.enum(["true", "false"]).transform((value) => value === "true")]);
 
 export const loginSchema = z.object({
   body: z.object({
@@ -145,8 +146,7 @@ export const newsSchema = z.object({
     title: z.string().trim().min(3),
     excerpt: z.string().trim().min(10),
     content: z.string().trim().min(20),
-    imagePath: optionalString,
-    isPublished: z.coerce.boolean().optional()
+    isPublished: publicationBoolean.optional()
   }),
   query: z.object({}).passthrough(),
   params: z.object({}).passthrough()
@@ -157,7 +157,7 @@ export const gallerySchema = z.object({
     title: z.string().trim().min(2),
     category: z.string().trim().min(2),
     description: optionalString,
-    isPublished: z.coerce.boolean().optional()
+    isPublished: publicationBoolean.optional()
   }),
   query: z.object({}).passthrough(),
   params: z.object({}).passthrough()

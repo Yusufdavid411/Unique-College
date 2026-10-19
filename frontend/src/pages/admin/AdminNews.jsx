@@ -11,6 +11,7 @@ export default function AdminNews() {
   const [items, setItems] = useState([]);
   const [form, setForm] = useState(empty);
   const [image, setImage] = useState(null);
+  const [editing, setEditing] = useState("");
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [busyId, setBusyId] = useState("");
@@ -29,6 +30,7 @@ export default function AdminNews() {
 
   async function submit(event) {
     event.preventDefault();
+    const formElement = event.currentTarget;
     setSubmitting(true);
     setNotice({ type: "", message: "" });
     const data = new FormData();
@@ -36,10 +38,12 @@ export default function AdminNews() {
     if (image) data.append("image", image);
 
     try {
-      await api.post("/news", data);
+      if (editing) await api.put("/news/" + editing, data);
+      else await api.post("/news", data);
+      setEditing("");
       setForm(empty);
       setImage(null);
-      event.currentTarget.reset();
+      formElement.reset();
       setNotice({ type: "success", message: "News item saved." });
       load();
     } catch (error) {
@@ -80,6 +84,7 @@ export default function AdminNews() {
                 alt={item.title}
               />
               <div><strong>{item.title}</strong><span>{item.excerpt}</span></div>
+              <button type="button" disabled={submitting} onClick={() => { setEditing(item.id); setImage(null); setForm({ title: item.title, excerpt: item.excerpt, content: item.content, isPublished: item.isPublished }); }}>Edit</button>
               <LoadingButton className="list-button" loading={busyId === item.id} loadingText="Deleting..." onClick={() => remove(item.id)}>
                 Delete
               </LoadingButton>
@@ -87,14 +92,15 @@ export default function AdminNews() {
           ))}
         </div>
       </section>
-      <form className="form-panel" onSubmit={submit}>
-        <h2>Create news</h2>
+      <form key={editing || "new"} className="form-panel" onSubmit={submit}>
+        <h2>{editing ? "Edit news" : "Create news"}</h2>
         <input required placeholder="Title" value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} />
         <input required placeholder="Excerpt" value={form.excerpt} onChange={(e) => setForm({ ...form, excerpt: e.target.value })} />
-        <label className="file-field">News image<input required accept="image/png,image/jpeg,image/webp" type="file" onChange={(e) => setImage(e.target.files?.[0] || null)} /></label>
+        <label className="file-field">{editing ? "Replace image (optional)" : "News image"}<input required={!editing} accept="image/png,image/jpeg,image/webp" type="file" onChange={(e) => setImage(e.target.files?.[0] || null)} /></label>
         <textarea required rows="8" placeholder="Content" value={form.content} onChange={(e) => setForm({ ...form, content: e.target.value })} />
         <label className="check-field"><input type="checkbox" checked={form.isPublished} onChange={(e) => setForm({ ...form, isPublished: e.target.checked })} /> Published</label>
         <LoadingButton type="submit" loading={submitting} loadingText="Saving news...">Save news</LoadingButton>
+        {editing && <button type="button" onClick={() => { setEditing(""); setForm(empty); setImage(null); }}>Cancel edit</button>}
       </form>
     </div>
   );
