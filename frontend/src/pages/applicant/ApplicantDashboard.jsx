@@ -25,7 +25,7 @@ export default function ApplicantDashboard() {
   const formComplete = Boolean(application.declarationAccepted && application.courseOfInterest && application.educationRecords?.length >= 5);
   const documentsComplete = ["PASSPORT", "BIRTH_CERTIFICATE", "NATIONAL_ID", "EDUCATIONAL_RESULT"].every((type) => documents.some((item) => item.type === type));
   const submitted = !["DRAFT", "RETURNED"].includes(application.status);
-  const progressItems = [formComplete, documentsComplete, submitted];
+  const progressItems = [formAccess.unlocked, formComplete, documentsComplete, submitted];
   const progress = Math.round((progressItems.filter(Boolean).length / progressItems.length) * 100);
 
   return (
@@ -46,8 +46,8 @@ export default function ApplicantDashboard() {
       </section>
 
       <section className="portal-card-grid">
-        <article><span className="portal-card-icon"><FileText /></span><div><h2>Application form</h2><p>{formComplete ? "Your required form information is complete." : "Complete personal, education, sponsor, and declaration details."}</p></div><Link to="/applicant/application">Open form <ArrowRight size={16} /></Link></article>
-        <article><span className="portal-card-icon"><FileCheck2 /></span><div><h2>Documents</h2><p>{documents.length} uploaded document{documents.length === 1 ? "" : "s"}. {documentsComplete ? "Required files are present." : "More required files are needed."}</p></div><Link to="/applicant/documents">Manage files <ArrowRight size={16} /></Link></article>
+        <article><span className="portal-card-icon"><FileText /></span><div><h2>Application form</h2><p>{formComplete ? "Your required form information is complete." : "Complete personal, education, sponsor, and declaration details."}</p></div>{formAccess.unlocked ? <Link to="/applicant/application">Open form <ArrowRight size={16} /></Link> : <button type="button" className="portal-add-button" disabled>Locked until payment is verified</button>}</article>
+        <article><span className="portal-card-icon"><FileCheck2 /></span><div><h2>Documents</h2><p>{documents.length} uploaded document{documents.length === 1 ? "" : "s"}. {documentsComplete ? "Required files are present." : "More required files are needed."}</p></div>{formAccess.unlocked ? <Link to="/applicant/documents">Manage files <ArrowRight size={16} /></Link> : <button type="button" className="portal-add-button" disabled>Locked until payment is verified</button>}</article>
         <article><span className="portal-card-icon"><CreditCard /></span><div><h2>Payments</h2><p>{verifiedPayments.length} verified payment{verifiedPayments.length === 1 ? "" : "s"}. Upload payment evidence for bursary review.</p></div><Link to="/applicant/payments">View payments <ArrowRight size={16} /></Link></article>
       </section>
 
@@ -56,6 +56,7 @@ export default function ApplicantDashboard() {
         <div className="portal-timeline">
           {[
             [true, "Account created", "Your secure applicant profile is active."],
+            [formAccess.unlocked, "Payment confirmed", "Admin verification unlocks the next application steps."],
             [formComplete, "Application completed", "All required form sections are ready."],
             [documentsComplete, "Documents uploaded", "Required credentials have been attached."],
             [submitted, "Submitted for review", "Admissions can vet your information."],

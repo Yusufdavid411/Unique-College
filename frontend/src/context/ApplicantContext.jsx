@@ -15,8 +15,9 @@ export function ApplicantProvider({ children }) {
     try {
       const response = await api.get("/applicant/dashboard");
       setApplication(response.data.data.application);
-      setFormAccess(response.data.data.formAccess || { unlocked: true, amount: null });
+      setFormAccess(response.data.data.formAccess || { unlocked: false, amount: null });
     } catch (requestError) {
+      setFormAccess({ unlocked: false, amount: null });
       setError(apiErrorMessage(requestError, "Applicant information could not be loaded."));
     } finally {
       setLoading(false);

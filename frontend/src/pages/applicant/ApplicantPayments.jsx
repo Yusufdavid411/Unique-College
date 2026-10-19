@@ -1,5 +1,6 @@
 import { Banknote, CheckCircle2, Clock3, Printer, UploadCloud, XCircle } from "lucide-react";
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { api, apiErrorMessage, assetUrl } from "../../api/client.js";
 import LoadingButton from "../../components/LoadingButton.jsx";
 import PrivateFileButton from "../../components/PrivateFileButton.jsx";
@@ -16,6 +17,7 @@ const typeLabels = {
 export default function ApplicantPayments() {
   const { application, formAccess, loading, refresh } = useApplicant();
   const { policy } = useAdmissions();
+  const navigate = useNavigate();
   const [proof, setProof] = useState(null);
   const [form, setForm] = useState({ type: "APPLICATION_FEE", amount: "", reference: "", paidAt: "" });
   const [busy, setBusy] = useState(false);
@@ -80,6 +82,7 @@ export default function ApplicantPayments() {
           ))}
         </section>
       </div>
+      <div className="applicant-next-step"><p id="payment-next-help">{formAccess.unlocked ? "Payment requirement confirmed. Continue to your application form." : "Next unlocks only after admin verification—not after uploading evidence."}</p><button className="button primary" type="button" disabled={!formAccess.unlocked || busy} aria-describedby="payment-next-help" onClick={() => navigate("/applicant/application")}>Next: Application form</button></div>
     </div>
   );
 }

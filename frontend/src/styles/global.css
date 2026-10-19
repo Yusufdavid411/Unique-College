@@ -2265,7 +2265,8 @@ th {
 }
 
 .applicant-sidebar nav a,
-.applicant-sidebar > button {
+.applicant-sidebar nav button,
+.applicant-sidebar .applicant-signout {
   display: flex;
   align-items: center;
   gap: 11px;
@@ -2280,13 +2281,144 @@ th {
   text-align: left;
 }
 
+.applicant-sidebar nav button:disabled {
+  cursor: not-allowed;
+  opacity: .55;
+}
+
+.applicant-lock-label {
+  margin-left: auto;
+  font-size: 10px;
+}
+
+.applicant-menu-toggle {
+  display: none;
+}
+
+.applicant-sidebar {
+  overflow-y: auto;
+  height: 100dvh;
+}
+
+.applicant-progress {
+  width: min(1180px, 100%);
+  margin: 0 auto 28px;
+  padding: 20px;
+  background: white;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+}
+
+.applicant-progress ol {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 12px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.applicant-progress li > a,
+.applicant-progress li > button {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  min-height: 44px;
+  padding: 6px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--blue-900);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 800;
+  text-align: left;
+}
+
+.applicant-progress [aria-current="step"] {
+  background: var(--blue-100);
+}
+
+.applicant-step-number {
+  display: grid;
+  place-items: center;
+  flex: 0 0 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: var(--blue-100);
+}
+
+.is-complete .applicant-step-number {
+  background: #e4f8ec;
+  color: #137a42;
+}
+
+.applicant-progress .is-locked button {
+  color: var(--muted);
+  cursor: not-allowed;
+}
+
+.applicant-payment-gate,
+.applicant-next-step {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-top: 20px;
+  padding-top: 18px;
+  border-top: 1px solid var(--line);
+}
+
+.applicant-payment-gate p,
+.applicant-next-step p {
+  flex: 1 1 260px;
+  margin: 0;
+}
+
+.applicant-payment-gate strong,
+.applicant-payment-gate span {
+  display: block;
+}
+
+.applicant-payment-gate span {
+  margin-top: 5px;
+  color: var(--muted);
+  font-size: 14px;
+}
+
+.applicant-shell button:disabled {
+  cursor: not-allowed;
+  opacity: .55;
+}
+
+.applicant-shell .portal-alert {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.applicant-main :where(p, strong, span, dd, td, th, legend) {
+  overflow-wrap: anywhere;
+}
+
+.applicant-main :where(fieldset, input, select, textarea, .print-document, .payment-history, .print-header > div, .print-document-title > div) {
+  min-width: 0;
+  max-width: 100%;
+}
+
+.applicant-main .print-document table {
+  width: 100%;
+  table-layout: fixed;
+}
+
 .applicant-sidebar nav a:hover,
 .applicant-sidebar nav a.active {
   color: #ffffff;
   background: rgba(255, 255, 255, .13);
 }
 
-.applicant-sidebar > button {
+.applicant-sidebar .applicant-signout {
   margin-top: auto;
 }
 
@@ -3007,14 +3139,14 @@ th {
   }
 
   .applicant-sidebar {
-    position: sticky;
+    position: relative;
     z-index: 20;
     height: auto;
     padding: 12px 14px;
   }
 
   .applicant-brand {
-    padding: 0 0 10px;
+    padding: 0 112px 10px 0;
   }
 
   .applicant-brand img {
@@ -3023,8 +3155,7 @@ th {
   }
 
   .applicant-sidebar nav {
-    overflow-x: auto;
-    display: flex;
+    display: none;
     gap: 6px;
     margin: 0;
     padding: 2px 0;
@@ -3037,7 +3168,57 @@ th {
     font-size: 13px;
   }
 
-  .applicant-sidebar > button {
+  .applicant-sidebar nav.is-open {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    margin-top: 12px;
+  }
+
+  .applicant-sidebar .applicant-menu-toggle {
+    position: absolute;
+    top: 15px;
+    right: 60px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    min-height: 40px;
+    padding: 4px 8px;
+    border: 1px solid rgba(255,255,255,.3);
+    border-radius: 8px;
+    color: white;
+    background: transparent;
+    font-size: 12px;
+  }
+
+  .applicant-signout span {
+    display: none;
+  }
+
+  .applicant-sidebar .applicant-brand strong {
+    font-size: 15px;
+  }
+
+  .applicant-brand span {
+    max-width: 110px;
+  }
+
+  .applicant-progress ol {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 6px;
+  }
+
+  .applicant-progress {
+    padding: 14px;
+  }
+
+  .applicant-main .portal-alert .button,
+  .applicant-next-step .button {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .applicant-sidebar .applicant-signout {
     position: absolute;
     top: 15px;
     right: 14px;
@@ -3602,46 +3783,6 @@ th {
   gap: 12px;
 }
 
-/* Applicant portal and admissions review */
-.applicant-shell {
-  min-height: 100vh;
-  display: grid;
-  grid-template-columns: 280px minmax(0, 1fr);
-  background: #f4f8fb;
-}
-
-.applicant-sidebar {
-  padding: 28px 20px;
-  background: var(--blue-900);
-  color: #fff;
-}
-
-.applicant-sidebar nav {
-  display: grid;
-  gap: 8px;
-  margin-top: 34px;
-}
-
-.applicant-sidebar a {
-  display: flex;
-  gap: 11px;
-  align-items: center;
-  padding: 12px 14px;
-  border-radius: 12px;
-  color: rgba(255, 255, 255, .78);
-}
-
-.applicant-sidebar a.active,
-.applicant-sidebar a:hover {
-  color: #fff;
-  background: rgba(255, 255, 255, .14);
-}
-
-.applicant-main {
-  min-width: 0;
-  padding: clamp(24px, 4vw, 56px);
-}
-
 .applicant-page,
 .admin-page {
   max-width: 1220px;
@@ -4048,20 +4189,6 @@ th {
     grid-template-columns: 1fr;
   }
 
-  .applicant-sidebar {
-    padding: 16px 18px;
-  }
-
-  .applicant-sidebar nav {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    margin-top: 16px;
-  }
-
-  .applicant-sidebar a {
-    justify-content: center;
-    font-size: 12px;
-  }
-
   .applicant-status-grid,
   .application-review-grid {
     grid-template-columns: 1fr;
@@ -4075,10 +4202,6 @@ th {
 
   .applicant-form-grid {
     grid-template-columns: 1fr;
-  }
-
-  .applicant-sidebar nav {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
   .applicant-access__intro,

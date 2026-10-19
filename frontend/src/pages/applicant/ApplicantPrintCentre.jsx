@@ -3,16 +3,18 @@ import { useState } from "react";
 import { useApplicant } from "../../context/ApplicantContext.jsx";
 import { assetPaths, schoolInfo } from "../../data/siteData.js";
 import ApplicationRecord from "../../components/ApplicationRecord.jsx";
+import FormPurchaseRequired from "../../components/FormPurchaseRequired.jsx";
 
 function PrintHeader() {
   return <header className="print-header"><img src={assetPaths.logo} alt="" /><div><strong>{schoolInfo.name}</strong><span>{schoolInfo.address}</span><span>{schoolInfo.email} · {schoolInfo.phoneDisplay}</span></div></header>;
 }
 
 export default function ApplicantPrintCentre() {
-  const { application, loading } = useApplicant();
+  const { application, formAccess, loading } = useApplicant();
   const [printing, setPrinting] = useState("");
   if (loading) return <div className="portal-loading">Preparing print centre...</div>;
   if (!application) return <div className="portal-error">Applicant record could not be loaded.</div>;
+  if (!formAccess.unlocked) return <FormPurchaseRequired amount={formAccess.amount} />;
 
   function print(section) {
     setPrinting(section);
