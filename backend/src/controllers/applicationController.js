@@ -5,6 +5,7 @@ import { created, ok } from "../utils/apiResponse.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
 import { fileMetadata } from "../services/uploadService.js";
 import { hasPermission } from "../services/permissions.js";
+import { auditedMutation } from "../services/audit.js";
 
 const applicationDetails = {
   applicant: { select: { id: true, name: true, email: true, role: true, portalUsername: true, officialEmail: true } },
@@ -93,7 +94,7 @@ export const updateApplicationStatus = asyncHandler(async (req, res) => {
     passwordHash = await bcrypt.hash(credentials.temporaryPassword, 12);
   }
 
-  const application = await prisma.$transaction(async (transaction) => {
+  const application = await auditedMutation(prisma, { actorId: req.user.id, action: "application.status:" + req.body.status, targetType: "application", targetId: current.id }, async (transaction) => {
     if (credentials) {
       await transaction.user.update({
         where: { id: current.applicant.id },
@@ -131,10 +132,10 @@ export const reviewApplicationDocument = asyncHandler(async (req, res) => {
     where: { id: req.params.documentId, applicationId: req.params.id }
   });
   if (!document) return res.status(404).json({ success: false, message: "Document not found" });
-  const updated = await prisma.applicationDocument.update({
+  const updated = await auditedMutation(prisma, { actorId: req.user.id, action: "document.review:" + req.body.reviewStatus, targetType: "document", targetId: document.id }, (transaction) => transaction.applicationDocument.update({
     where: { id: document.id },
     data: { reviewStatus: req.body.reviewStatus, reviewNote: req.body.reviewNote || null }
-  });
+  }));
   ok(res, updated, "Document review updated");
 });
 
@@ -143,18 +144,18 @@ export const reviewApplicationPayment = asyncHandler(async (req, res) => {
     where: { id: req.params.paymentId, applicationId: req.params.id }
   });
   if (!payment) return res.status(404).json({ success: false, message: "Payment not found" });
-  const updated = await prisma.payment.update({
+  const updated = await auditedMutation(prisma, { actorId: req.user.id, action: "payment.review:" + req.body.status, targetType: "payment", targetId: payment.id }, (transaction) => transaction.payment.update({
     where: { id: payment.id },
     data: {
       status: req.body.status,
       reviewNote: req.body.reviewNote || null,
       verifiedAt: req.body.status === "VERIFIED" ? new Date() : null
     }
-  });
+  }));
   ok(res, updated, "Payment review updated");
 });
 
 export const deleteApplication = asyncHandler(async (req, res) => {
-  await prisma.application.delete({ where: { id: req.params.id } });
+  await auditedMutation(prisma, { actorId: req.user.id, action: "application.deleted", targetType: "application", targetId: req.params.id }, (transaction) => transaction.application.delete({ where: { id: req.params.id } }));
   ok(res, null, "Application deleted");
 });
