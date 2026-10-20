@@ -1318,8 +1318,7 @@ select:disabled {
 .stat-card span,
 .gallery-card span,
 td span,
-.admin-list-item span,
-.admin-brand span {
+.admin-list-item span {
   display: block;
   color: var(--muted);
   font-size: 13px;
@@ -1862,6 +1861,15 @@ textarea {
   padding: 4px;
   border-radius: 8px;
   background: white;
+}
+
+.admin-brand span {
+  display: block;
+  margin-top: 3px;
+  color: #d7ecf6;
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 1.5;
 }
 
 .admin-sidebar nav {
