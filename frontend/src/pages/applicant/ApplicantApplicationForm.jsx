@@ -1,5 +1,5 @@
 import { Plus, Save, Send, Trash2 } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { api, apiErrorMessage } from "../../api/client.js";
 import LoadingButton from "../../components/LoadingButton.jsx";
 import FormPurchaseRequired from "../../components/FormPurchaseRequired.jsx";
@@ -44,6 +44,7 @@ export default function ApplicantApplicationForm() {
   const { application, formAccess, loading, refresh } = useApplicant();
   const [form, setForm] = useState(() => toForm(null));
   const [busy, setBusy] = useState("");
+  const operationInProgress = useRef(false);
   const [notice, setNotice] = useState({ type: "", message: "" });
 
   useEffect(() => { if (application) setForm(toForm(application)); }, [application]);
@@ -59,27 +60,34 @@ export default function ApplicantApplicationForm() {
   const updateEducation = (index, field, value) => setForm((current) => ({ ...current, educationRecords: current.educationRecords.map((record, recordIndex) => recordIndex === index ? { ...record, [field]: value } : record) }));
   const updateWork = (index, field, value) => setForm((current) => ({ ...current, workExperience: current.workExperience.map((record, recordIndex) => recordIndex === index ? { ...record, [field]: value } : record) }));
 
-  async function save(showMessage = true) {
+  async function save() {
+    if (operationInProgress.current) return;
+    operationInProgress.current = true;
     setBusy("save");
     setNotice({ type: "", message: "" });
     try {
       await api.patch("/applicant/application", form);
       await refresh();
-      if (showMessage) setNotice({ type: "success", message: "Your application draft has been saved." });
-      return true;
+      setNotice({ type: "success", message: "Your application draft has been saved." });
     } catch (error) {
       setNotice({ type: "error", message: apiErrorMessage(error, "The application could not be saved.") });
-      return false;
     } finally {
       setBusy("");
+      operationInProgress.current = false;
     }
   }
 
-  async function submit() {
-    const saved = await save(false);
-    if (!saved) return;
+  async function submit(event) {
+    if (operationInProgress.current || !event.currentTarget.form.reportValidity()) return;
+    if (!form.declarationAccepted) {
+      setNotice({ type: "error", message: "Please accept the declaration before submitting your application." });
+      return;
+    }
+    operationInProgress.current = true;
     setBusy("submit");
+    setNotice({ type: "", message: "" });
     try {
+      await api.patch("/applicant/application", form);
       await api.post("/applicant/application/submit");
       await refresh();
       setNotice({ type: "success", message: "Your application has been submitted to the admissions team." });
@@ -88,6 +96,7 @@ export default function ApplicantApplicationForm() {
       setNotice({ type: "error", message: missing?.length ? `Complete these items first: ${missing.join(", ")}.` : apiErrorMessage(error, "The application could not be submitted.") });
     } finally {
       setBusy("");
+      operationInProgress.current = false;
     }
   }
 
@@ -145,7 +154,7 @@ export default function ApplicantApplicationForm() {
           <label className="declaration-check"><input name="declarationAccepted" type="checkbox" checked={form.declarationAccepted} onChange={update} /><span>I declare that the information supplied is correct to the best of my knowledge. I understand that false information may lead to the withdrawal of admission.</span></label>
         </fieldset>
 
-        {editable && <div className="portal-form-actions"><LoadingButton type="button" className="button secondary" loading={busy === "save"} loadingText="Saving..." onClick={() => save()}><Save size={18} />Save draft</LoadingButton><LoadingButton type="button" loading={busy === "submit"} loadingText="Submitting..." onClick={submit}><Send size={18} />Submit for review</LoadingButton></div>}
+        {editable && <div className="portal-form-actions"><LoadingButton type="button" className="button secondary" loading={busy === "save"} disabled={Boolean(busy)} loadingText="Saving..." onClick={save}><Save size={18} />Save draft</LoadingButton><LoadingButton type="button" loading={busy === "submit"} disabled={Boolean(busy)} loadingText="Submitting..." onClick={submit}><Send size={18} />Submit for review</LoadingButton></div>}
       </form>
     </div>
   );

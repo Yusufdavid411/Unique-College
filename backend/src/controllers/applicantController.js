@@ -96,7 +96,7 @@ export const updateApplicantApplication = asyncHandler(async (req, res) => {
   }
 
   const data = { ...req.body };
-  if (data.dateOfBirth) data.dateOfBirth = new Date(data.dateOfBirth);
+  if (data.dateOfBirth !== undefined) data.dateOfBirth = data.dateOfBirth ? new Date(data.dateOfBirth) : null;
   if (data.firstName || data.surname || data.middleName) {
     data.fullName = [data.surname ?? current.surname, data.firstName ?? current.firstName, data.middleName ?? current.middleName]
       .filter(Boolean)

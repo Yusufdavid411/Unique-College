@@ -76,3 +76,10 @@ ordinary API requests retain the shorter timeout. After an uncertain receipt
 submission the portal refreshes payment history rather than automatically posting
 again. Admin and applicant sessions now use separate browser-storage keys, so
 signing into one portal does not silently replace the other's credentials.
+
+Drafts may omit a birth date: the API stores an explicitly blank date as SQL NULL,
+not an invalid empty DateTime string. Final submission checks required form fields
+in the browser before saving, then enforces completeness and supporting documents
+on the server. Draft saving remains available for incomplete applications. Save
+and submit share an in-flight guard so repeated clicks cannot run both operations
+at once.

@@ -71,7 +71,7 @@ test("applicant purchase, closure and admission approval enforce the full accoun
     dashboard = (await (await call("/applicant/dashboard", "GET", undefined, session.token)).json()).data;
     assert.equal(dashboard.formAccess.unlocked, true);
     assert.equal(Number(dashboard.formAccess.amount), 5000);
-    assert.equal((await call("/applicant/application", "PATCH", { firstName: "Test", surname: "Applicant" }, session.token)).status, 200);
+    assert.equal((await call("/applicant/application", "PATCH", { firstName: "Test", surname: "Applicant", dateOfBirth: "" }, session.token)).status, 200);
     assert.equal((await call("/settings/admissions", "PUT", { ...policy, open: false }, adminToken)).status, 200);
     assert.equal((await call("/applicant/register", "POST", { fullName: "Second Applicant", email: "other-" + email, phoneNumber: "08000000000", password: "IsolatedTestPassword123" })).status, 409);
     assert.equal((await call("/applicant/dashboard", "GET", undefined, session.token)).status, 200);
