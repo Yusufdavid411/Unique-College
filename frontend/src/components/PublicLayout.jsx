@@ -76,10 +76,11 @@ export default function PublicLayout() {
           }}
           aria-label={open ? "Close navigation" : "Open navigation"}
           aria-expanded={open}
+          aria-controls="public-navigation"
         >
           <Menu size={22} />
         </button>
-        <nav className={open ? "main-nav open" : "main-nav"}>
+        <nav id="public-navigation" className={open ? "main-nav open" : "main-nav"} aria-label="Main navigation">
           {navItems.slice(0, 2).map(([label, path]) => (
             <NavLink end={path === "/"} key={path} to={path} onClick={closeNavigation}>{label}</NavLink>
           ))}
