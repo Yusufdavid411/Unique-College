@@ -74,6 +74,21 @@ items above should not be rebuilt.
   including separate simultaneous applicant/admin sessions. This is not a claim
   that a real applicant receipt has been reviewed or changed during testing.
 
+## Production verification — 20 October 2026
+
+- Receipt reliability release 4e30928 is pushed to GitHub. The frontend production
+  deployment is Ready and its public bundle contains the scoped-session and
+  receipt-withdrawal changes. The API production deployment is also Ready.
+- Fresh admin sign-in, current-user lookup, dashboard statistics and application
+  listing returned HTTP 200. An authorised existing 4,002,156-byte receipt download
+  returned HTTP 200 with the correct Content-Length in approximately 2.2 seconds.
+  These checks did not alter applicant records or payment decisions.
+- The automated suite still passes 22 checks, with two database integration checks
+  skipped in the default run. An explicit isolated-database integration attempt
+  could not connect from the workstation to PostgreSQL port 5432. That lifecycle
+  verification remains outstanding; successful production API checks do not replace
+  it. Do not describe all Stage 1 acceptance checks as complete.
+
 ## Decisions needed from the school
 
 - Whether historical Render records need importing; the old database is untouched.
