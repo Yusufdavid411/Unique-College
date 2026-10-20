@@ -25,7 +25,8 @@ test("application drafts normalise empty dates and incomplete submissions return
       return { ...application, ...data };
     };
     async function patch(body) { return fetch(base, { method: "PATCH", headers, body: JSON.stringify(body) }); }
-    assert.equal((await patch({ dateOfBirth: "", educationRecords: [], workExperience: [] })).status, 200);
+    assert.equal((await patch({ middleName: "", dateOfBirth: "", educationRecords: [], workExperience: [] })).status, 200);
+    assert.equal(saved.middleName, "");
     assert.equal(saved.dateOfBirth, null);
     assert.equal((await patch({ dateOfBirth: "2004-03-15" })).status, 200);
     assert.equal(saved.dateOfBirth.toISOString(), "2004-03-15T00:00:00.000Z");
