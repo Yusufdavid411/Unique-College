@@ -8,7 +8,7 @@ import { useApplicant } from "../../context/ApplicantContext.jsx";
 import { useAdmissions } from "../../context/AdmissionsContext.jsx";
 
 const typeLabels = {
-  APPLICATION_FEE: "Application fee",
+  APPLICATION_FEE: "Application form fee",
   ACCEPTANCE_FEE: "Acceptance fee",
   SCHOOL_FEE: "School fee",
   OTHER: "Other approved payment"
@@ -19,18 +19,19 @@ export default function ApplicantPayments() {
   const { policy } = useAdmissions();
   const navigate = useNavigate();
   const [proof, setProof] = useState(null);
-  const [form, setForm] = useState({ type: "APPLICATION_FEE", amount: "", reference: "", paidAt: "" });
+  const [form, setForm] = useState({ amount: "", paidAt: "" });
   const [busy, setBusy] = useState(false);
   const [withdrawing, setWithdrawing] = useState("");
   const [uploadProgress, setUploadProgress] = useState(null);
   const [notice, setNotice] = useState({ type: "", message: "" });
   useEffect(() => {
-    if (formAccess.amount !== null && !formAccess.unlocked) setForm((current) => ({ ...current, type: "APPLICATION_FEE", amount: formAccess.amount }));
-  }, [formAccess.amount, formAccess.unlocked]);
+    if (formAccess.amount !== null) setForm((current) => ({ ...current, amount: formAccess.amount }));
+  }, [formAccess.amount]);
   if (loading) return <div className="portal-loading">Loading payments...</div>;
   if (!application) return <div className="portal-error">Applicant record could not be loaded.</div>;
   const history = (application.payments || []).filter((payment) => payment.status !== "CANCELLED");
   const pendingReceipt = history.some((payment) => payment.status === "PENDING");
+  const verifiedApplicationFee = history.some((payment) => payment.type === "APPLICATION_FEE" && payment.status === "VERIFIED");
 
   async function withdraw(paymentId) {
     if (!window.confirm("Remove this receipt and upload a replacement? It will remain in the school's audit history.")) return;
@@ -48,6 +49,7 @@ export default function ApplicantPayments() {
     event.preventDefault();
     const formElement = event.currentTarget;
     if (pendingReceipt) return setNotice({ type: "error", message: "A receipt is already awaiting review. Remove it before uploading another." });
+    if (verifiedApplicationFee) return setNotice({ type: "error", message: "Your application form payment is already verified." });
     if (!proof) return setNotice({ type: "error", message: "Please attach the payment receipt or evidence." });
     if (proof.size > MAX_UPLOAD_BYTES) return setNotice({ type: "error", message: "Choose a receipt of 4 MB or less." });
     setBusy(true);
@@ -58,7 +60,7 @@ export default function ApplicantPayments() {
     data.append("proof", proof);
     try {
       await api.post("/applicant/payments", data, { timeout: FILE_TRANSFER_TIMEOUT, onUploadProgress: (event) => setUploadProgress(event.total ? Math.round(event.loaded / event.total * 100) : null) });
-      setForm({ type: "APPLICATION_FEE", amount: formAccess.amount ?? "", reference: "", paidAt: "" });
+      setForm({ amount: formAccess.amount ?? "", paidAt: "" });
       setProof(null);
       formElement.reset();
       await refresh();
@@ -73,7 +75,7 @@ export default function ApplicantPayments() {
 
   return (
     <div className="portal-page">
-      <header className="portal-page-header"><div><span className="eyebrow">Payments and receipts</span><h1>Payments</h1></div></header>
+      <header className="portal-page-header"><div><span className="eyebrow">Form purchase</span><h1>Application form payment</h1></div></header>
       <section className="portal-alert payment-bank-card" aria-labelledby="payment-bank-title">
         {formAccess.amount !== null && <div><span className="eyebrow">Application fee</span><strong className="payment-fee-value">NGN {Number(formAccess.amount).toLocaleString("en-NG", { minimumFractionDigits: 2 })}</strong></div>}
         <h2 id="payment-bank-title">Bank details</h2>
@@ -85,10 +87,9 @@ export default function ApplicantPayments() {
 
       <div className="payment-layout">
         <form className="portal-form payment-form" onSubmit={submit}>
-          <fieldset disabled={busy || pendingReceipt}><legend><span><Banknote size={19} /></span>Upload receipt</legend>
-            <label>Payment type<select value={form.type} onChange={(event) => setForm({ ...form, type: event.target.value })}>{Object.entries(typeLabels).map(([value, label]) => <option value={value} key={value}>{label}</option>)}</select></label>
-            <label>Amount paid (NGN)<input type="number" min="1" step="0.01" value={form.amount} onChange={(event) => setForm({ ...form, amount: event.target.value })} required /></label>
-            <label>Bank or transaction reference<input value={form.reference} onChange={(event) => setForm({ ...form, reference: event.target.value })} required /></label>
+          <fieldset disabled={busy || pendingReceipt || verifiedApplicationFee}><legend><span><Banknote size={19} /></span>Upload receipt</legend>
+            <label>Payment for<input value="Application form fee" readOnly /></label>
+            <label>Amount paid (NGN)<input type="number" min="1" step="0.01" value={form.amount} readOnly={formAccess.amount !== null} onChange={(event) => setForm({ ...form, amount: event.target.value })} required /></label>
             <label>Date paid<input type="date" value={form.paidAt} onChange={(event) => setForm({ ...form, paidAt: event.target.value })} /></label>
             <label className="document-dropzone"><UploadCloud /><span>{proof?.name || "Choose payment receipt"}</span><input type="file" accept="application/pdf,image/png,image/jpeg,image/webp" onChange={(event) => setProof(event.target.files?.[0] || null)} required /></label>
             <small>PDF, JPG, PNG or WEBP. Maximum 4 MB.</small>

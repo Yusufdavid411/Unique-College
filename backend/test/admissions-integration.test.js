@@ -41,11 +41,13 @@ test("applicant purchase, closure and admission approval enforce the full accoun
     assert.equal((await call("/applications", "POST", {})).status, 410);
     assert.equal((await call("/settings/admissions", "PUT", { ...policy, applicationFee: 7000 }, adminToken)).status, 200);
     const payment = new FormData();
-    payment.set("type", "APPLICATION_FEE"); payment.set("amount", "5000"); payment.set("reference", marker);
+    payment.set("amount", "5000");
     payment.set("proof", new Blob(["%PDF-1.7\nTest evidence"], { type: "application/pdf" }), "proof.pdf");
     const evidence = await call("/applicant/payments", "POST", payment, session.token);
     assert.equal(evidence.status, 201);
     let recorded = (await evidence.json()).data;
+    assert.equal(recorded.type, "APPLICATION_FEE");
+    assert.match(recorded.reference, /^FORM-/);
     proofPath = recorded.proofPath;
     proofPaths.push(proofPath);
     assert.equal((await call("/applicant/payments", "POST", undefined, session.token)).status, 409);

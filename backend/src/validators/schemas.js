@@ -87,9 +87,8 @@ export const applicantDocumentSchema = z.object({
 
 export const applicantPaymentSchema = z.object({
   body: z.object({
-    type: z.enum(["APPLICATION_FEE", "ACCEPTANCE_FEE", "SCHOOL_FEE", "OTHER"]),
+    type: z.literal("APPLICATION_FEE").default("APPLICATION_FEE"),
     amount: z.coerce.number().positive().max(10000000).multipleOf(0.01),
-    reference: z.string().trim().min(3),
     paidAt: z.string().refine((value) => !value || !Number.isNaN(Date.parse(value)), "Invalid date").optional().or(z.literal(""))
   }),
   query: z.object({}).passthrough(),

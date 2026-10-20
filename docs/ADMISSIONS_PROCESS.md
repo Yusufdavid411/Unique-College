@@ -83,3 +83,20 @@ in the browser before saving, then enforces completeness and supporting document
 on the server. Draft saving remains available for incomplete applications. Save
 and submit share an in-flight guard so repeated clicks cannot run both operations
 at once.
+
+## Application-form receipt upload
+
+The applicant upload endpoint accepts APPLICATION_FEE only. The payment category
+is fixed in the UI and enforced by the API, while future acceptance/school-fee
+modules and historical records remain in the shared data model. Applicants no
+longer type a bank reference: a FORM-prefixed tracking ID is generated server-side
+for each evidence record. This is an internal identifier, not a verified bank
+transaction ID. Admin must still compare the receipt with actual bank records.
+The quoted fee is displayed read-only, and pending/verified duplicate protections
+remain active. Receipt uploads do not automatically confirm payment.
+
+Research: [Okunland College of Nursing's application portal](https://okunlandcollege.edu.ng/apply-for-admission)
+offers application-fee receipt uploads as an alternative to entering a payment
+reference. This supports the manual-receipt approach, not a claim that all schools
+use the same workflow. Hosted checkout may later replace manual review after the
+school approves and configures a merchant provider.

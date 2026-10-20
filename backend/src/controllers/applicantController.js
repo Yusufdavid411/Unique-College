@@ -229,16 +229,12 @@ export const recordApplicantPayment = asyncHandler(async (req, res) => {
   if (!req.file) return res.status(400).json({ success: false, message: "Payment evidence is required" });
   const application = await getApplicantApplication(req.user.id);
   if (req.body.type === "APPLICATION_FEE" && application.formFeeAmount !== null && !new Prisma.Decimal(req.body.amount).equals(application.formFeeAmount)) return res.status(422).json({ success: false, message: "Record the exact form fee quoted on your account" });
-  if (req.body.type === "ACCEPTANCE_FEE" && !["ACCEPTED", "ADMITTED"].includes(application.status)) return res.status(409).json({ success: false, message: "Acceptance payment is available after an admission offer" });
-  if (req.body.type === "SCHOOL_FEE" && application.status !== "ADMITTED") return res.status(409).json({ success: false, message: "School-fee records are available after admission" });
-  const duplicate = await prisma.payment.findFirst({ where: { reference: req.body.reference, status: { in: ["PENDING", "VERIFIED"] } } });
-  if (duplicate) return res.status(409).json({ success: false, message: "This payment reference has already been recorded" });
 
   const metadata = fileMetadata(req.file, "documents");
   const payment = await createPendingPayment(prisma, application.id, {
       type: req.body.type,
       amount: req.body.amount,
-      reference: req.body.reference,
+      reference: `FORM-${crypto.randomUUID()}`,
       paidAt: req.body.paidAt ? new Date(req.body.paidAt) : new Date(),
       proofPath: metadata.path,
       proofFileType: metadata.fileType,
