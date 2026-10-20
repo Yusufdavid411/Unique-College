@@ -1,8 +1,9 @@
-import { FileText, GraduationCap, Printer, ReceiptText } from "lucide-react";
+import { GraduationCap, Printer } from "lucide-react";
 import { useState } from "react";
 import { useApplicant } from "../../context/ApplicantContext.jsx";
 import { assetPaths, schoolInfo } from "../../data/siteData.js";
 import ApplicationRecord from "../../components/ApplicationRecord.jsx";
+import ApplicationDownloads from "../../components/ApplicationDownloads.jsx";
 import FormPurchaseRequired from "../../components/FormPurchaseRequired.jsx";
 
 function PrintHeader() {
@@ -27,23 +28,9 @@ export default function ApplicantPrintCentre() {
 
   return (
     <div className={`portal-page print-centre ${printing ? "is-printing" : ""}`} data-print-target={printing}>
-      <header className="portal-page-header no-print"><div><span className="eyebrow">Download and print</span><h1>Print centre</h1><p>Use your browser's print window to print or save each record as a PDF.</p></div></header>
-
-      <section className={`print-document application-copy ${printing === "application" ? "print-target" : ""}`}>
-        <PrintHeader />
-        <div className="print-document-title"><FileText /><div><span>Official applicant copy</span><h2>Application Form For Admission</h2></div><button className="no-print" type="button" onClick={() => print("application")}><Printer />Print / Save PDF</button></div>
-        <div className="print-meta"><span>Application ID<strong>{application.applicationNumber}</strong></span><span>Status<strong>{application.status.replaceAll("_", " ")}</strong></span><span>Date submitted<strong>{application.submittedAt ? new Date(application.submittedAt).toLocaleDateString() : "Not submitted"}</strong></span></div>
-        <ApplicationRecord application={application} />
-        <footer>Generated from the Unique College Applicant Portal · {new Date().toLocaleString()}</footer>
-      </section>
-
-      <section className={`print-document payment-copy ${printing === "payments" ? "print-target" : ""}`}>
-        <PrintHeader />
-        <div className="print-document-title"><ReceiptText /><div><span>Applicant payment record</span><h2>Payment records and receipts</h2></div><button className="no-print" type="button" onClick={() => print("payments")}><Printer />Print / Save PDF</button></div>
-        <p>Only VERIFIED entries confirm a payment accepted by the college. Pending or rejected evidence is not a confirmed receipt.</p>
-        {!application.payments?.length ? <p>No payments recorded.</p> : <table><thead><tr><th>Payment</th><th>Amount</th><th>Reference</th><th>Status</th><th>Date</th></tr></thead><tbody>{application.payments.map((payment) => <tr key={payment.id}><td>{payment.type.replaceAll("_", " ")}</td><td>NGN {Number(payment.amount).toLocaleString()}</td><td>{payment.reference}</td><td>{payment.status}</td><td>{new Date(payment.paidAt || payment.createdAt).toLocaleDateString()}</td></tr>)}</tbody></table>}
-        <footer>Application ID: {application.applicationNumber}</footer>
-      </section>
+      <header className="portal-page-header no-print"><div><span className="eyebrow">Download and print</span><h1>Print centre</h1><p>Download each PDF separately, then open it to print. The application uses the school's original form.</p></div></header>
+      <ApplicationDownloads application={application} />
+      <details className="no-print"><summary>Preview application details</summary><ApplicationRecord application={application} /></details>
 
       {application.status === "ADMITTED" && <section className={`print-document admission-copy ${printing === "admission" ? "print-target" : ""}`}>
         <PrintHeader />

@@ -13,6 +13,7 @@ import auditRoutes from "./auditRoutes.js";
 import fileRoutes from "./fileRoutes.js";
 import eventRoutes from "./eventRoutes.js";
 import userRoutes from "./userRoutes.js";
+import recordRoutes from "./recordRoutes.js";
 
 const router = Router();
 
@@ -42,5 +43,6 @@ router.use("/audit", auditRoutes);
 router.use("/files", fileRoutes);
 router.use("/events", eventRoutes);
 router.use("/users", userRoutes);
+router.use("/records", recordRoutes);
 
 export default router;

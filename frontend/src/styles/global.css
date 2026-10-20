@@ -3126,6 +3126,20 @@ th {
   max-width: 100%;
 }
 
+.record-downloads {
+  display: grid;
+  gap: 22px;
+  padding: 22px;
+  background: white;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  min-width: 0;
+}
+
+.record-downloads p { color: var(--muted); }
+.record-download-payment { display: grid; gap: 10px; padding: 16px 0; border-top: 1px solid var(--line); }
+.record-downloads button { max-width: 100%; white-space: normal; text-align: left; }
+
 .private-file-error {
   color: #a32121;
   overflow-wrap: anywhere;

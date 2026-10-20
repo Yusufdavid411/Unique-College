@@ -1,8 +1,9 @@
 import { useCallback, useEffect, useState } from "react";
-import { Eye, FileCheck2, Printer, X } from "lucide-react";
+import { Eye, FileCheck2, X } from "lucide-react";
 import { api } from "../../api/client.js";
 import PrivateFileButton from "../../components/PrivateFileButton.jsx";
 import ApplicationRecord from "../../components/ApplicationRecord.jsx";
+import ApplicationDownloads from "../../components/ApplicationDownloads.jsx";
 
 const statusOptions = ["DRAFT", "SUBMITTED", "REVIEWED", "RETURNED", "INTERVIEW_SCHEDULED", "ACCEPTED", "ADMITTED", "REJECTED"];
 const readableStatus = (value) => (value || "PENDING").replaceAll("_", " ").toLowerCase().replace(/\b\w/g, (letter) => letter.toUpperCase());
@@ -121,10 +122,10 @@ export default function AdminApplications() {
           <section className="application-review-panel" role="dialog" aria-modal="true" aria-labelledby="application-review-title">
             <div className="application-review-panel__header">
               <div><span className="eyebrow">Application review</span><h2 id="application-review-title">{selectedApplication.fullName}</h2><p>{selectedApplication.applicationNumber || "Application number pending"} · {selectedApplication.courseOfInterest || "Programme pending"}</p></div>
-              <div className="application-review-panel__actions"><button className="icon-button" type="button" onClick={() => window.print()} aria-label="Print application"><Printer size={18} /></button><button className="icon-button" type="button" onClick={() => setSelectedApplication(null)} aria-label="Close application"><X size={18} /></button></div>
+              <div className="application-review-panel__actions"><button className="icon-button" type="button" onClick={() => setSelectedApplication(null)} aria-label="Close application"><X size={18} /></button></div>
             </div>
             <div className="application-review-panel__content">
-              <div className="admin-application-print"><ApplicationRecord application={selectedApplication} /></div>
+              <ApplicationDownloads application={selectedApplication} />
               <details className="no-print"><summary>View the complete application record</summary><ApplicationRecord application={selectedApplication} /></details>
               <div className="application-review-grid">
                 <article><h3>Applicant details</h3><dl><div><dt>Email</dt><dd>{selectedApplication.email}</dd></div><div><dt>Phone</dt><dd>{selectedApplication.phoneNumber || "—"}</dd></div><div><dt>Date of birth</dt><dd>{formatDate(selectedApplication.dateOfBirth)}</dd></div><div><dt>Address</dt><dd>{selectedApplication.address || "—"}</dd></div><div><dt>Guardian</dt><dd>{details.guardian?.name || "—"}</dd></div><div><dt>Guardian phone</dt><dd>{details.guardian?.phone || "—"}</dd></div></dl></article>
