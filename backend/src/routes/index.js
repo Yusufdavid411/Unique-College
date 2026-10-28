@@ -14,6 +14,7 @@ import fileRoutes from "./fileRoutes.js";
 import eventRoutes from "./eventRoutes.js";
 import userRoutes from "./userRoutes.js";
 import recordRoutes from "./recordRoutes.js";
+import paymentGatewayRoutes from "./paymentGatewayRoutes.js";
 
 const router = Router();
 
@@ -44,5 +45,6 @@ router.use("/files", fileRoutes);
 router.use("/events", eventRoutes);
 router.use("/users", userRoutes);
 router.use("/records", recordRoutes);
+router.use("/payments/flutterwave", paymentGatewayRoutes);
 
 export default router;

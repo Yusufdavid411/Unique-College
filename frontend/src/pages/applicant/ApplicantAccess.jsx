@@ -55,7 +55,7 @@ export default function ApplicantAccess() {
           <div>
             <span className="eyebrow">2026/2027 Admissions</span>
             <h1>Your admission journey, in one secure place.</h1>
-            <p>Complete the official application form, upload credentials, submit payment evidence, track every review stage, and print your records.</p>
+            <p>Pay your application fee, complete the official admission form, upload credentials, track every review stage, and download your records.</p>
             <div className="applicant-access-points">
               <span><CheckCircle2 />Save and continue later</span>
               <span><CheckCircle2 />Track review and admission progress</span>

@@ -50,6 +50,12 @@ The purchased .com domain supersedes the proposed .edu.ng web addresses. Existin
 account emails are unchanged. DNS does not create email mailboxes or portal features.
 See CUSTOM_DOMAINS.md for configuration and verification.
 
+Flutterwave Standard v3 form-fee checkout and automatic verification are implemented
+behind PAYMENT_PROVIDER configuration. Merchant setup, live activation and its
+production migration remain separate release gates; see FLUTTERWAVE.md. Existing
+manual payments stay intact until activation. General institutional fee modules
+remain Stage 6 work.
+
 All web clients call the same API and PostgreSQL database. They must not duplicate
 business logic.
 

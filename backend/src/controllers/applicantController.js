@@ -10,6 +10,7 @@ import { Prisma } from "@prisma/client";
 import { requiredAdmissionDocuments } from "../services/admissionWorkflow.js";
 import { createPendingPayment, pendingReceiptMessage } from "../services/paymentSubmission.js";
 import { auditedMutation } from "../services/audit.js";
+import { publicPaymentConfiguration } from "../services/flutterwave.js";
 
 const editableStatuses = ["DRAFT", "RETURNED"];
 const requiredDocumentTypes = requiredAdmissionDocuments;
@@ -83,7 +84,7 @@ export const registerApplicant = asyncHandler(async (req, res) => {
 
 export const getApplicantDashboard = asyncHandler(async (req, res) => {
   const application = await getApplicantApplication(req.user.id);
-  ok(res, { application, user: toPublicUser(req.user), formAccess: formAccessFor(application) });
+  ok(res, { application, user: toPublicUser(req.user), formAccess: formAccessFor(application), paymentGateway: publicPaymentConfiguration() });
 });
 
 export const updateApplicantApplication = asyncHandler(async (req, res) => {
@@ -244,6 +245,7 @@ export const recordApplicantPayment = asyncHandler(async (req, res) => {
 });
 
 export const requireNoPendingReceipt = asyncHandler(async (req, res, next) => {
+  if (publicPaymentConfiguration().provider === "FLUTTERWAVE") return res.status(409).json({ success: false, message: "Use the secure online payment checkout. Receipt uploads are no longer required." });
   const pending = await prisma.payment.findFirst({ where: { application: { applicantId: req.user.id }, status: "PENDING" }, select: { id: true } });
   if (pending) return res.status(409).json({ success: false, message: pendingReceiptMessage });
   next();
@@ -252,6 +254,7 @@ export const requireNoPendingReceipt = asyncHandler(async (req, res, next) => {
 export const withdrawApplicantPayment = asyncHandler(async (req, res) => {
   const payment = await prisma.payment.findFirst({ where: { id: req.params.paymentId, application: { applicantId: req.user.id } } });
   if (!payment) return res.status(404).json({ success: false, message: "Payment not found" });
+  if (payment.provider === "FLUTTERWAVE") return res.status(409).json({ success: false, message: "Online payments cannot be withdrawn. Check their status with Flutterwave." });
   if (!["PENDING", "REJECTED"].includes(payment.status)) return res.status(409).json({ success: false, message: "Only pending or rejected receipts can be removed" });
   const updated = await auditedMutation(prisma, { actorId: req.user.id, action: "payment.withdrawn", targetType: "payment", targetId: payment.id }, async (transaction) => {
     const changed = await transaction.payment.updateMany({ where: { id: payment.id, status: payment.status, updatedAt: payment.updatedAt }, data: { status: "CANCELLED", reviewNote: "Withdrawn by applicant" } });

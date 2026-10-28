@@ -7,6 +7,7 @@ import PrivateFileButton from "../../components/PrivateFileButton.jsx";
 import { useApplicant } from "../../context/ApplicantContext.jsx";
 import { useAdmissions } from "../../context/AdmissionsContext.jsx";
 import { portalPath } from "../../api/portalLinks.js";
+import FlutterwavePayment from "../../components/FlutterwavePayment.jsx";
 
 const typeLabels = {
   APPLICATION_FEE: "Application form fee",
@@ -16,7 +17,7 @@ const typeLabels = {
 };
 
 export default function ApplicantPayments() {
-  const { application, formAccess, loading, refresh } = useApplicant();
+  const { application, formAccess, paymentGateway, loading, refresh } = useApplicant();
   const { policy } = useAdmissions();
   const navigate = useNavigate();
   const [proof, setProof] = useState(null);
@@ -30,6 +31,7 @@ export default function ApplicantPayments() {
   }, [formAccess.amount]);
   if (loading) return <div className="portal-loading">Loading payments...</div>;
   if (!application) return <div className="portal-error">Applicant record could not be loaded.</div>;
+  if (paymentGateway.provider === "FLUTTERWAVE") return <FlutterwavePayment />;
   const history = (application.payments || []).filter((payment) => payment.status !== "CANCELLED");
   const pendingReceipt = history.some((payment) => payment.status === "PENDING");
   const verifiedApplicationFee = history.some((payment) => payment.type === "APPLICATION_FEE" && payment.status === "VERIFIED");

@@ -17,7 +17,7 @@ const statusText = {
 };
 
 export default function ApplicantDashboard() {
-  const { application, formAccess, loading, error } = useApplicant();
+  const { application, formAccess, paymentGateway, loading, error } = useApplicant();
   if (loading) return <div className="portal-loading">Loading your admission record...</div>;
   if (!application) return <div className="portal-error">{error || "Applicant record not found."}</div>;
 
@@ -49,7 +49,7 @@ export default function ApplicantDashboard() {
       <section className="portal-card-grid">
         <article><span className="portal-card-icon"><FileText /></span><div><h2>Application form</h2><p>{formComplete ? "Your required form information is complete." : "Complete personal, education, sponsor, and declaration details."}</p></div>{formAccess.unlocked ? <Link to={portalPath("/applicant/application")}>Open form <ArrowRight size={16} /></Link> : <button type="button" className="portal-add-button" disabled>Locked until payment is verified</button>}</article>
         <article><span className="portal-card-icon"><FileCheck2 /></span><div><h2>Documents</h2><p>{documents.length} uploaded document{documents.length === 1 ? "" : "s"}. {documentsComplete ? "Required files are present." : "More required files are needed."}</p></div>{formAccess.unlocked ? <Link to={portalPath("/applicant/documents")}>Manage files <ArrowRight size={16} /></Link> : <button type="button" className="portal-add-button" disabled>Locked until payment is verified</button>}</article>
-        <article><span className="portal-card-icon"><CreditCard /></span><div><h2>Payments</h2><p>{verifiedPayments.length} verified payment{verifiedPayments.length === 1 ? "" : "s"}. Upload payment evidence for bursary review.</p></div><Link to={portalPath("/applicant/payments")}>View payments <ArrowRight size={16} /></Link></article>
+        <article><span className="portal-card-icon"><CreditCard /></span><div><h2>Payments</h2><p>{verifiedPayments.length} verified payment{verifiedPayments.length === 1 ? "" : "s"}. {paymentGateway.provider === "FLUTTERWAVE" ? "Pay securely online and track automatic confirmation." : "Upload payment evidence for bursary review."}</p></div><Link to={portalPath("/applicant/payments")}>View payments <ArrowRight size={16} /></Link></article>
       </section>
 
       <section className="portal-timeline-card">

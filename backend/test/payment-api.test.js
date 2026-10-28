@@ -46,6 +46,10 @@ test("receipt API blocks pending uploads and protects withdrawal ownership and r
     assert.equal(audit.length, 2);
     payment = { ...payment, status: "VERIFIED" };
     assert.equal((await fetch(base + "/receipt", { method: "DELETE", headers })).status, 409);
+    payment = { ...payment, status: "PENDING", provider: "FLUTTERWAVE" };
+    const automatic = await fetch(base + "/receipt", { method: "DELETE", headers });
+    assert.equal(automatic.status, 409);
+    assert.match((await automatic.json()).message, /cannot be withdrawn/);
     payment = null;
     assert.equal((await fetch(base + "/someone-elses-receipt", { method: "DELETE", headers })).status, 404);
   } finally {

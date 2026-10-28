@@ -153,6 +153,7 @@ export const reviewApplicationPayment = asyncHandler(async (req, res) => {
     where: { id: req.params.paymentId, applicationId: req.params.id }
   });
   if (!payment) return res.status(404).json({ success: false, message: "Payment not found" });
+  if (payment.provider === "FLUTTERWAVE") return res.status(409).json({ success: false, message: "Flutterwave payment status is verified automatically and cannot be overridden here." });
   if (payment.status === "CANCELLED") return res.status(409).json({ success: false, message: "This receipt was withdrawn by the applicant" });
   if (payment.type === "APPLICATION_FEE" && req.body.status === "VERIFIED") {
     const application = await prisma.application.findUnique({ where: { id: req.params.id } });
