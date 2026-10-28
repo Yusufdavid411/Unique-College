@@ -1,5 +1,13 @@
 # Custom domains
 
+Current user-facing addresses are https://www.uniquecollegekwali.com,
+https://apply.uniquecollegekwali.com and https://admin.uniquecollegekwali.com.
+The shared live API is https://api.uniquecollegekwali.com. Do not publish temporary
+Vercel deployment URLs as alternative portals. Old website aliases redirect to
+the canonical domain; legacy portal paths redirect to the correct subdomain.
+Payment sandbox testing was stopped at the user's request; do not resume or point
+the public website at its test API. Retain test records separately for audit.
+
 Namecheap retains DNS management. Existing public-domain records remain unchanged.
 Add CNAME records named admin and apply using the exact target Vercel displays for
 the uniquecollegekwali project. Add api using the target from unique-college-api.

@@ -1,4 +1,18 @@
-# Flutterwave application form payments (activation pending)
+# Flutterwave application form payments (activation pending; sandbox retired)
+
+## Current instruction — 28 October 2026
+
+The user requested stopping sandbox testing and using only the live school
+subdomains. Do not resume test charges, migrate test payments into production, or
+activate the alternate merchant's key on the live API. Historical sandbox setup
+below is retained for audit, not as an invitation to use those URLs. The retired
+sandbox projects are paused, and the old website, API alias and API preview URLs
+were checked to return 503 (deployment paused). Test data is preserved. Source
+fallback routing sends retired sandbox visitors to the official applicant entry
+without callback query parameters, and a retirement API guard returns 410 if the
+retirement flag is deployed. Neither fallback is a reason to unpause testing.
+The school's approved live Flutterwave credentials are still required before
+enabling real automatic payments.
 
 This Stage 1 integration uses Flutterwave Standard v3 hosted checkout. No card
 details pass through this application. Existing manually verified receipts remain
@@ -101,7 +115,13 @@ provider returned checkout-v2.dev-flutterwave.com for test checkout links; that
 exact HTTPS host is allowed only in test mode, while live mode remains restricted
 to checkout.flutterwave.com. Do not broaden this to wildcard checkout domains.
 
-Sandbox applicant entry: https://unique-college-payment-test.vercel.app/applicant/register
+Sandbox applicant entry: https://unique-college-payment-test.vercel.app/
+Sandbox sign-in: https://unique-college-payment-test.vercel.app/login
+Sandbox payment return: https://unique-college-payment-test.vercel.app/payments
+The sandbox hostname selects the same root-level applicant routing as the live
+applicant subdomain. Legacy /applicant links redirect to clean paths, preserving
+callback query parameters. Never redirect sandbox registration or payment buttons
+to the live applicant portal.
 Sandbox webhook: https://unique-college-payment-test-api.vercel.app/api/payments/flutterwave/webhook
 The sandbox fee was copied from the production admin-approved fee (NGN 20,000),
 without changing any production setting. Callback, paid receipt and actual provider

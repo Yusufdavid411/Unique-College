@@ -12,6 +12,11 @@ export const app = express();
 
 app.set("trust proxy", 1);
 
+app.use((req, res, next) => {
+  if (process.env.PAYMENT_SANDBOX_RETIRED === "true") return res.status(410).set("Cache-Control", "no-store").json({ success: false, message: "This payment sandbox has been retired. Use the official school portal." });
+  next();
+});
+
 app.use(helmet({ crossOriginResourcePolicy: { policy: "cross-origin" } }));
 const corsOptions = {
   origin(origin, callback) {
