@@ -33,12 +33,19 @@ test("public legacy links have one canonical portal destination", async () => {
   }
 });
 
-test("public application buttons use shared portal links rather than legacy local routes", async () => {
+test("public application buttons share a safe new-tab link rather than legacy local routes", async () => {
   for (const file of ["components/PublicLayout.jsx", "components/CourseCard.jsx", "pages/public/Home.jsx", "pages/public/Admission.jsx"]) {
     const source = await readFile(new URL(`../../frontend/src/${file}`, import.meta.url), "utf8");
-    assert.ok(source.includes("applicationHref("), file);
+    assert.ok(source.includes("<ApplyLink"), file);
     assert.doesNotMatch(source, /to="\/(?:apply|application|applicant(?:\/[^\"]*)?)"/, file);
   }
+  const shared = await readFile(new URL("../../frontend/src/components/ApplyLink.jsx", import.meta.url), "utf8");
+  assert.match(shared, /href=\{applicationHref\(\)\}/);
+  assert.match(shared, /target="_blank"/);
+  assert.match(shared, /rel="noopener noreferrer"/);
+  assert.match(shared, /opens in a new tab/);
+  const styles = await readFile(new URL("../../frontend/src/styles/global.css", import.meta.url), "utf8");
+  assert.match(styles, /a\.application-link:hover\s*\{\s*transition: none;\s*transform: none;/);
 });
 
 test("school-domain links cross to the correct portal without changing local development", () => {

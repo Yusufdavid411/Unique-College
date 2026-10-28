@@ -31,6 +31,9 @@ addresses redirect to the single apply hostname; legacy admin paths redirect to
 the admin hostname. Vercel handles public www redirects before rendering, while
 App also canonicalizes client-side navigation and old Vercel deployment links.
 Do not reintroduce raw applicant paths in public call-to-action buttons.
+Public application calls to action use ApplyLink: a native anchor to the applicant
+subdomain with target=_blank and rel=noopener noreferrer. They open a new tab and
+remain visually static on hover, while retaining a visible keyboard focus outline.
 
 Admissions availability is read from /api/settings/admissions, never inferred
 from the domain or a build-time constant. The endpoint disables caching; the client

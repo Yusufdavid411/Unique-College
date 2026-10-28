@@ -3,7 +3,8 @@ import { ArrowRight, CheckCircle2 } from "lucide-react";
 import Seo from "../../components/Seo.jsx";
 import { schoolInfo } from "../../data/siteData.js";
 import { useAdmissions } from "../../context/AdmissionsContext.jsx";
-import { applicationHref, applicantLoginHref } from "../../api/portalLinks.js";
+import { applicantLoginHref } from "../../api/portalLinks.js";
+import ApplyLink from "../../components/ApplyLink.jsx";
 
 export default function Admission() {
   const { policy, unavailable } = useAdmissions();
@@ -21,7 +22,7 @@ export default function Admission() {
           <h2>Entry Requirements</h2>
           <p>Applicants seeking admission into ND programmes should possess relevant O-Level credits, including English, Mathematics, Biology, Chemistry, Physics, or related science subjects as applicable to the programme.</p>
           <p>Application support is available through the registrar office at {schoolInfo.address}.</p>
-          <Link className="button primary" to={applicationHref()}>Apply now <ArrowRight size={18} /></Link>
+          <ApplyLink className="button primary">Apply now <ArrowRight size={18} /></ApplyLink>
           <p><Link to={applicantLoginHref()}>Existing applicant? Sign in to track your application.</Link></p>
         </div>
         <div className="process-list">
