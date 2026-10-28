@@ -5,6 +5,7 @@ import { useAuth } from "../context/AuthContext.jsx";
 import { ApplicantProvider, useApplicant } from "../context/ApplicantContext.jsx";
 import ApplicantProgress from "./ApplicantProgress.jsx";
 import { assetPaths } from "../data/siteData.js";
+import { portalPath } from "../api/portalLinks.js";
 
 const links = [
   ["Dashboard", "/applicant", LayoutDashboard],
@@ -60,7 +61,7 @@ function ApplicantShell() {
 
   const signOut = () => {
     logout();
-    navigate("/applicant/login");
+    navigate(portalPath("/applicant/login"));
   };
 
   return (
@@ -76,7 +77,7 @@ function ApplicantShell() {
         <nav id="applicant-navigation" aria-label="Applicant navigation">
           {links.map(([label, path, Icon]) => {
             const locked = ["/applicant/application", "/applicant/documents", "/applicant/print"].includes(path) && (loading || !formAccess.unlocked);
-            return locked ? <button type="button" disabled key={path} title="Available after payment verification"><Icon size={19} />{label}</button> : <NavLink to={path} end={path === "/applicant"} key={path} onClick={() => setMenuOpen(false)}><Icon size={19} />{label}</NavLink>;
+            return locked ? <button type="button" disabled key={path} title="Available after payment verification"><Icon size={19} />{label}</button> : <NavLink to={portalPath(path)} end={path === "/applicant"} key={path} onClick={() => setMenuOpen(false)}><Icon size={19} />{label}</NavLink>;
           })}
         </nav>
         <button className="applicant-signout" type="button" aria-label="Sign out" onClick={signOut}><LogOut size={20} /><span>Logout</span></button>

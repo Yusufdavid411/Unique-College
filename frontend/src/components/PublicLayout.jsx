@@ -2,6 +2,7 @@ import { NavLink, Outlet, Link, useLocation } from "react-router-dom";
 import { BriefcaseBusiness, ChevronDown, Crown, GraduationCap, Landmark, Mail, MapPin, Menu, Phone } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { assetPaths, schoolInfo } from "../data/siteData.js";
+import { applicationHref } from "../api/portalLinks.js";
 
 const navItems = [
   ["Home", "/"],
@@ -108,7 +109,7 @@ export default function PublicLayout() {
           {navItems.slice(2).map(([label, path]) => (
             <NavLink key={path} to={path} onClick={closeNavigation}>{label}</NavLink>
           ))}
-          <Link className="nav-cta" to="/applicant/register" onClick={closeNavigation}>Apply now</Link>
+          <Link className="nav-cta" to={applicationHref(window.location.hostname)} onClick={closeNavigation}>Apply now</Link>
         </nav>
       </header>
       <main>

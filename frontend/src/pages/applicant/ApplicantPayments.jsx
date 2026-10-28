@@ -6,6 +6,7 @@ import LoadingButton from "../../components/LoadingButton.jsx";
 import PrivateFileButton from "../../components/PrivateFileButton.jsx";
 import { useApplicant } from "../../context/ApplicantContext.jsx";
 import { useAdmissions } from "../../context/AdmissionsContext.jsx";
+import { portalPath } from "../../api/portalLinks.js";
 
 const typeLabels = {
   APPLICATION_FEE: "Application form fee",
@@ -109,7 +110,7 @@ export default function ApplicantPayments() {
           ))}
         </section>
       </div>
-      <div className="applicant-next-step"><p id="payment-next-help">{formAccess.unlocked ? "Continue to your application form." : "Continue after admin verifies your payment."}</p><button className="button primary" type="button" disabled={!formAccess.unlocked || busy} aria-describedby="payment-next-help" onClick={() => navigate("/applicant/application")}>Next: Application form</button></div>
+      <div className="applicant-next-step"><p id="payment-next-help">{formAccess.unlocked ? "Continue to your application form." : "Continue after admin verifies your payment."}</p><button className="button primary" type="button" disabled={!formAccess.unlocked || busy} aria-describedby="payment-next-help" onClick={() => navigate(portalPath("/applicant/application"))}>Next: Application form</button></div>
     </div>
   );
 }

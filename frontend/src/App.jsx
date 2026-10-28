@@ -31,11 +31,13 @@ import AdminUsers from "./pages/admin/AdminUsers.jsx";
 import Events from "./pages/public/Events.jsx";
 import ChangePassword from "./components/ChangePassword.jsx";
 import { RecoveryScreen } from "./components/AppErrorBoundary.jsx";
+import { portalPath, portalScope } from "./api/portalLinks.js";
 
 export default function App() {
+  const scope = portalScope();
   return (
     <Routes>
-      <Route element={<PublicLayout />}>
+      {!scope && <Route element={<PublicLayout />}>
         <Route index element={<Home />} />
         <Route path="about" element={<About />} />
         <Route path="leadership" element={<Navigate to="/leadership/executive" replace />} />
@@ -48,12 +50,13 @@ export default function App() {
         <Route path="events" element={<Events />} />
         <Route path="apply" element={<Navigate to="/applicant/register" replace />} />
         <Route path="application" element={<Navigate to="/applicant/register" replace />} />
-      </Route>
-      <Route path="/applicant/login" element={<ApplicantAccess />} />
-      <Route path="/applicant/register" element={<ApplicantAccess />} />
+      </Route>}
+      {scope !== "admin" && <>
+      <Route path={portalPath("/applicant/login")} element={<ApplicantAccess />} />
+      {scope !== "applicant" && <Route path="/applicant/register" element={<ApplicantAccess />} />}
       <Route
-        path="/applicant"
-        element={<ProtectedRoute roles={["APPLICANT", "STUDENT"]} redirectTo="/applicant/login"><ApplicantLayout /></ProtectedRoute>}
+        path={portalPath("/applicant")}
+        element={<ProtectedRoute roles={["APPLICANT", "STUDENT"]} redirectTo="/applicant/login" entry={scope === "applicant" ? <ApplicantAccess /> : null}><ApplicantLayout /></ProtectedRoute>}
       >
         <Route index element={<ApplicantDashboard />} />
         <Route path="application" element={<ApplicantApplicationForm />} />
@@ -62,11 +65,13 @@ export default function App() {
         <Route path="print" element={<ApplicantPrintCentre />} />
         <Route path="security" element={<ChangePassword />} />
       </Route>
-      <Route path="/admin/login" element={<AdminLogin />} />
+      </>}
+      {scope !== "applicant" && <>
+      {scope !== "admin" && <Route path="/admin/login" element={<AdminLogin />} />}
       <Route
-        path="/admin"
+        path={portalPath("/admin")}
         element={
-          <ProtectedRoute roles={["ADMIN"]}>
+          <ProtectedRoute roles={["ADMIN"]} entry={scope === "admin" ? <AdminLogin /> : null}>
             <AdminLayout />
           </ProtectedRoute>
         }
@@ -83,6 +88,7 @@ export default function App() {
         <Route path="users" element={<AdminUsers />} />
         <Route path="security" element={<ChangePassword />} />
       </Route>
+      </>}
       <Route path="*" element={<RecoveryScreen title="Page not found" message="This address is not available. Return to the homepage to continue." />} />
     </Routes>
   );

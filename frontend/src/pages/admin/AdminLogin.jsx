@@ -4,6 +4,7 @@ import { useAuth } from "../../context/AuthContext.jsx";
 import Seo from "../../components/Seo.jsx";
 import LoadingButton from "../../components/LoadingButton.jsx";
 import { apiErrorMessage } from "../../api/client.js";
+import { portalPath } from "../../api/portalLinks.js";
 
 export default function AdminLogin() {
   const { login, user } = useAuth();
@@ -12,7 +13,7 @@ export default function AdminLogin() {
   const [error, setError] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
-  if (user) return <Navigate to="/admin" replace />;
+  if (user) return <Navigate to={portalPath("/admin")} replace />;
 
   async function submit(event) {
     event.preventDefault();
@@ -20,7 +21,7 @@ export default function AdminLogin() {
     setSubmitting(true);
     try {
       await login(form.email, form.password);
-      navigate("/admin");
+      navigate(portalPath("/admin"));
     } catch (error) {
       setError(apiErrorMessage(error, "Invalid admin credentials."));
     } finally {

@@ -7,7 +7,7 @@ export const schoolInfo = {
   email: "uniquecollegescience@gmail.com",
   phones: ["09092835595", "0813 531 2799"],
   phoneDisplay: "+234 909 283 5595, +234 813 531 2799",
-  website: "uniquecollegekwali.vercel.app",
+  website: "www.uniquecollegekwali.com",
   motto: "Excellence in Impacting Knowledge",
   admissionSession: "2026/2027 Academic Session",
   established: "September 7, 2024",

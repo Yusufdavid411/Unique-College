@@ -1,6 +1,10 @@
+import { portalScope } from "./portalLinks.js";
+
 const legacyKey = "unique_college_token";
 
-export function sessionScope(pathname) {
+export function sessionScope(pathname, hostname = globalThis.location?.hostname) {
+  const hostScope = portalScope(hostname);
+  if (hostScope) return hostScope;
   if (/^\/admin(?:\/|$)/.test(pathname)) return "admin";
   if (/^\/applicant(?:\/|$)/.test(pathname)) return "applicant";
   return null;

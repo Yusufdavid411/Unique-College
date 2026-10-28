@@ -3,6 +3,7 @@ import { Images, LayoutDashboard, LogOut, Menu, MessageSquare, Newspaper, Settin
 import { useState } from "react";
 import { useAuth } from "../context/AuthContext.jsx";
 import { assetPaths } from "../data/siteData.js";
+import { portalPath } from "../api/portalLinks.js";
 
 const items = [
   ["Overview", "/admin", LayoutDashboard],
@@ -25,7 +26,7 @@ export default function AdminLayout() {
 
   function handleLogout() {
     logout();
-    navigate("/admin/login");
+    navigate(portalPath("/admin/login"));
   }
 
   return (
@@ -41,7 +42,7 @@ export default function AdminLayout() {
         <button className="admin-menu-toggle" type="button" aria-label={menuOpen ? "Close admin navigation" : "Open admin navigation"} aria-expanded={menuOpen} aria-controls="admin-navigation" onClick={() => setMenuOpen((open) => !open)}>{menuOpen ? <X size={22} /> : <Menu size={22} />}</button>
         <nav id="admin-navigation" aria-label="Admin navigation">
           {items.map(([label, path, Icon]) => (
-            <NavLink key={path} to={path} end={path === "/admin"} onClick={() => setMenuOpen(false)}>
+            <NavLink key={path} to={portalPath(path)} end={path === "/admin"} onClick={() => setMenuOpen(false)}>
               <Icon size={18} />
               {label}
             </NavLink>

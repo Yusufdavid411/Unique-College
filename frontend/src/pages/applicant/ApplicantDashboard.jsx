@@ -2,6 +2,7 @@ import { ArrowRight, CheckCircle2, Circle, Clock3, CreditCard, FileCheck2, FileT
 import { Link } from "react-router-dom";
 import { useApplicant } from "../../context/ApplicantContext.jsx";
 import FormPurchaseRequired from "../../components/FormPurchaseRequired.jsx";
+import { portalPath } from "../../api/portalLinks.js";
 
 const statusText = {
   DRAFT: "Draft",
@@ -46,9 +47,9 @@ export default function ApplicantDashboard() {
       </section>
 
       <section className="portal-card-grid">
-        <article><span className="portal-card-icon"><FileText /></span><div><h2>Application form</h2><p>{formComplete ? "Your required form information is complete." : "Complete personal, education, sponsor, and declaration details."}</p></div>{formAccess.unlocked ? <Link to="/applicant/application">Open form <ArrowRight size={16} /></Link> : <button type="button" className="portal-add-button" disabled>Locked until payment is verified</button>}</article>
-        <article><span className="portal-card-icon"><FileCheck2 /></span><div><h2>Documents</h2><p>{documents.length} uploaded document{documents.length === 1 ? "" : "s"}. {documentsComplete ? "Required files are present." : "More required files are needed."}</p></div>{formAccess.unlocked ? <Link to="/applicant/documents">Manage files <ArrowRight size={16} /></Link> : <button type="button" className="portal-add-button" disabled>Locked until payment is verified</button>}</article>
-        <article><span className="portal-card-icon"><CreditCard /></span><div><h2>Payments</h2><p>{verifiedPayments.length} verified payment{verifiedPayments.length === 1 ? "" : "s"}. Upload payment evidence for bursary review.</p></div><Link to="/applicant/payments">View payments <ArrowRight size={16} /></Link></article>
+        <article><span className="portal-card-icon"><FileText /></span><div><h2>Application form</h2><p>{formComplete ? "Your required form information is complete." : "Complete personal, education, sponsor, and declaration details."}</p></div>{formAccess.unlocked ? <Link to={portalPath("/applicant/application")}>Open form <ArrowRight size={16} /></Link> : <button type="button" className="portal-add-button" disabled>Locked until payment is verified</button>}</article>
+        <article><span className="portal-card-icon"><FileCheck2 /></span><div><h2>Documents</h2><p>{documents.length} uploaded document{documents.length === 1 ? "" : "s"}. {documentsComplete ? "Required files are present." : "More required files are needed."}</p></div>{formAccess.unlocked ? <Link to={portalPath("/applicant/documents")}>Manage files <ArrowRight size={16} /></Link> : <button type="button" className="portal-add-button" disabled>Locked until payment is verified</button>}</article>
+        <article><span className="portal-card-icon"><CreditCard /></span><div><h2>Payments</h2><p>{verifiedPayments.length} verified payment{verifiedPayments.length === 1 ? "" : "s"}. Upload payment evidence for bursary review.</p></div><Link to={portalPath("/applicant/payments")}>View payments <ArrowRight size={16} /></Link></article>
       </section>
 
       <section className="portal-timeline-card">
@@ -71,7 +72,7 @@ export default function ApplicantDashboard() {
         <div className="portal-highlight"><Clock3 /><div><strong>Interview scheduled</strong><span>{new Date(application.interviewDate).toLocaleString()}</span></div></div>
       )}
       {application.status === "ADMITTED" && (
-        <div className="portal-highlight success"><GraduationCap /><div><strong>Congratulations, you are admitted.</strong><span>Student number: {application.studentNumber}</span></div><Link to="/applicant/print">Open print centre</Link></div>
+        <div className="portal-highlight success"><GraduationCap /><div><strong>Congratulations, you are admitted.</strong><span>Student number: {application.studentNumber}</span></div><Link to={portalPath("/applicant/print")}>Open print centre</Link></div>
       )}
     </div>
   );

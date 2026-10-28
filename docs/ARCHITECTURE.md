@@ -39,11 +39,16 @@ STAGE_1_WORKLIST.md. The initial audit below records the starting position.
 
 | Hostname | Responsibility | Notes |
 | --- | --- | --- |
-| uniquecollegekwali.edu.ng | Public website | React application |
-| admin.uniquecollegekwali.edu.ng | Administration portal | React application, admin permissions |
-| staff.uniquecollegekwali.edu.ng | Staff/faculty portal | Future Stage 3 UI, shared API |
-| portal.uniquecollegekwali.edu.ng | Student portal | Future Stage 4 UI, shared API |
-| api.uniquecollegekwali.edu.ng | Single REST API | Express API, shared PostgreSQL |
+| uniquecollegekwali.com / www.uniquecollegekwali.com | Public website | React application; apex redirects to www |
+| admin.uniquecollegekwali.com | Administration portal | Same React deployment; login/dashboard at hostname root |
+| apply.uniquecollegekwali.com | Pre-admission portal | Same React deployment; registration/dashboard at hostname root |
+| staff.uniquecollegekwali.com | Staff/faculty portal | Future Stage 3 UI; do not publish before built |
+| portal.uniquecollegekwali.com | Student portal | Future Stage 4 UI; do not publish before built |
+| api.uniquecollegekwali.com | Single REST API | Express API, shared PostgreSQL |
+
+The purchased .com domain supersedes the proposed .edu.ng web addresses. Existing
+account emails are unchanged. DNS does not create email mailboxes or portal features.
+See CUSTOM_DOMAINS.md for configuration and verification.
 
 All web clients call the same API and PostgreSQL database. They must not duplicate
 business logic.

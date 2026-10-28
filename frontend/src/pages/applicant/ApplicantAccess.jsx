@@ -7,19 +7,20 @@ import { apiErrorMessage } from "../../api/client.js";
 import { useAuth } from "../../context/AuthContext.jsx";
 import { useAdmissions } from "../../context/AdmissionsContext.jsx";
 import { assetPaths } from "../../data/siteData.js";
+import { portalPath, publicPageHref } from "../../api/portalLinks.js";
 
 export default function ApplicantAccess() {
   const { pathname } = useLocation();
   const navigate = useNavigate();
   const { user, loading: authLoading, applicantLogin, registerApplicant } = useAuth();
   const { policy: admissions, unavailable: policyError, loading: policyLoading, refresh } = useAdmissions();
-  const isRegister = pathname.endsWith("register");
+  const isRegister = pathname === "/" || pathname.endsWith("register");
   const [showPassword, setShowPassword] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [form, setForm] = useState({ fullName: "", email: "", phoneNumber: "", identifier: "", password: "" });
 
-  if (user && ["APPLICANT", "STUDENT"].includes(user.role)) return <Navigate to="/applicant" replace />;
+  if (user && ["APPLICANT", "STUDENT"].includes(user.role)) return <Navigate to={portalPath("/applicant")} replace />;
   const checking = authLoading || (isRegister && policyLoading && !admissions);
   const canRegister = !policyError && admissions?.open === true;
 
@@ -36,7 +37,7 @@ export default function ApplicantAccess() {
       } else {
         await applicantLogin(form.identifier, form.password);
       }
-      navigate("/applicant");
+      navigate(portalPath("/applicant"));
     } catch (requestError) {
       setError(apiErrorMessage(requestError, "Your applicant account could not be accessed."));
       if (isRegister && requestError.response?.status === 409) refresh();
@@ -50,7 +51,7 @@ export default function ApplicantAccess() {
       <Seo title={isRegister ? "Start Application" : "Applicant Login"} description="Unique College secure admissions applicant portal." />
       <div className="applicant-access">
         <section className="applicant-access-story">
-          <Link className="applicant-access-brand" to="/"><img src={assetPaths.logo} alt="Unique College logo" /><span>Unique College</span></Link>
+          <Link className="applicant-access-brand" to={publicPageHref("/", window.location.hostname)}><img src={assetPaths.logo} alt="Unique College logo" /><span>Unique College</span></Link>
           <div>
             <span className="eyebrow">2026/2027 Admissions</span>
             <h1>Your admission journey, in one secure place.</h1>
@@ -73,7 +74,7 @@ export default function ApplicantAccess() {
               <h3>{policyError ? "Admissions status is temporarily unavailable" : "Admissions are currently closed"}</h3>
               <p>{policyError ? "We could not confirm whether new applications are open. Please try again shortly. Existing applicants can still sign in." : admissions?.message || "We are not accepting new applications at the moment."}</p>
               <p>Keep an eye on the school news and announcements to find out when the next admission opens.</p>
-              <div className="access-status-actions">{policyError && <button type="button" className="button secondary" onClick={refresh}>Try again</button>}<Link className="button primary" to="/news">View school news <ArrowRight size={18} /></Link><Link className="text-link" to="/applicant/login">Existing applicant? Sign in</Link><Link className="text-link" to="/">Return to homepage</Link></div>
+              <div className="access-status-actions">{policyError && <button type="button" className="button secondary" onClick={refresh}>Try again</button>}<Link className="button primary" to={publicPageHref("/news", window.location.hostname)}>View school news <ArrowRight size={18} /></Link><Link className="text-link" to={portalPath("/applicant/login")}>Existing applicant? Sign in</Link><Link className="text-link" to={publicPageHref("/", window.location.hostname)}>Return to homepage</Link></div>
             </div> : <>
             <p>{isRegister ? "Create your applicant account before completing the admission form." : "Sign in with your email, application ID, or student portal username."}</p>
             <form onSubmit={submit}>
@@ -91,7 +92,7 @@ export default function ApplicantAccess() {
                 {isRegister ? "Create applicant account" : "Sign in to portal"}<ArrowRight size={18} />
               </LoadingButton>
             </form>
-            <p className="access-switch">{isRegister ? "Already started?" : "New applicant?"} <Link to={isRegister ? "/applicant/login" : "/applicant/register"}>{isRegister ? "Sign in" : "Create an account"}</Link></p>
+            <p className="access-switch">{isRegister ? "Already started?" : "New applicant?"} <Link to={portalPath(isRegister ? "/applicant/login" : "/applicant/register")}>{isRegister ? "Sign in" : "Create an account"}</Link></p>
             </>}
           </div>
         </section>
