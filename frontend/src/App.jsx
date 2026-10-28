@@ -1,4 +1,5 @@
-import { Navigate, Route, Routes } from "react-router-dom";
+import { Navigate, Route, Routes, useLocation } from "react-router-dom";
+import { useEffect } from "react";
 import PublicLayout from "./components/PublicLayout.jsx";
 import ProtectedRoute from "./components/ProtectedRoute.jsx";
 import AdminLayout from "./components/AdminLayout.jsx";
@@ -31,10 +32,16 @@ import AdminUsers from "./pages/admin/AdminUsers.jsx";
 import Events from "./pages/public/Events.jsx";
 import ChangePassword from "./components/ChangePassword.jsx";
 import { RecoveryScreen } from "./components/AppErrorBoundary.jsx";
-import { portalPath, portalScope } from "./api/portalLinks.js";
+import { canonicalPortalHref, portalPath, portalScope } from "./api/portalLinks.js";
 
 export default function App() {
   const scope = portalScope();
+  const { pathname, search, hash } = useLocation();
+  const destination = canonicalPortalHref(pathname);
+  useEffect(() => {
+    if (destination) window.location.replace(`${destination}${search}${hash}`);
+  }, [destination, search, hash]);
+  if (destination) return <div className="loading-screen" role="status">Opening your secure portal…</div>;
   return (
     <Routes>
       {!scope && <Route element={<PublicLayout />}>

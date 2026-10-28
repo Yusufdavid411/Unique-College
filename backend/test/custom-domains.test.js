@@ -1,18 +1,44 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
-import { publicPageHref, applicationHref, portalPath, portalScope } from "../../frontend/src/api/portalLinks.js";
+import { publicPageHref, applicationHref, applicantLoginHref, canonicalPortalHref, portalPath, portalScope } from "../../frontend/src/api/portalLinks.js";
 import { sessionScope } from "../../frontend/src/api/session.js";
 
 test("only legacy portal prefixes redirect, never the hostname roots", async () => {
   const config = JSON.parse(await readFile(new URL("../../vercel.json", import.meta.url), "utf8"));
-  assert.deepEqual(config.redirects.map((rule) => [rule.source, rule.has[0].value, rule.destination]), [
+  assert.deepEqual(config.redirects.filter((rule) => ["admin.uniquecollegekwali.com", "apply.uniquecollegekwali.com"].includes(rule.has[0].value)).map((rule) => [rule.source, rule.has[0].value, rule.destination]), [
     ["/admin/login", "admin.uniquecollegekwali.com", "/"],
     ["/admin/:path*", "admin.uniquecollegekwali.com", "/:path*"],
     ["/applicant/register", "apply.uniquecollegekwali.com", "/"],
     ["/applicant/:path*", "apply.uniquecollegekwali.com", "/:path*"]
   ]);
   assert.ok(config.redirects.every((rule) => rule.permanent === false));
+});
+
+test("public legacy links have one canonical portal destination", async () => {
+  const hostname = "www.uniquecollegekwali.com";
+  for (const path of ["/apply", "/application", "/applicant", "/applicant/register"]) {
+    assert.equal(canonicalPortalHref(path, hostname), "https://apply.uniquecollegekwali.com/");
+  }
+  assert.equal(applicantLoginHref(hostname), "https://apply.uniquecollegekwali.com/login");
+  assert.equal(canonicalPortalHref("/applicant/payments", hostname), "https://apply.uniquecollegekwali.com/payments");
+  assert.equal(canonicalPortalHref("/admin/news", hostname), "https://admin.uniquecollegekwali.com/news");
+  assert.equal(canonicalPortalHref("/applicant/register", "uniquecollegekwali.vercel.app"), "https://apply.uniquecollegekwali.com/");
+  assert.equal(canonicalPortalHref("/news", hostname), null);
+  assert.equal(canonicalPortalHref("/applicant/register", "localhost"), null);
+  assert.equal(canonicalPortalHref("/", "apply.uniquecollegekwali.com"), null);
+  const config = JSON.parse(await readFile(new URL("../../vercel.json", import.meta.url), "utf8"));
+  for (const path of ["/apply", "/application", "/applicant/register"]) {
+    assert.equal(config.redirects.find((rule) => rule.source === path && rule.has[0].value === hostname)?.destination, "https://apply.uniquecollegekwali.com/");
+  }
+});
+
+test("public application buttons use shared portal links rather than legacy local routes", async () => {
+  for (const file of ["components/PublicLayout.jsx", "components/CourseCard.jsx", "pages/public/Home.jsx", "pages/public/Admission.jsx"]) {
+    const source = await readFile(new URL(`../../frontend/src/${file}`, import.meta.url), "utf8");
+    assert.ok(source.includes("applicationHref("), file);
+    assert.doesNotMatch(source, /to="\/(?:apply|application|applicant(?:\/[^\"]*)?)"/, file);
+  }
 });
 
 test("school-domain links cross to the correct portal without changing local development", () => {

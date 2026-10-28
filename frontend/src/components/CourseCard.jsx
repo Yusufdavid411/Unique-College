@@ -1,5 +1,6 @@
 import { ArrowRight, BookOpenCheck, ChevronDown, Clock3, ListChecks } from "lucide-react";
 import { Link } from "react-router-dom";
+import { applicationHref } from "../api/portalLinks.js";
 
 export default function CourseCard({ program, index }) {
   return (
@@ -27,7 +28,7 @@ export default function CourseCard({ program, index }) {
               <p>{program.requirements}</p>
             </div>
           </div>
-          <Link className="text-link" to="/apply">
+          <Link className="text-link" to={applicationHref()}>
             Apply for this programme <ArrowRight size={16} aria-hidden="true" />
           </Link>
         </div>

@@ -6,6 +6,7 @@ import ResponsiveCarousel from "../../components/ResponsiveCarousel.jsx";
 import Seo from "../../components/Seo.jsx";
 import EventsPreview from "../../components/EventsPreview.jsx";
 import { useAdmissions } from "../../context/AdmissionsContext.jsx";
+import { applicationHref } from "../../api/portalLinks.js";
 import { assetPaths, heroSlides, leadershipWelcome, programs, schoolInfo, stats } from "../../data/siteData.js";
 
 export default function Home() {
@@ -58,7 +59,7 @@ export default function Home() {
           <h1>{schoolInfo.name} {schoolInfo.location}</h1>
           <p>{schoolInfo.motto}. Practical healthcare education for community health, pharmacy technology, medical laboratory technology, health information management, public health, and health promotion.</p>
           <div className="hero-actions">
-            <Link className="button primary" to="/admission">{policy?.open ? "Start application" : "Admissions information"} <ArrowRight size={18} /></Link>
+            <Link className="button primary" to={applicationHref()}>Apply now <ArrowRight size={18} /></Link>
             <Link className="button ghost" to="/courses">Explore Courses</Link>
           </div>
         </div>

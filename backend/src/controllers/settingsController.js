@@ -6,6 +6,7 @@ import { z } from "zod";
 import { auditedMutation } from "../services/audit.js";
 
 export const readAdmissionsPolicy = asyncHandler(async (req, res) => {
+  res.set("Cache-Control", "no-store");
   ok(res, await getAdmissionsPolicy());
 });
 

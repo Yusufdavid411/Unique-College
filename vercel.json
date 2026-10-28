@@ -5,6 +5,42 @@
   "framework": "vite",
   "redirects": [
     {
+      "source": "/applicant/register",
+      "has": [{ "type": "host", "value": "www.uniquecollegekwali.com" }],
+      "destination": "https://apply.uniquecollegekwali.com/",
+      "permanent": false
+    },
+    {
+      "source": "/applicant/:path*",
+      "has": [{ "type": "host", "value": "www.uniquecollegekwali.com" }],
+      "destination": "https://apply.uniquecollegekwali.com/:path*",
+      "permanent": false
+    },
+    {
+      "source": "/apply",
+      "has": [{ "type": "host", "value": "www.uniquecollegekwali.com" }],
+      "destination": "https://apply.uniquecollegekwali.com/",
+      "permanent": false
+    },
+    {
+      "source": "/application",
+      "has": [{ "type": "host", "value": "www.uniquecollegekwali.com" }],
+      "destination": "https://apply.uniquecollegekwali.com/",
+      "permanent": false
+    },
+    {
+      "source": "/admin/login",
+      "has": [{ "type": "host", "value": "www.uniquecollegekwali.com" }],
+      "destination": "https://admin.uniquecollegekwali.com/",
+      "permanent": false
+    },
+    {
+      "source": "/admin/:path*",
+      "has": [{ "type": "host", "value": "www.uniquecollegekwali.com" }],
+      "destination": "https://admin.uniquecollegekwali.com/:path*",
+      "permanent": false
+    },
+    {
       "source": "/admin/login",
       "has": [{ "type": "host", "value": "admin.uniquecollegekwali.com" }],
       "destination": "/",

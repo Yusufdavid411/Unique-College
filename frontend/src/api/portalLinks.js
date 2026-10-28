@@ -2,7 +2,9 @@ const schoolHosts = new Set([
   "uniquecollegekwali.com",
   "www.uniquecollegekwali.com",
   "admin.uniquecollegekwali.com",
-  "apply.uniquecollegekwali.com"
+  "apply.uniquecollegekwali.com",
+  "uniquecollegekwali.vercel.app",
+  "uniquecollegekwali-yusufdavid411s-projects.vercel.app"
 ]);
 
 export function portalScope(hostname = globalThis.location?.hostname) {
@@ -24,6 +26,22 @@ export function publicPageHref(path, hostname) {
   return schoolHosts.has(hostname) ? `https://www.uniquecollegekwali.com${path}` : path;
 }
 
-export function applicationHref(hostname) {
+export function applicationHref(hostname = globalThis.location?.hostname) {
   return schoolHosts.has(hostname) ? "https://apply.uniquecollegekwali.com/" : "/applicant/register";
+}
+
+export function applicantLoginHref(hostname = globalThis.location?.hostname) {
+  return schoolHosts.has(hostname) ? "https://apply.uniquecollegekwali.com/login" : "/applicant/login";
+}
+
+export function canonicalPortalHref(pathname, hostname = globalThis.location?.hostname) {
+  if (!schoolHosts.has(hostname) || portalScope(hostname)) return null;
+  if (/^\/(apply|application)\/?$/.test(pathname)) return applicationHref(hostname);
+  if (/^\/applicant(?:\/|$)/.test(pathname)) {
+    return `https://apply.uniquecollegekwali.com${portalPath(pathname, "apply.uniquecollegekwali.com")}`;
+  }
+  if (/^\/admin(?:\/|$)/.test(pathname)) {
+    return `https://admin.uniquecollegekwali.com${portalPath(pathname, "admin.uniquecollegekwali.com")}`;
+  }
+  return null;
 }

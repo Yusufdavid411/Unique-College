@@ -14,7 +14,7 @@ export function AdmissionsProvider({ children }) {
     const version = ++requestVersion.current;
     setLoading(true);
     try {
-      const response = await api.get("/settings/admissions");
+      const response = await api.get("/settings/admissions", { headers: { "Cache-Control": "no-cache" } });
       if (version === requestVersion.current) { setPolicy(response.data.data); setUnavailable(false); }
     } catch {
       if (version === requestVersion.current) { setPolicy(null); setUnavailable(true); }
@@ -24,7 +24,15 @@ export function AdmissionsProvider({ children }) {
   }, []);
   useEffect(() => {
     refresh();
-    return () => { requestVersion.current += 1; };
+    const onFocus = () => refresh();
+    const onVisibility = () => { if (document.visibilityState === "visible") refresh(); };
+    window.addEventListener("focus", onFocus);
+    document.addEventListener("visibilitychange", onVisibility);
+    return () => {
+      requestVersion.current += 1;
+      window.removeEventListener("focus", onFocus);
+      document.removeEventListener("visibilitychange", onVisibility);
+    };
   }, [pathname, refresh]);
   return <AdmissionsContext.Provider value={{ policy, unavailable, loading, refresh }}>{children}</AdmissionsContext.Provider>;
 }

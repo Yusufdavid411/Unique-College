@@ -17,6 +17,20 @@ path-based scope on local development and the original deployment address.
 API endpoint paths and backend authorization are unchanged. Local storage is isolated by
 origin, so users may need to sign in again on their new portal address.
 
+All public application buttons (navbar, hero, admissions and programme cards) use
+the shared portalLinks helpers. Public /apply, /application and legacy /applicant
+addresses redirect to the single apply hostname; legacy admin paths redirect to
+the admin hostname. Vercel handles public www redirects before rendering, while
+App also canonicalizes client-side navigation and old Vercel deployment links.
+Do not reintroduce raw applicant paths in public call-to-action buttons.
+
+Admissions availability is read from /api/settings/admissions, never inferred
+from the domain or a build-time constant. The endpoint disables caching; the client
+refreshes on route changes and when returning to the tab. Apply buttons remain
+available when admissions close; the applicant portal shows the closure message
+and news link instead of registration. API registration independently enforces the
+live admissions policy. API failures must show unavailable, never assume open.
+
 Production API CLIENT_URL must include the exact HTTPS origins for the public
 apex, www, admin and apply, preserving existing allowed origins during migration.
 Do not allow wildcard origins. Defaults apply only when CLIENT_URL is unset.
