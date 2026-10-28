@@ -78,11 +78,13 @@ test("retired payment sandbox no longer hosts applicant routes and points only t
   assert.equal(canonicalPortalHref("/", hostname), "https://apply.uniquecollegekwali.com/");
 });
 
-test("legacy website aliases canonicalize public pages as well as portal entry points", () => {
+test("legacy website aliases canonicalize public pages as well as portal entry points", async () => {
+  const config = JSON.parse(await readFile(new URL("../../vercel.json", import.meta.url), "utf8"));
   for (const hostname of ["uniquecollegekwali.vercel.app", "uniquecollegekwali-yusufdavid411s-projects.vercel.app"]) {
     assert.equal(canonicalPortalHref("/", hostname), "https://www.uniquecollegekwali.com/");
     assert.equal(canonicalPortalHref("/news", hostname), "https://www.uniquecollegekwali.com/news");
     assert.equal(canonicalPortalHref("/applicant/register", hostname), "https://apply.uniquecollegekwali.com/");
     assert.equal(canonicalPortalHref("/admin/login", hostname), "https://admin.uniquecollegekwali.com/");
+    assert.equal(config.redirects.find((rule) => rule.source === "/" && rule.has[0].value === hostname)?.destination, "https://www.uniquecollegekwali.com/");
   }
 });

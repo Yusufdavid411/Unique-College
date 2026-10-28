@@ -5,6 +5,18 @@
   "framework": "vite",
   "redirects": [
     {
+      "source": "/",
+      "has": [{ "type": "host", "value": "uniquecollegekwali.vercel.app" }],
+      "destination": "https://www.uniquecollegekwali.com/",
+      "permanent": false
+    },
+    {
+      "source": "/",
+      "has": [{ "type": "host", "value": "uniquecollegekwali-yusufdavid411s-projects.vercel.app" }],
+      "destination": "https://www.uniquecollegekwali.com/",
+      "permanent": false
+    },
+    {
       "source": "/:path*",
       "has": [{ "type": "host", "value": "uniquecollegekwali.vercel.app" }],
       "destination": "https://www.uniquecollegekwali.com/:path*",
