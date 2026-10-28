@@ -106,7 +106,7 @@ export async function applicationFormPdf(application) {
 }
 
 export async function paymentReceiptPdf(application, payment) {
-  if (payment.status !== "VERIFIED") throw Object.assign(new Error("A payment receipt is available only after admin verification. You can download the original payment evidence separately."), { statusCode: 409 });
+  if (payment.status !== "VERIFIED") throw Object.assign(new Error("A payment receipt is available only after payment verification. You can download the original payment evidence separately."), { statusCode: 409 });
   const [template, fontBytes] = await loadAssets();
   const document = await PDFDocument.create();
   document.registerFontkit(fontkit);
@@ -130,6 +130,7 @@ export async function paymentReceiptPdf(application, payment) {
   });
   write(0, "Payment accepted and verified by the college.", 72, 570, 468, "Receipt note", 10);
   write(0, "This receipt does not constitute an admission offer.", 72, 590, 468, "Receipt note", 10);
+  if (process.env.FLUTTERWAVE_MODE === "test") write(0, "TEST PAYMENT - NO REAL MONEY - NOT VALID FOR ADMISSION", 72, 630, 468, "Test payment notice", 11);
   document.setTitle(`Payment receipt ${application.applicationNumber || ""}`);
   return document.save();
 }

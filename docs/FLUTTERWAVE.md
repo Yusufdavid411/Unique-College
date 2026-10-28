@@ -11,6 +11,7 @@ account, settlement details and successful test-mode verification. Do not paste
 keys into chat, source control or frontend variables. Configure on the API only:
 
 - PAYMENT_PROVIDER=flutterwave
+- FLUTTERWAVE_MODE=live for approved real payments, test for isolated testing
 - FLUTTERWAVE_SECRET_KEY: the merchant's v3 secret key (test first, live afterward)
 - FLUTTERWAVE_WEBHOOK_HASH: a random, private hash matching the merchant dashboard
 - FLUTTERWAVE_RETURN_URL=https://apply.uniquecollegekwali.com/payments
@@ -25,6 +26,29 @@ personal bank account as a Flutterwave settlement account.
 Deploy the additive 202610280007_flutterwave_payments Prisma migration before the
 updated API, preserving all existing payments. VPS deployments use the same env
 variables, REST endpoints and PostgreSQL migration; no Vercel-specific payment API.
+
+## Isolated sandbox setup
+
+Never put another merchant's test key into the production API environment. Testing
+must use the isolated unique_college_test database, a separate signing secret and
+a local/preview frontend and API. Production applicants, receipts and fee access
+must not change. Explicitly set FLUTTERWAVE_TEST_DATABASE_NAME=unique_college_test;
+the configured DATABASE_URL must point there. Test mode rejects Vercel production
+deployments, live merchant keys and redirects into the live school domains. Live
+mode rejects test keys. Test payments display a warning and receipt PDFs are marked
+not valid for admission.
+
+The ignored backend/.env.flutterwave-test.local file holds the regenerated test
+secret and a private webhook hash. Do not commit, screenshot or paste these
+values into chat. The public and encryption keys are not needed for this hosted
+checkout integration. Complete callback and webhook testing using Flutterwave's
+official test cards only; never enter a real card in the sandbox.
+
+An alternate merchant's sandbox can exercise the integration, but its checkout
+branding belongs to that merchant. Passing sandbox tests does not approve Unique
+College's live merchant account or change its settlement beneficiary. Before going
+live, configure the school's own approved credentials and webhook hash, live mode,
+production database/return URL and verify the approved settlement details.
 
 ## Verification and safety
 
@@ -60,6 +84,36 @@ attempt can be safely enabled. Never mark a callback cancellation as proof no mo
 was received.
 
 ## Build verification checkpoint — 28 October 2026
+
+Two sandbox Vercel projects use the same code, not separate business logic:
+unique-college-payment-test (React) and unique-college-payment-test-api (Express).
+Their preview deployments are assigned the matching .vercel.app aliases. Only
+Preview-scoped variables are configured; do not promote these previews or deploy
+them with --prod. The first automatically assigned production deployments had no
+test configuration; use the explicit preview deployments and aliases instead.
+The sandbox uses unique_college_test and an independent JWT secret. No live school
+project environment or production admissions policy was changed. It reuses the
+private storage provider solely for compatibility; payment testing does not upload
+files or access production applicant records.
+
+Authenticated Flutterwave API requests accepted the supplied sandbox key. The
+provider returned checkout-v2.dev-flutterwave.com for test checkout links; that
+exact HTTPS host is allowed only in test mode, while live mode remains restricted
+to checkout.flutterwave.com. Do not broaden this to wildcard checkout domains.
+
+Sandbox applicant entry: https://unique-college-payment-test.vercel.app/applicant/register
+Sandbox webhook: https://unique-college-payment-test-api.vercel.app/api/payments/flutterwave/webhook
+The sandbox fee was copied from the production admin-approved fee (NGN 20,000),
+without changing any production setting. Callback, paid receipt and actual provider
+webhook verification must still be confirmed after completing a simulated payment.
+Deployed sandbox checks confirmed gatewayReady=true, the quoted fee of NGN 20,000,
+and a genuine provider-hosted checkout link. The unpaid application update returns
+402, forged references return 404, unsigned webhooks return 401, and a correctly
+signed non-payment probe returns 200 without changing payment status. These probes
+do not substitute for a real provider test-success event. Browser automation could
+not confidently verify the Flutterwave dashboard URL, so saving the dashboard's
+test webhook settings was handed to the user rather than attempted through another
+UI mechanism. The webhook hash remains only in ignored files and sandbox API secrets.
 
 The additive migration was applied and its columns/unique transaction index checked
 in the existing isolated unique_college_test database only. Production schema and

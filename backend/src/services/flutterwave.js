@@ -6,12 +6,29 @@ export function paymentConfiguration() {
   const secretKey = process.env.FLUTTERWAVE_SECRET_KEY || "";
   const webhookHash = process.env.FLUTTERWAVE_WEBHOOK_HASH || "";
   const returnUrl = process.env.FLUTTERWAVE_RETURN_URL || "https://apply.uniquecollegekwali.com/payments";
-  return { enabled, secretKey, webhookHash, returnUrl };
+  let databaseName = "";
+  try { databaseName = new URL(process.env.DATABASE_URL).pathname.slice(1); } catch {}
+  return { enabled, secretKey, webhookHash, returnUrl, mode: process.env.FLUTTERWAVE_MODE || "live", deploymentEnvironment: process.env.VERCEL_ENV || "local", databaseName, testDatabaseName: process.env.FLUTTERWAVE_TEST_DATABASE_NAME || "" };
+}
+
+export function paymentConfigurationIssue(config) {
+  if (!config.secretKey || !config.webhookHash) return "Online payments are not available yet. Please check back shortly.";
+  const testKey = config.secretKey.startsWith("FLWSECK_TEST-");
+  if (!["test", "live"].includes(config.mode)) return "Select a valid Flutterwave payment mode.";
+  if ((config.mode === "test") !== testKey) return "The Flutterwave key does not match the configured payment mode.";
+  if (config.mode === "test") {
+    if (config.deploymentEnvironment === "production") return "Test payments are not permitted on the production deployment.";
+    if (!config.testDatabaseName || config.testDatabaseName === "neondb" || config.databaseName !== config.testDatabaseName) return "Test payments require the explicitly configured isolated test database.";
+    let hostname;
+    try { hostname = new URL(config.returnUrl).hostname; } catch { return "Configure a valid payment return address."; }
+    if (hostname === "uniquecollegekwali.com" || hostname.endsWith(".uniquecollegekwali.com") || hostname === "uniquecollegekwali.vercel.app") return "Test payments cannot return to a live school portal.";
+  }
+  return null;
 }
 
 export function publicPaymentConfiguration() {
   const config = paymentConfiguration();
-  return { provider: config.enabled ? "FLUTTERWAVE" : "MANUAL", ready: config.enabled && Boolean(config.secretKey && config.webhookHash) };
+  return { provider: config.enabled ? "FLUTTERWAVE" : "MANUAL", ready: config.enabled && !paymentConfigurationIssue(config), mode: config.mode };
 }
 
 function failure(message, statusCode = 409) {
@@ -34,9 +51,15 @@ export function assertVerifiedTransaction(payment, transaction) {
   if (!/^\d+$/.test(String(transaction.id))) throw failure("The payment provider returned an invalid transaction ID.");
 }
 
+export function trustedFlutterwaveCheckout(url, mode) {
+  return url.protocol === "https:" && (url.hostname === "checkout.flutterwave.com" || (mode === "test" && url.hostname === "checkout-v2.dev-flutterwave.com"));
+}
+
 export function flutterwaveService(database, fetcher = fetch, config = paymentConfiguration()) {
   function requireReady() {
-    if (!config.enabled || !config.secretKey || !config.webhookHash) throw failure("Online payments are not available yet. Please check back shortly.", 503);
+    if (!config.enabled) throw failure("Online payments are not available yet. Please check back shortly.", 503);
+    const issue = paymentConfigurationIssue(config);
+    if (issue) throw failure(issue, 503);
     const url = new URL(config.returnUrl);
     if (url.protocol !== "https:" && !["localhost", "127.0.0.1"].includes(url.hostname)) throw failure("The payment return address is not configured securely.", 503);
   }
@@ -95,7 +118,7 @@ export function flutterwaveService(database, fetcher = fetch, config = paymentCo
     });
     let checkout;
     try { checkout = new URL(result.link); } catch { throw failure("The payment provider returned an invalid checkout address.", 502); }
-    if (checkout.protocol !== "https:" || checkout.hostname !== "checkout.flutterwave.com") throw failure("The payment provider returned an untrusted checkout address.", 502);
+    if (!trustedFlutterwaveCheckout(checkout, config.mode)) throw failure("The payment provider returned an untrusted checkout address.", 502);
     await database.payment.updateMany({ where: { id: payment.id, status: "PENDING" }, data: { checkoutUrl: checkout.href } });
     return { paymentId: payment.id, reference: payment.reference, link: checkout.href };
   }

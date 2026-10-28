@@ -6,6 +6,7 @@ import { portalPath } from "../api/portalLinks.js";
 import { useApplicant } from "../context/ApplicantContext.jsx";
 import PrivateFileButton from "./PrivateFileButton.jsx";
 import LoadingButton from "./LoadingButton.jsx";
+import { trustedPaymentCheckout } from "../api/paymentCheckout.js";
 
 export default function FlutterwavePayment() {
   const { application, formAccess, paymentGateway, refresh } = useApplicant();
@@ -49,7 +50,7 @@ export default function FlutterwavePayment() {
     try {
       const response = await api.post("/payments/flutterwave/checkout");
       const link = new URL(response.data.data.link);
-      if (link.protocol !== "https:" || link.hostname !== "checkout.flutterwave.com") throw new Error("Invalid payment address");
+      if (!trustedPaymentCheckout(link, paymentGateway.mode)) throw new Error("Invalid payment address");
       window.location.assign(link.href);
     } catch (error) { setNotice(apiErrorMessage(error, "Checkout could not be opened. Please try again shortly.")); }
     finally { operation.current = false; setBusy(false); }
@@ -66,6 +67,7 @@ export default function FlutterwavePayment() {
   }
 
   return <div className="portal-page">
+    {paymentGateway.mode === "test" && <div className="portal-alert" role="status"><strong>TEST MODE — no real money</strong><p>Use Flutterwave test cards only. These payments and receipts are not valid for real admissions.</p></div>}
     <header className="portal-page-header"><div><span className="eyebrow">Secure online payment</span><h1>Application form payment</h1><p>Pay securely through Flutterwave. Your form unlocks automatically after your payment is verified.</p></div></header>
     <section className="portal-alert payment-bank-card">
       <span className="eyebrow">Application fee</span><strong className="payment-fee-value">NGN {Number(formAccess.amount || 0).toLocaleString("en-NG", { minimumFractionDigits: 2 })}</strong>

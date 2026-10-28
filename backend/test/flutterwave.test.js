@@ -1,13 +1,14 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { flutterwaveService, assertVerifiedTransaction, validWebhookHash, publicPaymentConfiguration } from "../src/services/flutterwave.js";
+import { flutterwaveService, assertVerifiedTransaction, validWebhookHash, publicPaymentConfiguration, paymentConfigurationIssue, trustedFlutterwaveCheckout } from "../src/services/flutterwave.js";
+import { trustedPaymentCheckout } from "../../frontend/src/api/paymentCheckout.js";
 import { formAccessFor } from "../src/services/formAccess.js";
 import { app } from "../src/app.js";
 import { prisma } from "../src/config/prisma.js";
 import { env } from "../src/config/env.js";
 import jwt from "jsonwebtoken";
 
-const config = { enabled: true, secretKey: "test-secret-not-a-real-key", webhookHash: "test-webhook-hash", returnUrl: "https://apply.uniquecollegekwali.com/payments" };
+const config = { enabled: true, mode: "test", secretKey: "FLWSECK_TEST-not-a-real-key", webhookHash: "test-webhook-hash", returnUrl: "http://localhost:5183/applicant/payments", deploymentEnvironment: "local", databaseName: "unique_college_test", testDatabaseName: "unique_college_test" };
 
 function fixture() {
   const audit = [];
@@ -100,8 +101,28 @@ test("webhook secret comparisons reject absent or forged signatures and configur
   assert.equal(validWebhookHash("", ""), false);
   assert.equal(validWebhookHash("forged", config.webhookHash), false);
   assert.equal(validWebhookHash(config.webhookHash, config.webhookHash), true);
-  assert.deepEqual(Object.keys(publicPaymentConfiguration()).sort(), ["provider", "ready"]);
+  assert.deepEqual(Object.keys(publicPaymentConfiguration()).sort(), ["mode", "provider", "ready"]);
   assert.throws(() => assertVerifiedTransaction({ reference: "ref", amount: "20000", currency: "NGN" }, { id: 123, tx_ref: "ref", amount: 0, currency: "NGN", status: "successful" }));
+});
+
+test("test payments cannot use production databases, portals, deployments or live merchant keys", () => {
+  assert.equal(paymentConfigurationIssue(config), null);
+  assert.match(paymentConfigurationIssue({ ...config, databaseName: "neondb" }), /isolated test database/);
+  assert.match(paymentConfigurationIssue({ ...config, testDatabaseName: "neondb", databaseName: "neondb" }), /isolated test database/);
+  assert.match(paymentConfigurationIssue({ ...config, deploymentEnvironment: "production" }), /production deployment/);
+  assert.match(paymentConfigurationIssue({ ...config, returnUrl: "https://apply.uniquecollegekwali.com/payments" }), /live school portal/);
+  assert.match(paymentConfigurationIssue({ ...config, secretKey: "FLWSECK-live-example" }), /does not match/);
+  assert.match(paymentConfigurationIssue({ ...config, mode: "live" }), /does not match/);
+});
+
+test("sandbox checkout hostname observed from Flutterwave is accepted only in test mode", () => {
+  for (const validate of [trustedFlutterwaveCheckout, trustedPaymentCheckout]) {
+    assert.equal(validate(new URL("https://checkout.flutterwave.com/v3/hosted/pay/test"), "live"), true);
+    assert.equal(validate(new URL("https://checkout-v2.dev-flutterwave.com/test"), "test"), true);
+    assert.equal(validate(new URL("https://checkout-v2.dev-flutterwave.com/test"), "live"), false);
+    assert.equal(validate(new URL("http://checkout.flutterwave.com/test"), "test"), false);
+    assert.equal(validate(new URL("https://checkout.flutterwave.com.attacker.test/test"), "test"), false);
+  }
 });
 
 test("gateway routes reject unauthenticated payment attempts and unsigned webhooks", async () => {
