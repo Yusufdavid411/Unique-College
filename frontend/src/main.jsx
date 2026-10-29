@@ -6,6 +6,7 @@ import { AuthProvider } from "./context/AuthContext.jsx";
 import { AdmissionsProvider } from "./context/AdmissionsContext.jsx";
 import "./styles/global.css";
 import AppErrorBoundary from "./components/AppErrorBoundary.jsx";
+import ToastNotifications from "./components/ToastNotifications.jsx";
 
 function ApplicationRoot() {
   React.useLayoutEffect(() => {
@@ -22,5 +23,5 @@ function ApplicationRoot() {
 }
 
 createRoot(document.getElementById("root")).render(
-  <React.StrictMode><AppErrorBoundary><ApplicationRoot /></AppErrorBoundary></React.StrictMode>
+  <React.StrictMode><ToastNotifications /><AppErrorBoundary><ApplicationRoot /></AppErrorBoundary></React.StrictMode>
 );

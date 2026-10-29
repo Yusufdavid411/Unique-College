@@ -7,6 +7,20 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+model WebsitePageView {
+  id          String   @id
+  day         DateTime @db.Date
+  path        String   @db.VarChar(120)
+  visitorHash String   @db.VarChar(64)
+  device      String   @db.VarChar(10)
+  referrer    String   @db.VarChar(253)
+  createdAt   DateTime @default(now())
+
+  @@index([day, visitorHash])
+  @@index([day, path])
+  @@map("website_page_views")
+}
+
 enum UserRole {
   ADMIN
   STAFF

@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { useApplicant } from "../../context/ApplicantContext.jsx";
 import FormPurchaseRequired from "../../components/FormPurchaseRequired.jsx";
 import { portalPath } from "../../api/portalLinks.js";
+import { ErrorToast } from "../../components/ToastNotifications.jsx";
 
 const statusText = {
   DRAFT: "Draft",
@@ -36,7 +37,7 @@ export default function ApplicantDashboard() {
         <span className={`portal-status ${application.status.toLowerCase()}`}>{statusText[application.status] || application.status}</span>
       </header>
 
-      {error && <p className="form-status error">{error}</p>}
+      <ErrorToast message={error} />
       {["SUBMITTED", "PENDING", "REVIEWED"].includes(application.status) && <section className="review-status-card" role="status"><span className="eyebrow">Application status</span><h2>Under review</h2><p>Your application has been submitted successfully. Please check back later for the admissions decision.</p></section>}
       {application.status === "RETURNED" && <section className="review-status-card" role="status"><h2>Corrections required</h2><p>Read the admissions note, update your form or documents, then submit again for review.</p><Link className="button" to={portalPath("/applicant/application")}>Correct application</Link></section>}
       {["ACCEPTED", "ADMITTED"].includes(application.status) && <section className="review-status-card" role="status"><h2>Your application has been accepted</h2><p>You can now download your accepted application form. Payment receipts are available separately.</p><Link className="button" to={portalPath("/applicant/print")}>Download records</Link></section>}

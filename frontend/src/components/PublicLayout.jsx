@@ -3,6 +3,7 @@ import { BriefcaseBusiness, ChevronDown, Crown, GraduationCap, Landmark, Mail, M
 import { useEffect, useRef, useState } from "react";
 import { assetPaths, schoolInfo } from "../data/siteData.js";
 import ApplyLink from "./ApplyLink.jsx";
+import PublicVisitorTracker from "./PublicVisitorTracker.jsx";
 
 const navItems = [
   ["Home", "/"],
@@ -60,6 +61,7 @@ export default function PublicLayout() {
 
   return (
     <div className="site-shell">
+      <PublicVisitorTracker />
       <header className="site-header">
         <Link to="/" className="brand" onClick={closeNavigation}>
           <span className="brand-mark image-mark"><img src={assetPaths.logo} alt="Unique College logo" /></span>
@@ -124,6 +126,7 @@ export default function PublicLayout() {
           </div>
         </div>
         <div className="footer-contact-list">
+          <Link to="/privacy">Website privacy</Link>
           <span><MapPin size={18} />{schoolInfo.address}</span>
           <span><Mail size={18} />{schoolInfo.email}</span>
           <span><Phone size={18} />{schoolInfo.phoneDisplay}</span>

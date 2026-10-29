@@ -2,6 +2,8 @@ import { useState } from "react";
 import { api, apiErrorMessage } from "../api/client.js";
 import { useAuth } from "../context/AuthContext.jsx";
 import PasswordInput from "./PasswordInput.jsx";
+import { ErrorToast } from "./ToastNotifications.jsx";
+import { notify } from "../api/notifications.js";
 
 export default function ChangePassword({ embedded = false }) {
   const { logout } = useAuth();
@@ -10,7 +12,7 @@ export default function ChangePassword({ embedded = false }) {
   async function submit(event) {
     event.preventDefault();
     const values = new FormData(event.currentTarget);
-    if (values.get("password") !== values.get("confirmation")) return setError("Passwords do not match.");
+    if (values.get("password") !== values.get("confirmation")) return notify({ title: "Check your new password", message: "Passwords do not match. Enter the same new password in both fields." });
     setBusy(true);
     setError("");
     try {
@@ -31,7 +33,7 @@ export default function ChangePassword({ embedded = false }) {
       <label>New password<PasswordInput label="new password" name="password" autoComplete="new-password" minLength={12} maxLength={72} required /></label>
       <p>Use at least 12 characters including uppercase, lowercase, and a number.</p>
       <label>Confirm password<PasswordInput label="confirmation password" name="confirmation" autoComplete="new-password" required /></label>
-      {error && <p role="alert">{error}</p>}
+      <ErrorToast message={error} />
       <button className="button" type="submit" disabled={busy}>{busy ? "Updating…" : "Change password"}</button><button type="button" onClick={logout}>Sign out</button>
     </form>
   </Container>;

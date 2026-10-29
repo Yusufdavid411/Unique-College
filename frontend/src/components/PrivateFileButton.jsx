@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { api, apiErrorMessage, FILE_TRANSFER_TIMEOUT } from "../api/client.js";
+import { ErrorToast } from "./ToastNotifications.jsx";
 
 export default function PrivateFileButton({ path, endpoint, filename, children = "Download file" }) {
   const [busy, setBusy] = useState(false);
@@ -28,5 +29,5 @@ export default function PrivateFileButton({ path, endpoint, filename, children =
       setBusy(false);
     }
   }
-  return <span className="private-file-control"><button type="button" className="portal-add-button" disabled={busy || (!path && !endpoint)} onClick={download}>{busy ? `Downloading${progress === null ? "…" : ` ${progress}%`}` : children}</button>{error && <span className="private-file-error" role="alert">{error}</span>}</span>;
+  return <span className="private-file-control"><button type="button" className="portal-add-button" disabled={busy || (!path && !endpoint)} onClick={download}>{busy ? `Downloading${progress === null ? "…" : ` ${progress}%`}` : children}</button><ErrorToast message={error} /></span>;
 }

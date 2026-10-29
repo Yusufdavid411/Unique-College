@@ -30,6 +30,7 @@ import AdminAudit from "./pages/admin/AdminAudit.jsx";
 import AdminEvents from "./pages/admin/AdminEvents.jsx";
 import AdminUsers from "./pages/admin/AdminUsers.jsx";
 import Events from "./pages/public/Events.jsx";
+import Privacy from "./pages/public/Privacy.jsx";
 import ChangePassword from "./components/ChangePassword.jsx";
 import { RecoveryScreen } from "./components/AppErrorBoundary.jsx";
 import { canonicalPortalHref, portalPath, portalScope, retiredPaymentSandbox } from "./api/portalLinks.js";
@@ -55,6 +56,7 @@ export default function App() {
         <Route path="gallery" element={<Gallery />} />
         <Route path="news" element={<News />} />
         <Route path="events" element={<Events />} />
+        <Route path="privacy" element={<Privacy />} />
         <Route path="apply" element={<Navigate to="/applicant/register" replace />} />
         <Route path="application" element={<Navigate to="/applicant/register" replace />} />
       </Route>}

@@ -4,27 +4,25 @@ import { useAuth } from "../../context/AuthContext.jsx";
 import Seo from "../../components/Seo.jsx";
 import LoadingButton from "../../components/LoadingButton.jsx";
 import PasswordInput from "../../components/PasswordInput.jsx";
-import { apiErrorMessage } from "../../api/client.js";
+import { reportApiError } from "../../api/notifications.js";
 import { portalPath } from "../../api/portalLinks.js";
 
 export default function AdminLogin() {
   const { login, user } = useAuth();
   const navigate = useNavigate();
   const [form, setForm] = useState({ email: "", password: "" });
-  const [error, setError] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
   if (user) return <Navigate to={portalPath("/admin")} replace />;
 
   async function submit(event) {
     event.preventDefault();
-    setError("");
     setSubmitting(true);
     try {
       await login(form.email, form.password);
       navigate(portalPath("/admin"));
     } catch (error) {
-      setError(apiErrorMessage(error, "Invalid admin credentials."));
+      reportApiError(error);
     } finally {
       setSubmitting(false);
     }
@@ -39,7 +37,6 @@ export default function AdminLogin() {
         <input required type="email" placeholder="Admin email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} />
         <PasswordInput required name="password" autoComplete="current-password" aria-label="Password" placeholder="Password" value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} />
         <LoadingButton type="submit" loading={submitting} loadingText="Signing in...">Sign in</LoadingButton>
-        {error && <p className="form-status error">{error}</p>}
       </form>
     </main>
   );

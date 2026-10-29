@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import AdminNotice from "../../components/AdminNotice.jsx";
 import { api, apiErrorMessage } from "../../api/client.js";
+import VisitorAnalytics from "../../components/VisitorAnalytics.jsx";
 
 export default function AdminDashboard() {
   const [stats, setStats] = useState({});
@@ -30,6 +31,7 @@ export default function AdminDashboard() {
   return (
     <div className="admin-page">
       <header className="admin-header"><span className="eyebrow">Dashboard</span><h1>Overview</h1></header>
+      <VisitorAnalytics />
       <AdminNotice type="error">{notice}</AdminNotice>
       {notice && <button className="button secondary" type="button" onClick={load}>Try again</button>}
       {!notice && <div className="admin-stats">

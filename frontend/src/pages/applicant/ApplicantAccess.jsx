@@ -9,6 +9,7 @@ import { useAuth } from "../../context/AuthContext.jsx";
 import { useAdmissions } from "../../context/AdmissionsContext.jsx";
 import { assetPaths } from "../../data/siteData.js";
 import { portalPath, publicPageHref } from "../../api/portalLinks.js";
+import { ErrorToast } from "../../components/ToastNotifications.jsx";
 
 export default function ApplicantAccess() {
   const { pathname } = useLocation();
@@ -87,7 +88,7 @@ export default function ApplicantAccess() {
               )}
               {!isRegister && <label>Email or portal username<input name="identifier" value={form.identifier} onChange={update} required /></label>}
               <label>Password<PasswordInput name="password" autoComplete={isRegister ? "new-password" : "current-password"} value={form.password} onChange={update} minLength="8" required /></label>
-              {error && <p className="form-status error">{error}</p>}
+              <ErrorToast message={error} />
               <LoadingButton type="submit" loading={busy} disabled={isRegister && policyLoading} loadingText="Please wait...">
                 {isRegister ? "Create applicant account" : "Sign in to portal"}<ArrowRight size={18} />
               </LoadingButton>

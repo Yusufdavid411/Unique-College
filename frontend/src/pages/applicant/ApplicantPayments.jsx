@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { api, apiErrorMessage, FILE_TRANSFER_TIMEOUT, MAX_UPLOAD_BYTES } from "../../api/client.js";
 import LoadingButton from "../../components/LoadingButton.jsx";
+import { ErrorToast } from "../../components/ToastNotifications.jsx";
 import PrivateFileButton from "../../components/PrivateFileButton.jsx";
 import { useApplicant } from "../../context/ApplicantContext.jsx";
 import { useAdmissions } from "../../context/AdmissionsContext.jsx";
@@ -85,7 +86,7 @@ export default function ApplicantPayments() {
         <p className="payment-bank-instructions">{policy?.paymentInstructions || "Contact admissions for payment details."}</p>
         <p>{formAccess.unlocked ? "Your application form is available." : "Pay into this account and upload your receipt below."}</p>
       </section>
-      {notice.message && <p className={`form-status ${notice.type}`}>{notice.message}</p>}
+      {notice.type === "error" ? <ErrorToast message={notice.message} incident={notice} /> : notice.message && <p className={`form-status ${notice.type}`}>{notice.message}</p>}
       {pendingReceipt && <div className="portal-alert" role="status"><strong>Receipt awaiting review</strong><p>Wait for the admin decision, or remove the receipt below before uploading a replacement.</p></div>}
 
       <div className="payment-layout">

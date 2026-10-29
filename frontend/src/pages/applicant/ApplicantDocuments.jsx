@@ -2,6 +2,7 @@ import { CheckCircle2, FileText, UploadCloud, XCircle } from "lucide-react";
 import { useState } from "react";
 import { api, apiErrorMessage, MAX_UPLOAD_BYTES } from "../../api/client.js";
 import LoadingButton from "../../components/LoadingButton.jsx";
+import { ErrorToast } from "../../components/ToastNotifications.jsx";
 import PrivateFileButton from "../../components/PrivateFileButton.jsx";
 import FormPurchaseRequired from "../../components/FormPurchaseRequired.jsx";
 import { useApplicant } from "../../context/ApplicantContext.jsx";
@@ -48,7 +49,7 @@ export default function ApplicantDocuments() {
     <div className="portal-page">
       <header className="portal-page-header"><div><span className="eyebrow">Credentials</span><h1>Supporting documents</h1><p>Upload clear scans, up to 4 MB each. Admissions reviews each document independently.</p></div></header>
       {!editable && <div className="portal-alert"><strong>Uploads locked during review</strong><p>Admissions will return your application if any replacement is required.</p></div>}
-      {notice.message && <p className={`form-status ${notice.type}`}>{notice.message}</p>}
+      {notice.type === "error" ? <ErrorToast message={notice.message} incident={notice} /> : notice.message && <p className={`form-status ${notice.type}`}>{notice.message}</p>}
       <section className="document-upload-grid">
         {documentTypes.map(([type, label, help], index) => {
           const uploaded = (application.documents || []).filter((document) => document.type === type);

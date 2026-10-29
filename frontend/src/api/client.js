@@ -1,5 +1,7 @@
 import axios from "axios";
 import { sessionScope, sessionToken } from "./session.js";
+import { reportApiError } from "./notifications.js";
+export { apiErrorMessage } from "./errorMessages.js";
 
 export const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
 export const FILE_TRANSFER_TIMEOUT = 240000;
@@ -19,26 +21,17 @@ api.interceptors.request.use((config) => {
   return config;
 });
 
+api.interceptors.response.use((response) => response, async (error) => {
+  if (typeof Blob !== "undefined" && error.response?.data instanceof Blob && error.response.data.size < 65536) {
+    try { error.response.data = JSON.parse(await error.response.data.text()); } catch {}
+  }
+  if (error.config?.notifyOnError !== false) reportApiError(error);
+  return Promise.reject(error);
+});
+
 export function assetUrl(path) {
   if (!path) return "";
   if (path.startsWith("http")) return path;
   if (path.startsWith("/school-assets/")) return path;
   return `${API_BASE_URL}${path}`;
-}
-
-export function apiErrorMessage(error, fallback = "Something went wrong. Please try again.") {
-  const response = error.response?.data;
-
-  if (response?.errors && typeof response.errors === "object") {
-    const details = Object.entries(response.errors)
-      .flatMap(([field, messages]) => (Array.isArray(messages) ? messages.map((message) => `${field}: ${message}`) : []))
-      .join(" ");
-    return details ? `${response.message || fallback}. ${details}` : response.message || fallback;
-  }
-
-  if (typeof response?.message === "string") return response.message;
-  if (error.code === "ECONNABORTED") return "The server took too long to respond. Please try again.";
-  if (!error.response) return "The server could not be reached. Please wait a moment and try again.";
-
-  return fallback;
 }

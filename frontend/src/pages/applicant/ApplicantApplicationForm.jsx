@@ -2,6 +2,7 @@ import { Plus, Save, Send, Trash2 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { api, apiErrorMessage } from "../../api/client.js";
 import LoadingButton from "../../components/LoadingButton.jsx";
+import { ErrorToast } from "../../components/ToastNotifications.jsx";
 import FormPurchaseRequired from "../../components/FormPurchaseRequired.jsx";
 import { useApplicant } from "../../context/ApplicantContext.jsx";
 import { programs } from "../../data/siteData.js";
@@ -104,7 +105,7 @@ export default function ApplicantApplicationForm() {
     <div className="portal-page">
       <header className="portal-page-header"><div><span className="eyebrow">Official admission form</span><h1>Application form</h1><p>Your draft saves to your account. Submit only after confirming every entry.</p></div><span className="application-number">{application.applicationNumber}</span></header>
       {!editable && <div className="portal-alert"><strong>Form locked during review</strong><p>The admissions team will return it if changes are required.</p></div>}
-      {notice.message && <p className={`form-status ${notice.type}`}>{notice.message}</p>}
+      {notice.type === "error" ? <ErrorToast message={notice.message} incident={notice} /> : notice.message && <p className={`form-status ${notice.type}`}>{notice.message}</p>}
 
       <form className="portal-form" onSubmit={(event) => event.preventDefault()}>
         <fieldset disabled={!editable}>

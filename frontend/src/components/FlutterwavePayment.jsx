@@ -7,6 +7,7 @@ import { useApplicant } from "../context/ApplicantContext.jsx";
 import PrivateFileButton from "./PrivateFileButton.jsx";
 import LoadingButton from "./LoadingButton.jsx";
 import { trustedPaymentCheckout } from "../api/paymentCheckout.js";
+import { ErrorToast } from "./ToastNotifications.jsx";
 
 export default function FlutterwavePayment() {
   const { application, formAccess, paymentGateway, refresh } = useApplicant();
@@ -78,7 +79,7 @@ export default function FlutterwavePayment() {
         <p>No receipt upload or admin approval is needed for payments verified through Flutterwave. If you have already paid, check the status instead of paying again.</p>
       </>}
     </section>
-    {notice && <p className="form-status error" role="status">{notice}</p>}
+    <ErrorToast message={notice} />
     <section className="payment-history"><h2>Payment history</h2>
       {!history.length && <div className="empty-state">No payments yet.</div>}
       {history.map((payment) => <article key={payment.id}>
