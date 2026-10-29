@@ -45,6 +45,7 @@ export async function applicationFormPdf(application) {
   const font = await document.embedFont(fontBytes, { subset: true });
   const pages = document.getPages();
   const write = fieldWriter(pages, font);
+  if (application.isTest) for (const page of pages) page.drawText("TEST APPLICATION - NOT VALID FOR REAL ADMISSION", { x: 72, y: 15, size: 10, font, color: rgb(0.7, 0.1, 0.1) });
   write(0, application.fullName, 144, 177, 390, "Full name");
   write(0, date(application.dateOfBirth), 157, 200, 165, "Date of birth");
   write(0, application.gender, 361, 200, 173, "Sex");
@@ -128,9 +129,9 @@ export async function paymentReceiptPdf(application, payment) {
     write(0, label, 72, 180 + index * 39, 156, label, 10);
     write(0, value, 235, 180 + index * 39, 300, label, 11);
   });
-  write(0, "Payment accepted and verified by the college.", 72, 570, 468, "Receipt note", 10);
+  write(0, payment.isTest ? "Simulated payment verified with Flutterwave. No money received." : "Payment accepted and verified by the college.", 72, 570, 468, "Receipt note", 10);
   write(0, "This receipt does not constitute an admission offer.", 72, 590, 468, "Receipt note", 10);
-  if (process.env.FLUTTERWAVE_MODE === "test") write(0, "TEST PAYMENT - NO REAL MONEY - NOT VALID FOR ADMISSION", 72, 630, 468, "Test payment notice", 11);
+  if (payment.isTest) write(0, "TEST PAYMENT - NO REAL MONEY - NOT VALID FOR ADMISSION", 72, 630, 468, "Test payment notice", 11);
   document.setTitle(`Payment receipt ${application.applicationNumber || ""}`);
   return document.save();
 }

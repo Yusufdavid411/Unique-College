@@ -13,11 +13,11 @@ export const dashboardStats = asyncHandler(async (req, res) => {
     galleryItems,
     unreadMessages
   ] = await Promise.all([
-    prisma.application.count(),
-    prisma.application.count({ where: { status: { in: ["SUBMITTED", "PENDING", "REVIEWED"] }, submittedAt: { not: null } } }),
-    prisma.application.count({ where: { status: "ACCEPTED" } }),
-    prisma.application.count({ where: { status: "ADMITTED" } }),
-    prisma.payment.count({ where: { status: "PENDING" } }),
+    prisma.application.count({ where: { isTest: false } }),
+    prisma.application.count({ where: { isTest: false, status: { in: ["SUBMITTED", "PENDING", "REVIEWED"] }, submittedAt: { not: null } } }),
+    prisma.application.count({ where: { isTest: false, status: "ACCEPTED" } }),
+    prisma.application.count({ where: { isTest: false, status: "ADMITTED" } }),
+    prisma.payment.count({ where: { isTest: false, status: "PENDING" } }),
     prisma.news.count(),
     prisma.gallery.count(),
     prisma.contactMessage.count({ where: { isRead: false } })

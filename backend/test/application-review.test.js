@@ -53,6 +53,27 @@ test("review API hides unsubmitted details and rejects premature decisions", asy
     assert.equal(history[0].emailStatus, "PENDING");
     assert.equal(history[0].emailRecipient, application.email);
     assert.equal((await returned.json()).data.application.reviewReady, false);
+    Object.assign(application, {
+      status: "REVIEWED", isTest: true, declarationAccepted: true, formFeeAmount: 20000,
+      applicant: { id: "test-user", role: "APPLICANT" },
+      payments: [{ type: "APPLICATION_FEE", status: "VERIFIED", currency: "NGN", amount: 20000, isTest: true }],
+      documents: ["PASSPORT", "BIRTH_CERTIFICATE", "NATIONAL_ID", "EDUCATIONAL_RESULT"].map((type) => ({ type, reviewStatus: "VERIFIED" }))
+    });
+    assert.equal((await decision({ status: "ACCEPTED" })).status, 200);
+    assert.equal(canDownloadApplication(application), true);
+    prisma.$transaction = async (callback) => callback({
+      user: { update: async ({ data }) => { Object.assign(application.applicant, data); } },
+      application: { updateMany: async ({ data }) => { Object.assign(application, data); return { count: 1 }; }, findUnique: async () => application },
+      applicationStatusHistory: { create: async ({ data }) => { history.push(data); return {}; } },
+      auditLog: { create: async () => ({}) }
+    });
+    const admitted = await decision({ status: "ADMITTED" });
+    assert.equal(admitted.status, 200);
+    const result = (await admitted.json()).data;
+    assert.match(result.credentials.studentNumber, /^TEST\//);
+    assert.match(result.credentials.portalUsername, /^TEST/);
+    assert.equal(result.credentials.officialEmail, null);
+    assert.equal(result.application.isTest, true);
   } finally {
     prisma.user.findUnique = original.user;
     prisma.application.findUnique = original.application;

@@ -22,9 +22,9 @@ const applicationDetails = {
 function studentCredentials(application) {
   const suffix = (application.applicationNumber || application.id).replace(/[^a-z0-9]/gi, "").slice(-7).toUpperCase();
   const year = new Date().getFullYear();
-  const studentNumber = application.studentNumber || `UCHK/${year}/${suffix}`;
-  const portalUsername = `UC${year}${suffix}`;
-  const officialEmail = `${portalUsername.toLowerCase()}@uniquecollegekwali.com`;
+  const studentNumber = application.studentNumber || `${application.isTest ? "TEST" : "UCHK"}/${year}/${suffix}`;
+  const portalUsername = `${application.isTest ? "TEST" : "UC"}${year}${suffix}`;
+  const officialEmail = application.isTest ? null : `${portalUsername.toLowerCase()}@uniquecollegekwali.com`;
   const temporaryPassword = `Uc!${crypto.randomBytes(5).toString("base64url")}7`;
   return { studentNumber, portalUsername, officialEmail, temporaryPassword };
 }
@@ -52,11 +52,11 @@ export const createApplication = asyncHandler(async (req, res) => {
 export const listApplications = asyncHandler(async (req, res) => {
   const status = req.query.status;
   const applications = await prisma.application.findMany({
-    where: status ? { status } : undefined,
+    where: { isTest: req.query.testing === "true", ...(status ? { status } : {}) },
     select: {
-      id: true, applicationNumber: true, fullName: true, email: true, status: true,
+      id: true, isTest: true, applicationNumber: true, fullName: true, email: true, status: true,
       submittedAt: true, createdAt: true, courseOfInterest: true, formFeeAmount: true,
-      payments: { select: { status: true, amount: true, type: true, currency: true } }
+      payments: { select: { status: true, amount: true, type: true, currency: true, isTest: true } }
     },
     orderBy: { createdAt: "desc" }
   });
@@ -68,7 +68,7 @@ function reviewResponse(application) {
   const reviewReady = readyForReview(application);
   const paymentConfirmed = formAccessFor(application).unlocked;
   if (!reviewReady) return {
-    id: application.id, fullName: application.fullName, applicationNumber: application.applicationNumber,
+    id: application.id, isTest: application.isTest, fullName: application.fullName, applicationNumber: application.applicationNumber,
     status: application.status, submittedAt: application.submittedAt, paymentConfirmed, reviewReady,
     reviewNote: application.reviewNote, statusHistory: application.statusHistory, emailConfigured: statusEmailConfigured(),
     payments: application.payments.filter((payment) => payment.status === "VERIFIED"), allowedStatuses: []

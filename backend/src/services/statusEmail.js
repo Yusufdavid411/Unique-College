@@ -15,8 +15,8 @@ export function statusEmailContent(event) {
         ? "Your application is under review. Please check back later for the admissions decision."
         : "Sign in to view your application status and the admissions office's instructions.";
   return {
-    subject: `Unique College: ${status}`,
-    text: [`Unique College of Health Science and Technology`, "", `Application status: ${status}`, instructions, "", "Open your applicant portal: https://apply.uniquecollegekwali.com/", "", "This is an automated status notification. Your full records and any correction notes are available securely in the portal."].join("\n")
+    subject: `${event.application?.isTest ? "[TEST] " : ""}Unique College: ${status}`,
+    text: [`Unique College of Health Science and Technology`, event.application?.isTest ? "TEST SIMULATION — NOT A REAL ADMISSION OR PAYMENT" : "", `Application status: ${status}`, instructions, "", "Open your applicant portal: https://apply.uniquecollegekwali.com/", "", "This is an automated status notification. Your full records and any correction notes are available securely in the portal."].join("\n")
   };
 }
 
@@ -34,7 +34,7 @@ export async function deliverStatusEmail(eventId, { database = prisma, request =
     data: { emailStatus: "SENDING", emailLastAttemptAt: now, emailAttempts: { increment: 1 }, emailError: null }
   });
   if (!claimed.count) return { status: "UNCHANGED" };
-  const event = await database.applicationStatusHistory.findUnique({ where: { id: eventId } });
+  const event = await database.applicationStatusHistory.findUnique({ where: { id: eventId }, include: { application: { select: { isTest: true } } } });
   if (!event) return { status: "UNCHANGED" };
   try {
     const response = await request("https://api.resend.com/emails", {

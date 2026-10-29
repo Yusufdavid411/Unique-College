@@ -120,6 +120,7 @@ model UserRoleAssignment {
 
 model Application {
   id                    String            @id @default(uuid())
+  isTest                Boolean           @default(false)
   applicantId           String?           @unique
   applicationNumber     String?           @unique
   formFeeAmount         Decimal?          @db.Decimal(12, 2)
@@ -199,6 +200,7 @@ model ApplicationDocument {
 
 model Payment {
   id            String        @id @default(uuid())
+  isTest        Boolean       @default(false)
   applicationId String
   type          PaymentType
   amount        Decimal       @db.Decimal(12, 2)

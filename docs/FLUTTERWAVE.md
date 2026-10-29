@@ -1,6 +1,30 @@
-# Flutterwave application form payments (activation pending; sandbox retired)
+# Flutterwave application form payments
 
-## Current instruction — 28 October 2026
+## Updated instruction — 29 October 2026
+
+The user authorised test mode on the official applicant portal and requested the complete
+payment-to-admission workflow. This supersedes the earlier restriction below only for the
+new explicitly enabled restricted production test mode. The old sandbox deployments remain
+paused. Never enable unrestricted test checkout for real applicant accounts.
+
+FLUTTERWAVE_RESTRICTED_PRODUCTION_TEST=true allows test credentials on the production API
+only with FLUTTERWAVE_MODE=test, database neondb, and the exact official return URL.
+Only operator-created Application.isTest accounts can start or verify test payments.
+Payments persist isTest and must match both the configured gateway mode and the application.
+Test payments cannot unlock real applicants. Existing real receipts retain their proper
+format regardless of the globally configured gateway mode.
+
+The test account follows the same fee quote, server verification, unlock, upload, submission,
+review, acceptance and download flow. Admins use Show test applications only to review test
+records. Test admissions have TEST-prefixed student numbers/usernames, no official mailbox,
+and are excluded from real admissions statistics. PDFs are marked not valid for admission.
+This does not activate real charges or approve the alternate merchant for school settlements.
+
+After testing, disable the restricted flag, configure the school's approved live key/hash,
+set mode live, and redeploy. Test accounts are barred from live checkout and old test
+payments cannot be reinterpreted as real payments. Do not remove the persisted test flags.
+
+## Historical instruction — 28 October 2026 (superseded by the restricted mode above)
 
 The user requested stopping sandbox testing and using only the live school
 subdomains. Do not resume test charges, migrate test payments into production, or

@@ -34,6 +34,7 @@ export default function ApplicantPrintCentre() {
 
       {application.status === "ADMITTED" && <section className={`print-document admission-copy ${printing === "admission" ? "print-target" : ""}`}>
         <PrintHeader />
+        {application.isTest && <h2>TEST ADMISSION — NOT VALID FOR ENROLMENT</h2>}
         <div className="print-document-title"><GraduationCap /><div><span>Admission record</span><h2>Provisional Admission Notice</h2></div><button className="no-print" type="button" onClick={() => print("admission")}><Printer />Print / Save PDF</button></div>
         <p>Dear <strong>{application.fullName}</strong>,</p><p>Following the review of your application and supporting credentials, you have been admitted to study <strong>{application.courseOfInterest}</strong> at Unique College of Health Science and Technology.</p><div className="admission-credentials"><span>Student number<strong>{application.studentNumber}</strong></span><span>Official portal email<strong>{application.applicant?.officialEmail || "Issued by administration"}</strong></span></div><p>This notice is an institutional admission record. Complete all required acceptance, clearance, and fee steps communicated by the college.</p><footer>Admissions Office · {application.admittedAt ? new Date(application.admittedAt).toLocaleDateString() : new Date().toLocaleDateString()}</footer>
       </section>}

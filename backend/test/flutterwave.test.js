@@ -13,11 +13,11 @@ const config = { enabled: true, mode: "test", secretKey: "FLWSECK_TEST-not-a-rea
 function fixture() {
   const audit = [];
   const requests = [];
-  const application = { id: "application", applicantId: "owner", formFeeAmount: "20000", email: "applicant@example.test", fullName: "Test Applicant", phoneNumber: "08000000000", payments: [] };
+  const application = { id: "application", isTest: true, applicantId: "owner", formFeeAmount: "20000", email: "applicant@example.test", fullName: "Test Applicant", phoneNumber: "08000000000", payments: [] };
   const database = {
     application: { findUnique: async () => application },
     payment: {
-      create: async ({ data }) => { const payment = { id: "payment", status: "PENDING", checkoutUrl: null, checkoutStartedAt: null, ...data, application: { applicantId: "owner" } }; application.payments.push(payment); return payment; },
+      create: async ({ data }) => { const payment = { id: "payment", status: "PENDING", checkoutUrl: null, checkoutStartedAt: null, ...data, application: { applicantId: "owner", isTest: application.isTest } }; application.payments.push(payment); return payment; },
       findFirst: async ({ where }) => application.payments.find((payment) => (!where.reference || payment.reference === where.reference) && (!where.application || where.application.applicantId === "owner")) || null,
       findUnique: async () => application.payments[0],
       updateMany: async ({ where, data }) => {
@@ -113,6 +113,27 @@ test("test payments cannot use production databases, portals, deployments or liv
   assert.match(paymentConfigurationIssue({ ...config, returnUrl: "https://apply.uniquecollegekwali.com/payments" }), /live school portal/);
   assert.match(paymentConfigurationIssue({ ...config, secretKey: "FLWSECK-live-example" }), /does not match/);
   assert.match(paymentConfigurationIssue({ ...config, mode: "live" }), /does not match/);
+});
+
+test("restricted official-portal tests cannot charge or unlock real applicants", async () => {
+  const productionTest = { ...config, deploymentEnvironment: "production", databaseName: "neondb", returnUrl: "https://apply.uniquecollegekwali.com/payments", restrictedProductionTest: true };
+  assert.equal(paymentConfigurationIssue(productionTest), null);
+  assert.ok(paymentConfigurationIssue({ ...productionTest, mode: "live", secretKey: "FLWSECK-live-example" }));
+  assert.ok(paymentConfigurationIssue({ ...productionTest, returnUrl: "https://attacker.example/payments" }));
+  const state = fixture();
+  state.application.isTest = false;
+  const service = flutterwaveService(state.database, state.fetcher, productionTest);
+  await assert.rejects(service.start("owner"), /designated test account/);
+  assert.equal(state.requests.length, 0);
+  state.application.isTest = true;
+  const checkout = await service.start("owner");
+  await service.verify(checkout.reference, "owner");
+  assert.equal(state.application.payments[0].isTest, true);
+  assert.equal(formAccessFor(state.application).unlocked, true);
+  assert.equal(formAccessFor({ ...state.application, isTest: false }).unlocked, false);
+  const liveService = flutterwaveService(state.database, state.fetcher, { ...productionTest, restrictedProductionTest: false, mode: "live", secretKey: "FLWSECK-live-example" });
+  await assert.rejects(liveService.start("owner"), /cannot make live payments/);
+  await assert.rejects(liveService.verify(checkout.reference, "owner"), /different payment mode/);
 });
 
 test("sandbox checkout hostname observed from Flutterwave is accepted only in test mode", () => {

@@ -1,0 +1,2 @@
+ALTER TABLE "applications" ADD COLUMN "isTest" BOOLEAN NOT NULL DEFAULT false;
+ALTER TABLE "payments" ADD COLUMN "isTest" BOOLEAN NOT NULL DEFAULT false;

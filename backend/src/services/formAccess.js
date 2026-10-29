@@ -3,7 +3,7 @@ import { prisma } from "../config/prisma.js";
 
 export function formAccessFor(application) {
   const fee = application.formFeeAmount;
-  const unlocked = fee == null || new Prisma.Decimal(fee).equals(0) || (application.payments || []).some((payment) => payment.type === "APPLICATION_FEE" && payment.status === "VERIFIED" && payment.currency === "NGN" && new Prisma.Decimal(payment.amount).equals(fee));
+  const unlocked = fee == null || new Prisma.Decimal(fee).equals(0) || (application.payments || []).some((payment) => Boolean(payment.isTest) === Boolean(application.isTest) && payment.type === "APPLICATION_FEE" && payment.status === "VERIFIED" && payment.currency === "NGN" && new Prisma.Decimal(payment.amount).equals(fee));
   return { unlocked, amount: fee == null ? null : String(fee), currency: "NGN" };
 }
 

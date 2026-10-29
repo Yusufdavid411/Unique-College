@@ -18,7 +18,7 @@ const links = [
 
 function ApplicantShell() {
   const { logout, user } = useAuth();
-  const { formAccess, loading } = useApplicant();
+  const { application, formAccess, paymentGateway, loading } = useApplicant();
   const [menuOpen, setMenuOpen] = useState(false);
   const [mobile, setMobile] = useState(() => window.matchMedia("(max-width: 820px)").matches);
   const sidebarRef = useRef(null);
@@ -88,7 +88,7 @@ function ApplicantShell() {
             <div className="applicant-topbar-title"><strong>Pre-admission portal</strong><span>Unique College</span></div>
             <div className="applicant-account"><span className="applicant-account-avatar"><UserRound size={23} /></span><div><strong>{user?.name}</strong><span>Applicant account</span></div></div>
           </header>
-          <main className="applicant-main"><ApplicantProgress /><Outlet /></main>
+          <main className="applicant-main">{application?.isTest ? <div className="portal-alert" role="status"><strong>TEST ACCOUNT — no real money or admission</strong><p>You can test payment, form submission, review and downloads. Use sample information and Flutterwave test cards only.</p></div> : paymentGateway.mode === "test" && <div className="portal-alert" role="status"><strong>Real payments are temporarily unavailable</strong><p>Payment testing is in progress. Do not send money or use a real card.</p></div>}<ApplicantProgress /><Outlet /></main>
         </div>
       </div>
   );

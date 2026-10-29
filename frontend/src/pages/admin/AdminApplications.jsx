@@ -16,16 +16,17 @@ export default function AdminApplications() {
   const [feedback, setFeedback] = useState("");
   const [credentials, setCredentials] = useState(null);
   const [filter, setFilter] = useState("submitted");
+  const [testing, setTesting] = useState(false);
   const dialog = useRef(null);
 
   const loadApplications = useCallback(async () => {
     setLoading(true);
     try {
-      const { data } = await api.get("/applications");
+      const { data } = await api.get("/applications", { params: testing ? { testing: "true" } : {} });
       setApplications(data.data || []);
     } catch (error) { setFeedback(apiErrorMessage(error, "Unable to load applications.")); }
     finally { setLoading(false); }
-  }, []);
+  }, [testing]);
   useEffect(() => { loadApplications(); }, [loadApplications]);
   const selectedId = selectedApplication?.id;
   useEffect(() => {
@@ -98,6 +99,8 @@ export default function AdminApplications() {
 
   return <div className="admin-page">
     <header className="admin-header"><span className="eyebrow">Admissions office</span><h1>Applications</h1><p>Review submitted applications and keep applicants informed.</p></header>
+    <label className="check-field"><input type="checkbox" checked={testing} onChange={(event) => setTesting(event.target.checked)} />Show test applications only</label>
+    {testing && <p className="portal-alert" role="status">TEST RECORDS — these payments and admissions are simulations, excluded from the school's real application totals.</p>}
     {!selectedApplication && feedback && <p className="admin-feedback" role="status">{feedback}</p>}
     <div className="review-filters" role="group" aria-label="Application queue">{[["submitted", "Submitted applications"], ["waiting", "Not ready for review"], ["all", "All applicants"]].map(([value, label]) => <button key={value} type="button" aria-pressed={filter === value} onClick={() => setFilter(value)}>{label}</button>)}</div>
     <div className="admin-table-card"><div className="admin-table-wrap"><table className="review-queue">
@@ -112,6 +115,7 @@ export default function AdminApplications() {
       <section ref={dialog} tabIndex={-1} onKeyDown={dialogKeyDown} className="application-review-panel" role="dialog" aria-modal="true" aria-labelledby="application-review-title">
         <header className="application-review-panel__header"><div><span className="eyebrow">Application status</span><h2 id="application-review-title">{selectedApplication.fullName}</h2><p>{selectedApplication.applicationNumber}</p></div><button className="icon-button" type="button" disabled={saving} onClick={() => setSelectedApplication(null)} aria-label="Close application"><X size={20} /></button></header>
         <div className="application-review-panel__content">
+          {selectedApplication.isTest && <p className="portal-alert" role="status">TEST APPLICATION — decisions, receipts and student credentials here are for testing only.</p>}
           <section className="review-status-card"><span className="eyebrow">Current status</span><h3>{ready || selectedApplication.status === "RETURNED" ? readableStatus(selectedApplication.status) : "Awaiting submission"}</h3><p>{ready ? `Submitted ${formatDate(selectedApplication.submittedAt)}. Review the form and documents below before updating the status.` : selectedApplication.status === "RETURNED" ? "Waiting for the applicant to correct and resubmit their form." : selectedApplication.paymentConfirmed ? "Payment confirmed. The applicant has not submitted their form for review yet." : "Waiting for successful payment and a submitted application. No form is available for review yet."}</p>
             {!ready && selectedApplication.reviewNote && <p>{selectedApplication.reviewNote}</p>}
             {ready && <form key={`${selectedApplication.id}-${selectedApplication.status}`} className="application-review-form" onSubmit={updateApplicationStatus}>
