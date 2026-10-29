@@ -4442,6 +4442,25 @@ th {
 .application-review-panel__header .icon-button { flex-shrink: 0; align-self: flex-start; }
 .review-disclosure .record-downloads { margin: 0; }
 
+@media (max-width: 640px) {
+  .admin-table-card .review-queue,
+  .review-queue tbody,
+  .review-queue tr,
+  .review-queue td {
+    display: block;
+    width: 100%;
+    min-width: 0;
+  }
+  .review-queue thead { display: none; }
+  .review-queue tr { padding: 14px 0; border-bottom: 1px solid var(--line-strong); }
+  .admin-table-card .review-queue td { border: 0; padding: 8px 18px; overflow-wrap: anywhere; }
+  .review-queue td[data-label]::before { content: attr(data-label); display: block; font-size: 12px; font-weight: 750; color: var(--muted); margin-bottom: 4px; }
+  .review-status-button { width: 100%; justify-content: space-between; }
+  .review-filters button { flex: 1 1 150px; }
+  .application-review-backdrop { padding: 10px; }
+  .application-review-panel { max-height: calc(100dvh - 20px); border-radius: 14px; }
+}
+
 .application-review-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));

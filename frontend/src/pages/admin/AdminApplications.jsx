@@ -100,11 +100,11 @@ export default function AdminApplications() {
     <header className="admin-header"><span className="eyebrow">Admissions office</span><h1>Applications</h1><p>Review submitted applications and keep applicants informed.</p></header>
     {!selectedApplication && feedback && <p className="admin-feedback" role="status">{feedback}</p>}
     <div className="review-filters" role="group" aria-label="Application queue">{[["submitted", "Submitted applications"], ["waiting", "Not ready for review"], ["all", "All applicants"]].map(([value, label]) => <button key={value} type="button" aria-pressed={filter === value} onClick={() => setFilter(value)}>{label}</button>)}</div>
-    <div className="admin-table-card"><div className="admin-table-wrap"><table>
+    <div className="admin-table-card"><div className="admin-table-wrap"><table className="review-queue">
       <thead><tr><th>Applicant</th><th>Programme</th><th>Submitted</th><th>Status / review</th></tr></thead>
       <tbody>{loading ? <tr><td colSpan="4">Loading applications…</td></tr> : visibleApplications.length ? visibleApplications.map((application) => <tr key={application.id}>
-        <td><strong>{application.fullName}</strong><small>{application.applicationNumber || application.email}</small></td>
-        <td>{application.courseOfInterest || "Not submitted"}</td><td>{formatDate(application.submittedAt)}</td>
+        <td data-label="Applicant"><strong>{application.fullName}</strong><small>{application.applicationNumber || application.email}</small></td>
+        <td data-label="Programme">{application.courseOfInterest || "Not submitted"}</td><td data-label="Submitted">{formatDate(application.submittedAt)}</td>
         <td><button className={`review-status-button status-chip--${application.status.toLowerCase()}`} type="button" onClick={() => openApplication(application.id)} aria-label={`View status for ${application.fullName}`}><span>{application.status === "RETURNED" || application.reviewReady ? readableStatus(application.status) : "Awaiting submission"}</span>{application.status === "SUBMITTED" && <small>New</small>}<span aria-hidden="true">→</span></button></td>
       </tr>) : <tr><td colSpan="4">{filter === "submitted" ? "No submitted applications are ready for review." : "No applicants in this queue."}</td></tr>}</tbody>
     </table></div></div>
