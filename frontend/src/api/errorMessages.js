@@ -23,5 +23,6 @@ export function describeApiError(error, online = globalThis.navigator?.onLine) {
 
 export function apiErrorMessage(error, fallback = "Something went wrong. Please try again.") {
   if (error?.code === "ERR_CANCELED" || error?.name === "AbortError") return "";
-  return error ? describeApiError(error).message : fallback;
+  if (error?.response || error?.isAxiosError || ["ERR_NETWORK", "ECONNABORTED", "ETIMEDOUT"].includes(error?.code) || error?.name === "TimeoutError") return describeApiError(error).message;
+  return fallback;
 }

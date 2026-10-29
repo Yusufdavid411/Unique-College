@@ -4,7 +4,7 @@ import { useAuth } from "../../context/AuthContext.jsx";
 import Seo from "../../components/Seo.jsx";
 import LoadingButton from "../../components/LoadingButton.jsx";
 import PasswordInput from "../../components/PasswordInput.jsx";
-import { reportApiError } from "../../api/notifications.js";
+import { reportUnexpectedError } from "../../api/notifications.js";
 import { portalPath } from "../../api/portalLinks.js";
 
 export default function AdminLogin() {
@@ -22,7 +22,7 @@ export default function AdminLogin() {
       await login(form.email, form.password);
       navigate(portalPath("/admin"));
     } catch (error) {
-      reportApiError(error);
+      reportUnexpectedError(error);
     } finally {
       setSubmitting(false);
     }
