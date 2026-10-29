@@ -67,12 +67,11 @@ export default function FlutterwavePayment() {
   }
 
   return <div className="portal-page">
-    {paymentGateway.mode === "test" && <div className="portal-alert" role="status"><strong>TEST MODE — no real money</strong><p>Use Flutterwave test cards only. These payments and receipts are not valid for real admissions.</p></div>}
     <header className="portal-page-header"><div><span className="eyebrow">Secure online payment</span><h1>Application form payment</h1><p>Pay securely through Flutterwave. Your form unlocks automatically after your payment is verified.</p></div></header>
     <section className="portal-alert payment-bank-card">
       <span className="eyebrow">Application fee</span><strong className="payment-fee-value">NGN {Number(formAccess.amount || 0).toLocaleString("en-NG", { minimumFractionDigits: 2 })}</strong>
       {formAccess.unlocked ? <p><CheckCircle2 size={18} /> Your application form is available.</p> : <>
-        {!paymentGateway.ready && <p role="status">{paymentGateway.mode === "test" ? "Testing is restricted to the school's designated test account. Real payments are unavailable. Do not transfer money." : "Online payments are being configured. Please check back shortly."}</p>}
+        {!paymentGateway.ready && <p role="status">Online payments are temporarily unavailable for this account. Please check back shortly. Do not transfer money outside this checkout.</p>}
         {pending && !onlinePending && <div><p>An existing receipt is awaiting review. Do not pay twice. Wait for its review, or withdraw an incorrect receipt before paying online.</p><button type="button" className="button secondary" disabled={busy} onClick={withdrawLegacyReceipt}>Withdraw incorrect receipt</button></div>}
         <LoadingButton type="button" loading={busy} loadingText="Please wait…" disabled={busy || !paymentGateway.ready || Boolean(pending && !onlinePending)} onClick={checkout}><CreditCard size={18} /> {onlinePending ? "Resume Flutterwave checkout" : "Pay with Flutterwave"}</LoadingButton>
         {onlinePending && <button type="button" className="button secondary" disabled={busy} onClick={() => verify(pending.reference)}>Check payment status</button>}

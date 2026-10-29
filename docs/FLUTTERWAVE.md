@@ -15,10 +15,16 @@ Test payments cannot unlock real applicants. Existing real receipts retain their
 format regardless of the globally configured gateway mode.
 
 The test account follows the same fee quote, server verification, unlock, upload, submission,
-review, acceptance and download flow. Admins use Show test applications only to review test
+review, acceptance and download flow. Admins use Preview records only to review test
 records. Test admissions have TEST-prefixed student numbers/usernames, no official mailbox,
 and are excluded from real admissions statistics. PDFs are marked not valid for admission.
 This does not activate real charges or approve the alternate merchant for school settlements.
+
+The portal uses the same clean interface in test and live modes, without repeated test
+banners. Admins select Preview records only to find simulated applications. Unavailable
+checkout remains disabled with concise guidance. Test markings on downloadable records,
+test flags, notification labels and gateway-mode checks are retained. Switching to live
+credentials does not require removing temporary paragraphs from the interface.
 
 After testing, disable the restricted flag, configure the school's approved live key/hash,
 set mode live, and redeploy. Test accounts are barred from live checkout and old test
