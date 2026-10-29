@@ -2316,7 +2316,7 @@ th {
   display: grid;
   grid-template-columns: 275px minmax(0, 1fr);
   min-height: 100vh;
-  background: #f5f8fb;
+  background: #ffffff;
 }
 
 .applicant-sidebar {
@@ -2327,7 +2327,7 @@ th {
   height: 100vh;
   padding: 24px 18px;
   color: var(--blue-900);
-  background: #f1f4f8;
+  background: #ffffff;
   border-right: 1px solid var(--line);
 }
 
