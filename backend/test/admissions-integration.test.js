@@ -78,7 +78,7 @@ test("applicant purchase, closure and admission approval enforce the full accoun
     assert.equal((await call("/applicant/register", "POST", { fullName: "Second Applicant", email: "other-" + email, phoneNumber: "08000000000", password: "IsolatedTestPassword123" })).status, 409);
     assert.equal((await call("/applicant/dashboard", "GET", undefined, session.token)).status, 200);
     assert.equal((await call("/applications/" + application.id + "/status", "PATCH", { status: "ADMITTED" }, adminToken)).status, 409);
-    await prisma.application.update({ where: { id: application.id }, data: { status: "REVIEWED", declarationAccepted: true } });
+    await prisma.application.update({ where: { id: application.id }, data: { status: "REVIEWED", declarationAccepted: true, submittedAt: new Date() } });
     assert.equal((await call("/applications/" + application.id + "/status", "PATCH", { status: "ADMITTED" }, adminToken)).status, 422);
     await prisma.applicationDocument.createMany({ data: ["PASSPORT", "BIRTH_CERTIFICATE", "NATIONAL_ID", "EDUCATIONAL_RESULT"].map((type) => ({ applicationId: application.id, type, label: "Isolated test document", path: proofPath, fileType: "application/pdf", fileSize: 20, reviewStatus: "VERIFIED" })) });
     const decision = await call("/applications/" + application.id + "/status", "PATCH", { status: "ADMITTED" }, adminToken);

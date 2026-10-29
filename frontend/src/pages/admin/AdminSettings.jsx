@@ -2,8 +2,16 @@ import { useEffect, useState } from "react";
 import AdminNotice from "../../components/AdminNotice.jsx";
 import LoadingButton from "../../components/LoadingButton.jsx";
 import { api, apiErrorMessage } from "../../api/client.js";
+import { useSearchParams } from "react-router-dom";
+import ChangePassword from "../../components/ChangePassword.jsx";
 
 export default function AdminSettings() {
+  const [searchParams, setSearchParams] = useSearchParams();
+  const security = searchParams.get("tab") === "security";
+  return <div className="admin-page"><header className="admin-header"><span className="eyebrow">Administration</span><h1>Settings</h1><p>Manage admissions, website preferences, and account security in one place.</p></header><div className="review-filters" role="group" aria-label="Settings sections"><button type="button" aria-pressed={!security} onClick={() => setSearchParams({})}>School settings</button><button type="button" aria-pressed={security} onClick={() => setSearchParams({ tab: "security" })}>Account security</button></div>{security ? <ChangePassword embedded /> : <SchoolSettings />}</div>;
+}
+
+function SchoolSettings() {
   const [settings, setSettings] = useState([]);
   const [admissions, setAdmissions] = useState(null);
   const [savingAdmissions, setSavingAdmissions] = useState(false);
@@ -58,9 +66,8 @@ export default function AdminSettings() {
   }
 
   return (
-    <div className="admin-page admin-two-col">
+    <div className="admin-two-col">
       <section>
-        <header className="admin-header"><span className="eyebrow">CMS</span><h1>Site settings</h1></header>
         <AdminNotice type={notice.type}>{notice.message}</AdminNotice>
         {admissions && <form className="form-panel" onSubmit={saveAdmissions}>
           <h2>Admissions availability</h2>

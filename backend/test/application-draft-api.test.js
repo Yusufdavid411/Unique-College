@@ -17,7 +17,7 @@ test("application drafts normalise empty dates and incomplete submissions return
     prisma.user.findUnique = async () => ({ id: "draft-owner", name: "Test Applicant", role: "APPLICANT", isActive: true, sessionVersion: 0 });
     prisma.application.findUnique = async ({ where }) => {
       assert.equal(where.applicantId, "draft-owner");
-      return application;
+      return structuredClone(application);
     };
     prisma.application.update = async ({ data }) => {
       assert.ok(data.dateOfBirth === undefined || data.dateOfBirth === null || data.dateOfBirth instanceof Date, "Prisma date fields cannot accept an empty string");
@@ -47,7 +47,7 @@ test("application drafts normalise empty dates and incomplete submissions return
     });
     let history;
     prisma.$transaction = async (callback) => callback({
-      application: { update: async ({ data }) => ({ ...application, ...data }) },
+      application: { updateMany: async ({ data }) => { Object.assign(application, data); return { count: 1 }; }, findUnique: async () => application },
       applicationStatusHistory: { create: async ({ data }) => { history = data; } }
     });
     const complete = await fetch(base + "/submit", { method: "POST", headers });

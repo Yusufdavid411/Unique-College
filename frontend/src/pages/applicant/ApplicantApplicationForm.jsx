@@ -90,7 +90,7 @@ export default function ApplicantApplicationForm() {
       await api.patch("/applicant/application", form);
       await api.post("/applicant/application/submit");
       await refresh();
-      setNotice({ type: "success", message: "Your application has been submitted to the admissions team." });
+      setNotice({ type: "success", message: "Your application is under review. Please check back later for a decision." });
     } catch (error) {
       const missing = error.response?.data?.data?.missing;
       setNotice({ type: "error", message: missing?.length ? `Complete these items first: ${missing.join(", ")}.` : apiErrorMessage(error, "The application could not be submitted.") });

@@ -30,7 +30,7 @@ export default function ApplicantPrintCentre() {
     <div className={`portal-page print-centre ${printing ? "is-printing" : ""}`} data-print-target={printing}>
       <header className="portal-page-header no-print"><div><span className="eyebrow">Download and print</span><h1>Print centre</h1><p>Download each PDF separately, then open it to print. The application uses the school's original form.</p></div></header>
       <ApplicationDownloads application={application} />
-      <details className="no-print"><summary>Preview application details</summary><ApplicationRecord application={application} /></details>
+      {["ACCEPTED", "ADMITTED"].includes(application.status) && <details className="no-print"><summary>Preview accepted application details</summary><ApplicationRecord application={application} /></details>}
 
       {application.status === "ADMITTED" && <section className={`print-document admission-copy ${printing === "admission" ? "print-target" : ""}`}>
         <PrintHeader />

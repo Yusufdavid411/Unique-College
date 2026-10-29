@@ -234,10 +234,17 @@ model ApplicationStatusHistory {
   note          String?
   changedBy     String
   createdAt     DateTime           @default(now())
+  emailStatus   String             @default("NOT_REQUIRED")
+  emailRecipient String?
+  emailAttempts Int                @default(0)
+  emailLastAttemptAt DateTime?
+  emailSentAt DateTime?
+  emailError String?
 
   application Application @relation(fields: [applicationId], references: [id], onDelete: Cascade)
 
   @@index([applicationId])
+  @@index([emailStatus, emailLastAttemptAt])
   @@map("application_status_history")
 }
 

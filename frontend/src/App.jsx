@@ -93,7 +93,7 @@ export default function App() {
         <Route path="audit" element={<AdminAudit />} />
         <Route path="events" element={<AdminEvents />} />
         <Route path="users" element={<AdminUsers />} />
-        <Route path="security" element={<ChangePassword />} />
+        <Route path="security" element={<Navigate to={`${portalPath("/admin/settings")}?tab=security`} replace />} />
       </Route>
       </>}
       <Route path="*" element={<RecoveryScreen title="Page not found" message="This address is not available. Return to the homepage to continue." />} />

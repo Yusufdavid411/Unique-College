@@ -14,7 +14,7 @@ export const dashboardStats = asyncHandler(async (req, res) => {
     unreadMessages
   ] = await Promise.all([
     prisma.application.count(),
-    prisma.application.count({ where: { status: "PENDING" } }),
+    prisma.application.count({ where: { status: { in: ["SUBMITTED", "PENDING", "REVIEWED"] }, submittedAt: { not: null } } }),
     prisma.application.count({ where: { status: "ACCEPTED" } }),
     prisma.application.count({ where: { status: "ADMITTED" } }),
     prisma.payment.count({ where: { status: "PENDING" } }),

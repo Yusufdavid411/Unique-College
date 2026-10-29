@@ -10,7 +10,7 @@ import { applicationFormPdf, paymentReceiptPdf } from "../src/services/applicati
 function fixture() {
   return {
     id: "application", applicantId: "owner", fullName: "Ọlá Test Applicant", applicationNumber: "UCHK-TEST",
-    status: "SUBMITTED", formFeeAmount: "20000", gender: "MALE", dateOfBirth: new Date("2004-03-15"),
+    status: "ACCEPTED", submittedAt: new Date("2026-10-20"), formFeeAmount: "20000", gender: "MALE", dateOfBirth: new Date("2004-03-15"),
     maritalStatus: "SINGLE", courseOfInterest: "Community Health Extension Workers (CHEW) ND",
     educationRecords: ["English Language", "Mathematics", "Chemistry", "Physics", "Biology/Health Science", "Geography"].map((subject) => ({ subject, grade: "B3", examBody: "WAEC", year: "2024" })),
     payments: [{ id: "payment", type: "APPLICATION_FEE", currency: "NGN", amount: "20000", status: "VERIFIED", reference: "FORM-TEST", paidAt: new Date("2026-10-19"), verifiedAt: new Date("2026-10-20") }]
@@ -55,11 +55,17 @@ test("admin and applicant download identical forms while other accounts cannot r
       const receipt = await call("/payments/payment/receipt", user);
       assert.equal(receipt.status, 200);
       assert.equal((await PDFDocument.load(await receipt.arrayBuffer())).getPageCount(), 1);
+      for (const status of ["DRAFT", "SUBMITTED", "RETURNED", "REJECTED", "REVIEWED"]) {
+        application.status = status;
+        assert.equal((await call("/form", user)).status, 409);
+        assert.equal((await call("/payments/payment/receipt", user)).status, 200);
+      }
+      application.status = "ACCEPTED";
     }
     application.payments[0].status = "PENDING";
     assert.equal((await call("/form", "owner")).status, 402);
     assert.equal((await call("/payments/payment/receipt", "owner")).status, 409);
-    assert.equal((await call("/form", "admin")).status, 200);
+    assert.equal((await call("/form", "admin")).status, 409);
     assert.equal((await call("/payments/missing/receipt", "admin")).status, 404);
   } finally {
     prisma.user.findUnique = original.user;

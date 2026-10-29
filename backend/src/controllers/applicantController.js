@@ -11,6 +11,7 @@ import { requiredAdmissionDocuments } from "../services/admissionWorkflow.js";
 import { createPendingPayment, pendingReceiptMessage } from "../services/paymentSubmission.js";
 import { auditedMutation } from "../services/audit.js";
 import { publicPaymentConfiguration } from "../services/flutterwave.js";
+import { attemptStatusEmail } from "../services/statusEmail.js";
 
 const editableStatuses = ["DRAFT", "RETURNED"];
 const requiredDocumentTypes = requiredAdmissionDocuments;
@@ -160,24 +161,27 @@ export const submitApplicantApplication = asyncHandler(async (req, res) => {
   }
 
   const updated = await prisma.$transaction(async (transaction) => {
-    const next = await transaction.application.update({
-      where: { id: application.id },
-      data: { status: "SUBMITTED", submittedAt: new Date(), dateReceived: new Date() },
-      include: applicantInclude()
+    const changed = await transaction.application.updateMany({
+      where: { id: application.id, status: application.status, updatedAt: application.updatedAt },
+      data: { status: "SUBMITTED", submittedAt: new Date(), dateReceived: new Date(), reviewNote: null }
     });
-    await transaction.applicationStatusHistory.create({
+    if (!changed.count) throw Object.assign(new Error("Your application changed. Reload it before submitting again."), { statusCode: 409 });
+    const history = await transaction.applicationStatusHistory.create({
       data: {
         applicationId: application.id,
         fromStatus: application.status,
         toStatus: "SUBMITTED",
         note: "Application submitted for review",
-        changedBy: req.user.name
+        changedBy: req.user.name,
+        emailStatus: "PENDING",
+        emailRecipient: application.email
       }
     });
-    return next;
+    return { application: await transaction.application.findUnique({ where: { id: application.id }, include: applicantInclude() }), historyId: history?.id };
   });
 
-  ok(res, updated, "Application submitted for review");
+  await attemptStatusEmail(updated.historyId);
+  ok(res, updated.application, "Your application is under review. Please check back later for a decision.");
 });
 
 export const uploadApplicantDocument = asyncHandler(async (req, res) => {

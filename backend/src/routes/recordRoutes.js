@@ -5,6 +5,7 @@ import { asyncHandler } from "../utils/asyncHandler.js";
 import { hasPermission } from "../services/permissions.js";
 import { formAccessFor } from "../services/formAccess.js";
 import { applicationFormPdf, paymentReceiptPdf } from "../services/applicationPdf.js";
+import { canDownloadApplication } from "../services/applicationReview.js";
 
 const router = Router();
 router.use(requireAuth);
@@ -15,6 +16,7 @@ router.get("/applications/:id/:kind", asyncHandler(async (req, res) => {
   const owner = application.applicantId === req.user.id;
   if (!owner && !hasPermission(req.user, "applications.read")) return res.sendStatus(404);
   if (owner && !formAccessFor(application).unlocked) return res.status(402).json({ message: "Your application form unlocks after the application fee is verified" });
+  if (!canDownloadApplication(application)) return res.status(409).json({ message: "The application form can be downloaded only after a paid, submitted application has been accepted" });
   const bytes = await applicationFormPdf(application);
   res.set({ "Content-Type": "application/pdf", "Cache-Control": "private, no-store", "X-Content-Type-Options": "nosniff" });
   res.attachment("application-form.pdf").send(Buffer.from(bytes));

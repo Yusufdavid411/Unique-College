@@ -6,6 +6,7 @@
   "scripts": {
     "test": "node --test test/*.test.js",
     "backup": "node scripts/backup.js",
+    "notifications:retry": "node scripts/retry-status-notifications.js",
     "db:check": "node scripts/check-database.js",
     "dev": "nodemon src/server.js",
     "start": "node src/server.js",

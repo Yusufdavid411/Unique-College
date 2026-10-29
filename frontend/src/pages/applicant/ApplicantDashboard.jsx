@@ -7,11 +7,11 @@ import { portalPath } from "../../api/portalLinks.js";
 const statusText = {
   DRAFT: "Draft",
   RETURNED: "Action required",
-  SUBMITTED: "Submitted",
+  SUBMITTED: "Under review",
   PENDING: "Pending review",
-  REVIEWED: "Reviewed",
+  REVIEWED: "Under review",
   INTERVIEW_SCHEDULED: "Interview scheduled",
-  ACCEPTED: "Offer issued",
+  ACCEPTED: "Application accepted",
   ADMITTED: "Admitted",
   REJECTED: "Not selected"
 };
@@ -37,6 +37,9 @@ export default function ApplicantDashboard() {
       </header>
 
       {error && <p className="form-status error">{error}</p>}
+      {["SUBMITTED", "PENDING", "REVIEWED"].includes(application.status) && <section className="review-status-card" role="status"><span className="eyebrow">Application status</span><h2>Under review</h2><p>Your application has been submitted successfully. Please check back later for the admissions decision.</p></section>}
+      {application.status === "RETURNED" && <section className="review-status-card" role="status"><h2>Corrections required</h2><p>Read the admissions note, update your form or documents, then submit again for review.</p><Link className="button" to={portalPath("/applicant/application")}>Correct application</Link></section>}
+      {["ACCEPTED", "ADMITTED"].includes(application.status) && <section className="review-status-card" role="status"><h2>Your application has been accepted</h2><p>You can now download your accepted application form. Payment receipts are available separately.</p><Link className="button" to={portalPath("/applicant/print")}>Download records</Link></section>}
       {!formAccess.unlocked && <FormPurchaseRequired amount={formAccess.amount} />}
       {application.reviewNote && <div className="portal-alert"><strong>Admissions note</strong><p>{application.reviewNote}</p></div>}
 
@@ -57,7 +60,7 @@ export default function ApplicantDashboard() {
         <div className="portal-timeline">
           {[
             [true, "Account created", "Your secure applicant profile is active."],
-            [formAccess.unlocked, "Payment confirmed", "Admin verification unlocks the next application steps."],
+            [formAccess.unlocked, "Payment confirmed", "Successful payment unlocks the application form."],
             [formComplete, "Application completed", "All required form sections are ready."],
             [documentsComplete, "Documents uploaded", "Required credentials have been attached."],
             [submitted, "Submitted for review", "Admissions can vet your information."],
