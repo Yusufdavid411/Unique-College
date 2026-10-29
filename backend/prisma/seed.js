@@ -7,7 +7,7 @@ dotenv.config();
 const prisma = new PrismaClient();
 
 async function main() {
-  const email = process.env.ADMIN_EMAIL || "admin@uniquecollege.edu.ng";
+  const email = process.env.ADMIN_EMAIL || "admin@uniquecollegekwali.com";
   const resetPassword = process.env.ADMIN_RESET_PASSWORD === "true";
   const existing = await prisma.user.findUnique({ where: { email } });
   const password = process.env.ADMIN_PASSWORD;

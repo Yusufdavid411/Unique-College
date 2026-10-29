@@ -4,6 +4,14 @@ import { readFile } from "node:fs/promises";
 import { publicPageHref, applicationHref, applicantLoginHref, canonicalPortalHref, portalPath, portalScope } from "../../frontend/src/api/portalLinks.js";
 import { sessionScope } from "../../frontend/src/api/session.js";
 
+test("generated admin access instructions use school subdomains", async () => {
+  const script = await readFile(new URL("../scripts/create-admin-access.js", import.meta.url), "utf8");
+  assert.ok(script.includes("Admin login: https://admin.uniquecollegekwali.com/"));
+  assert.ok(script.includes("News management: https://admin.uniquecollegekwali.com/news"));
+  assert.ok(script.includes("Public news: https://www.uniquecollegekwali.com/news"));
+  assert.ok(!script.includes("vercel.app"));
+});
+
 test("only legacy portal prefixes redirect, never the hostname roots", async () => {
   const config = JSON.parse(await readFile(new URL("../../vercel.json", import.meta.url), "utf8"));
   assert.deepEqual(config.redirects.filter((rule) => ["admin.uniquecollegekwali.com", "apply.uniquecollegekwali.com"].includes(rule.has[0].value)).map((rule) => [rule.source, rule.has[0].value, rule.destination]), [

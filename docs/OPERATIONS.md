@@ -18,10 +18,10 @@ College Neon database. The Vercel API passes database readiness, administrator
 sign-in, news/image publishing and unpublishing checks. The website uses that API.
 The older Render database is preserved and has not been imported or deleted.
 
-Use https://uniquecollegekwali.vercel.app/admin/login for current testing. Although
-Vercel lists the .edu.ng production alias, this workstation's DNS returned
-ENOTFOUND for uniquecollegekwali.edu.ng during the final check. Do not advertise
-the custom domain as verified until DNS and TLS checks pass.
+Use https://admin.uniquecollegekwali.com/ for administrator sign-in and
+https://admin.uniquecollegekwali.com/news for news management. The public website
+is https://www.uniquecollegekwali.com/ and applications use
+https://apply.uniquecollegekwali.com/. Do not distribute legacy Vercel portal links.
 
 ## Applicant files
 

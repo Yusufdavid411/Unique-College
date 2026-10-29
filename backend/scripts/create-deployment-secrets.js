@@ -6,7 +6,7 @@ const content = [
   "JWT_SECRET=" + crypto.randomBytes(48).toString("base64url"),
   "PREVIEW_JWT_SECRET=" + crypto.randomBytes(48).toString("base64url"),
   "ADMIN_PASSWORD=Uc!" + crypto.randomBytes(24).toString("base64url") + "7",
-  "ADMIN_EMAIL=admin@uniquecollegekwali.edu.ng"
+  "ADMIN_EMAIL=admin@uniquecollegekwali.com"
 ].join("\n") + "\n";
 try {
   await fs.writeFile(destination, content, { flag: "wx", mode: 0o600 });
