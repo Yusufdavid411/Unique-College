@@ -1,7 +1,8 @@
 import { useState } from "react";
-import { ArrowRight, CheckCircle2, Eye, EyeOff, LockKeyhole, ShieldCheck } from "lucide-react";
+import { ArrowRight, CheckCircle2, LockKeyhole, ShieldCheck } from "lucide-react";
 import { Link, Navigate, useLocation, useNavigate } from "react-router-dom";
 import LoadingButton from "../../components/LoadingButton.jsx";
+import PasswordInput from "../../components/PasswordInput.jsx";
 import Seo from "../../components/Seo.jsx";
 import { apiErrorMessage } from "../../api/client.js";
 import { useAuth } from "../../context/AuthContext.jsx";
@@ -15,7 +16,6 @@ export default function ApplicantAccess() {
   const { user, loading: authLoading, applicantLogin, registerApplicant } = useAuth();
   const { policy: admissions, unavailable: policyError, loading: policyLoading, refresh } = useAdmissions();
   const isRegister = pathname === "/" || pathname.endsWith("register");
-  const [showPassword, setShowPassword] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [form, setForm] = useState({ fullName: "", email: "", phoneNumber: "", identifier: "", password: "" });
@@ -86,7 +86,7 @@ export default function ApplicantAccess() {
                 </>
               )}
               {!isRegister && <label>Email or portal username<input name="identifier" value={form.identifier} onChange={update} required /></label>}
-              <label>Password<span className="password-field"><input name="password" type={showPassword ? "text" : "password"} value={form.password} onChange={update} minLength="8" required /><button type="button" onClick={() => setShowPassword((value) => !value)} aria-label={showPassword ? "Hide password" : "Show password"}>{showPassword ? <EyeOff size={18} /> : <Eye size={18} />}</button></span></label>
+              <label>Password<PasswordInput name="password" autoComplete={isRegister ? "new-password" : "current-password"} value={form.password} onChange={update} minLength="8" required /></label>
               {error && <p className="form-status error">{error}</p>}
               <LoadingButton type="submit" loading={busy} disabled={isRegister && policyLoading} loadingText="Please wait...">
                 {isRegister ? "Create applicant account" : "Sign in to portal"}<ArrowRight size={18} />
