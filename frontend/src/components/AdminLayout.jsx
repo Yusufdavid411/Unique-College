@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useAuth } from "../context/AuthContext.jsx";
 import { assetPaths } from "../data/siteData.js";
 import { portalPath } from "../api/portalLinks.js";
+import { useSchool } from "../context/SchoolContext.jsx";
 
 const items = [
   ["Overview", "/admin", LayoutDashboard],
@@ -19,6 +20,7 @@ const items = [
 ];
 
 export default function AdminLayout() {
+  const { schoolInfo } = useSchool();
   const { logout, user } = useAuth();
   const navigate = useNavigate();
   const [menuOpen, setMenuOpen] = useState(false);
@@ -34,7 +36,7 @@ export default function AdminLayout() {
         <div className="admin-brand">
           <img src={assetPaths.logo} alt="Unique College logo" />
           <div>
-            <strong>Unique College</strong>
+            <strong>{schoolInfo.shortName}</strong>
             <span>{user?.name}</span>
           </div>
         </div>

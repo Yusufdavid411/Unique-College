@@ -7,7 +7,16 @@ import { prisma } from "../config/prisma.js";
 import { auditedMutation } from "../services/audit.js";
 
 export const changePassword = asyncHandler(async (req, res) => {
-  const body = z.object({ currentPassword: z.string().min(1).max(128), password: z.string().min(12).max(72).regex(/[A-Z]/).regex(/[a-z]/).regex(/[0-9]/) }).parse(req.body);
+  const body = z.object({
+    currentPassword: z.string().min(1, "Enter your current password").max(128),
+    password: z.string()
+      .min(12, "Use at least 12 characters")
+      .max(72, "Use no more than 72 characters")
+      .regex(/[A-Z]/, "Add at least one uppercase letter (A-Z)")
+      .regex(/[a-z]/, "Add at least one lowercase letter (a-z)")
+      .regex(/[0-9]/, "Add at least one number (0-9)")
+      .refine((value) => Buffer.byteLength(value, "utf8") <= 72, "This password is too long when encoded. Shorten it to 72 bytes or fewer")
+  }).parse(req.body);
   if (!(await bcrypt.compare(body.currentPassword, req.user.passwordHash))) return res.status(400).json({ success: false, message: "Current password is incorrect" });
   if (await bcrypt.compare(body.password, req.user.passwordHash)) return res.status(422).json({ success: false, message: "Choose a different password" });
   const passwordHash = await bcrypt.hash(body.password, 12);

@@ -1,12 +1,13 @@
 import { Link } from "react-router-dom";
 import { ArrowRight, CheckCircle2 } from "lucide-react";
 import Seo from "../../components/Seo.jsx";
-import { schoolInfo } from "../../data/siteData.js";
+import { useSchool } from "../../context/SchoolContext.jsx";
 import { useAdmissions } from "../../context/AdmissionsContext.jsx";
 import { applicantLoginHref } from "../../api/portalLinks.js";
 import ApplyLink from "../../components/ApplyLink.jsx";
 
 export default function Admission() {
+  const { schoolInfo } = useSchool();
   const { policy, unavailable } = useAdmissions();
   const steps = ["Review the updated 6-semester ND programme options", "Complete every required field on the online application form", "Upload a clear passport photograph", "Watch your email and phone for admission updates if accepted"];
   return (

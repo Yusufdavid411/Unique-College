@@ -1,7 +1,8 @@
 import { NavLink, Outlet, Link, useLocation } from "react-router-dom";
 import { BriefcaseBusiness, ChevronDown, Crown, GraduationCap, Landmark, Mail, MapPin, Menu, Phone } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
-import { assetPaths, schoolInfo } from "../data/siteData.js";
+import { assetPaths } from "../data/siteData.js";
+import { useSchool } from "../context/SchoolContext.jsx";
 import ApplyLink from "./ApplyLink.jsx";
 import PublicVisitorTracker from "./PublicVisitorTracker.jsx";
 
@@ -24,6 +25,7 @@ const leadershipLinks = [
 ];
 
 export default function PublicLayout() {
+  const { schoolInfo } = useSchool();
   const location = useLocation();
   const [open, setOpen] = useState(false);
   const [leadershipOpen, setLeadershipOpen] = useState(false);

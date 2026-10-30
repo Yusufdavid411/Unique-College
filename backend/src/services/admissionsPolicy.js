@@ -3,9 +3,9 @@ import { prisma } from "../config/prisma.js";
 export const admissionsPolicyKey = "admissions_policy";
 
 export function parseAdmissionsPolicy(value) {
-  if (!value) return { open: false, message: "Admissions dates will be announced shortly.", applicationFee: null, paymentInstructions: "" };
+  if (!value) return { open: false, message: "Admissions dates will be announced shortly.", applicationFee: null };
   const policy = JSON.parse(value);
-  return { open: policy.open === true, message: policy.message || "Admissions are currently closed.", applicationFee: typeof policy.applicationFee === "number" && Number.isFinite(policy.applicationFee) && policy.applicationFee >= 0 ? policy.applicationFee : null, paymentInstructions: typeof policy.paymentInstructions === "string" ? policy.paymentInstructions : "" };
+  return { open: policy.open === true, message: policy.message || "Admissions are currently closed.", applicationFee: typeof policy.applicationFee === "number" && Number.isFinite(policy.applicationFee) && policy.applicationFee >= 0 ? policy.applicationFee : null };
 }
 
 export async function getAdmissionsPolicy() {

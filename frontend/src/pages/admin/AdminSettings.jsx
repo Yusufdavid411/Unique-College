@@ -1,104 +1,97 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import AdminNotice from "../../components/AdminNotice.jsx";
 import LoadingButton from "../../components/LoadingButton.jsx";
-import { api, apiErrorMessage } from "../../api/client.js";
-import { useSearchParams } from "react-router-dom";
 import ChangePassword from "../../components/ChangePassword.jsx";
+import { api, apiErrorMessage } from "../../api/client.js";
+import { useAdmissions } from "../../context/AdmissionsContext.jsx";
+import { useSchool } from "../../context/SchoolContext.jsx";
+import { schoolSettingsFormValues, schoolSettingsSections } from "../../data/schoolSettings.js";
 
 export default function AdminSettings() {
   const [searchParams, setSearchParams] = useSearchParams();
   const security = searchParams.get("tab") === "security";
-  return <div className="admin-page"><header className="admin-header"><span className="eyebrow">Administration</span><h1>Settings</h1><p>Manage admissions, website preferences, and account security in one place.</p></header><div className="review-filters" role="group" aria-label="Settings sections"><button type="button" aria-pressed={!security} onClick={() => setSearchParams({})}>School settings</button><button type="button" aria-pressed={security} onClick={() => setSearchParams({ tab: "security" })}>Account security</button></div>{security ? <ChangePassword embedded /> : <SchoolSettings />}</div>;
+  return <div className="admin-page"><header className="admin-header"><span className="eyebrow">Administration</span><h1>Settings</h1><p>Manage admissions, school information, and account security.</p></header><div className="review-filters" role="group" aria-label="Settings sections"><button type="button" aria-pressed={!security} onClick={() => setSearchParams({})}>School settings</button><button type="button" aria-pressed={security} onClick={() => setSearchParams({ tab: "security" })}>Account security</button></div>{security ? <ChangePassword embedded /> : <SchoolSettings />}</div>;
 }
 
 function SchoolSettings() {
-  const [settings, setSettings] = useState([]);
+  const dirtyFields = useRef(new Set());
+  const [values, setValues] = useState(() => schoolSettingsFormValues());
   const [admissions, setAdmissions] = useState(null);
-  const [savingAdmissions, setSavingAdmissions] = useState(false);
-  const [form, setForm] = useState({ key: "", value: "", group: "general" });
+  const [saving, setSaving] = useState("");
   const [loading, setLoading] = useState(true);
-  const [submitting, setSubmitting] = useState(false);
+  const [failed, setFailed] = useState(false);
+  const [revision, setRevision] = useState(0);
   const [notice, setNotice] = useState({ type: "", message: "" });
+  const { updateSchoolSettings } = useSchool();
+  const { refresh: refreshAdmissions } = useAdmissions();
 
-  function load() {
-    setLoading(true);
-    api
-      .get("/settings")
-      .then((res) => setSettings(res.data.data))
-      .catch((error) => setNotice({ type: "error", message: apiErrorMessage(error, "Settings could not be loaded.") }))
-      .finally(() => setLoading(false));
-  }
-
-  useEffect(load, []);
   useEffect(() => {
-    api.get("/settings/admissions").then((res) => setAdmissions(res.data.data))
-      .catch((error) => setNotice({ type: "error", message: apiErrorMessage(error) }));
-  }, []);
+    const controller = new AbortController();
+    setLoading(true);
+    setFailed(false);
+    Promise.all([api.get("/settings/school", { signal: controller.signal }), api.get("/settings/admissions", { signal: controller.signal })])
+      .then(([profile, policy]) => { if (!controller.signal.aborted) { dirtyFields.current.clear(); setValues(schoolSettingsFormValues(profile.data.data)); setAdmissions(policy.data.data); } })
+      .catch((error) => { if (!controller.signal.aborted) { setFailed(true); setNotice({ type: "error", message: apiErrorMessage(error, "Settings could not be loaded.") }); } })
+      .finally(() => { if (!controller.signal.aborted) setLoading(false); });
+    return () => controller.abort();
+  }, [revision]);
+
+  function changeField(key, value) {
+    dirtyFields.current.add(key);
+    setValues((previous) => ({ ...previous, [key]: value }));
+  }
 
   async function saveAdmissions(event) {
     event.preventDefault();
-    setSavingAdmissions(true);
-    try {
-      await api.put("/settings/admissions", admissions);
-      setNotice({ type: "success", message: "Admissions availability saved. Existing applicants can still sign in." });
-      load();
-    } catch (error) {
-      setNotice({ type: "error", message: apiErrorMessage(error) });
-    } finally {
-      setSavingAdmissions(false);
-    }
-  }
-
-  async function submit(event) {
-    event.preventDefault();
-    setSubmitting(true);
+    if (saving) return;
+    setSaving("admissions");
     setNotice({ type: "", message: "" });
     try {
-      await api.post("/settings", form);
-      setForm({ key: "", value: "", group: "general" });
-      setNotice({ type: "success", message: "Setting saved." });
-      load();
-    } catch (error) {
-      setNotice({ type: "error", message: apiErrorMessage(error, "Setting could not be saved.") });
-    } finally {
-      setSubmitting(false);
-    }
+      const { data } = await api.put("/settings/admissions", { open: admissions.open, message: admissions.message, applicationFee: admissions.applicationFee });
+      setAdmissions(data.data);
+      setNotice({ type: "success", message: "Admissions settings saved." });
+      refreshAdmissions();
+    } catch (error) { setNotice({ type: "error", message: apiErrorMessage(error) }); }
+    finally { setSaving(""); }
   }
 
-  return (
-    <div className="admin-two-col">
-      <section>
-        <AdminNotice type={notice.type}>{notice.message}</AdminNotice>
-        {admissions && <form className="form-panel" onSubmit={saveAdmissions}>
-          <h2>Admissions availability</h2>
-          <label>Status<select value={String(admissions.open)} onChange={(event) => setAdmissions({ ...admissions, open: event.target.value === "true" })}>
-            <option value="false">Admissions closed</option><option value="true">Admissions open</option>
-          </select></label>
-          <label>Public message<textarea required minLength={5} maxLength={500} value={admissions.message} onChange={(event) => setAdmissions({ ...admissions, message: event.target.value })} /></label>
-          <label>Approved form price (NGN)<input type="number" min="0" max="10000000" step="0.01" value={admissions.applicationFee ?? ""} onChange={(event) => setAdmissions({ ...admissions, applicationFee: event.target.value === "" ? null : Number(event.target.value) })} /></label>
-          <label>Bank details and payment instructions<textarea maxLength={3000} rows={5} value={admissions.paymentInstructions || ""} onChange={(event) => setAdmissions({ ...admissions, paymentInstructions: event.target.value })} placeholder="Bank name, account name, account number and payment instructions." /></label>
-          <p>New applicants keep the quoted form price. A verified application-fee payment unlocks their full form. Set zero only if the school explicitly offers free forms.</p>
-          <p>Closing admissions stops new registrations. Existing applicants retain access to their application and progress.</p>
-          <LoadingButton type="submit" loading={savingAdmissions} loadingText="Saving...">Save admissions status</LoadingButton>
-        </form>}
-        <div className="admin-list">
-          {loading && <div className="empty-state">Loading settings...</div>}
-          {!loading && !settings.length && <div className="empty-state">No settings have been saved yet.</div>}
-          {!loading && settings.map((setting) => (
-            <article className="admin-list-item" key={setting.id}>
-              <div><strong>{setting.key}</strong><span>{setting.value}</span></div>
-              <small>{setting.group}</small>
-            </article>
-          ))}
+  async function saveSection(event, section) {
+    event.preventDefault();
+    if (saving) return;
+    setSaving(section.id);
+    setNotice({ type: "", message: "" });
+    try {
+      const changes = Object.fromEntries(section.fields.map((field) => [field.key, values[field.key]]));
+      const { data } = await api.patch("/settings/school", changes);
+      updateSchoolSettings(data.data);
+      section.fields.forEach((field) => dirtyFields.current.delete(field.key));
+      setValues((previous) => ({ ...schoolSettingsFormValues(data.data), ...Object.fromEntries([...dirtyFields.current].map((key) => [key, previous[key]])) }));
+      setNotice({ type: "success", message: `${section.title} saved. The website now uses these details.` });
+    } catch (error) { setNotice({ type: "error", message: apiErrorMessage(error) }); }
+    finally { setSaving(""); }
+  }
+
+  return <div className="school-settings">
+    <AdminNotice type={notice.type}>{notice.message}</AdminNotice>
+    {loading ? <p role="status">Loading school settings…</p> : failed ? <div className="empty-state"><p>Settings could not load.</p><button type="button" className="button" onClick={() => setRevision((value) => value + 1)}>Try again</button></div> : <>
+      {admissions && <form className="form-panel" onSubmit={saveAdmissions}>
+        <h2>Admissions availability</h2>
+        <div className="settings-field-grid">
+          <label>Status<select disabled={Boolean(saving)} value={String(admissions.open)} onChange={(event) => setAdmissions({ ...admissions, open: event.target.value === "true" })}><option value="false">Admissions closed</option><option value="true">Admissions open</option></select></label>
+          <label>Application form price (NGN)<input disabled={Boolean(saving)} type="number" min="0" max="10000000" step="0.01" value={admissions.applicationFee ?? ""} onChange={(event) => setAdmissions({ ...admissions, applicationFee: event.target.value === "" ? null : Number(event.target.value) })} /></label>
+          <label className="settings-full-width">Public admissions message<textarea disabled={Boolean(saving)} required minLength={5} maxLength={500} rows={3} value={admissions.message} onChange={(event) => setAdmissions({ ...admissions, message: event.target.value })} /></label>
         </div>
-      </section>
-      <form className="form-panel" onSubmit={submit}>
-        <h2>Save setting</h2>
-        <input required placeholder="Key" value={form.key} onChange={(e) => setForm({ ...form, key: e.target.value })} />
-        <input required placeholder="Value" value={form.value} onChange={(e) => setForm({ ...form, value: e.target.value })} />
-        <input required placeholder="Group" value={form.group} onChange={(e) => setForm({ ...form, group: e.target.value })} />
-        <LoadingButton type="submit" loading={submitting} loadingText="Saving setting...">Save setting</LoadingButton>
-      </form>
-    </div>
-  );
+        <details className="settings-help"><summary>How these controls work</summary><p>New applicants keep the form price quoted when they register. Closing admissions stops new registrations without removing existing applicants' access. Payments use the configured online checkout; bank instructions are no longer needed here.</p></details>
+        <LoadingButton type="submit" disabled={Boolean(saving)} loading={saving === "admissions"} loadingText="Saving…">Save admissions settings</LoadingButton>
+      </form>}
+      {schoolSettingsSections.map((section) => <details className="settings-panel" key={section.id}>
+        <summary>{section.title}</summary>
+        <form className="form-panel" onSubmit={(event) => saveSection(event, section)}>
+          <div className="settings-field-grid">{section.fields.map((field) => <label className={field.multiline ? "settings-full-width" : undefined} key={field.key}>{field.label}{field.multiline ? <textarea required rows={4} disabled={Boolean(saving)} maxLength={field.maxLength} value={values[field.key]} onChange={(event) => changeField(field.key, event.target.value)} /> : <input required type={field.type || "text"} disabled={Boolean(saving)} maxLength={field.maxLength} value={values[field.key]} onChange={(event) => changeField(field.key, event.target.value)} />}</label>)}</div>
+          <LoadingButton type="submit" disabled={Boolean(saving)} loading={saving === section.id} loadingText="Saving…">Save {section.title.toLowerCase()}</LoadingButton>
+        </form>
+      </details>)}
+    </>}
+  </div>;
 }

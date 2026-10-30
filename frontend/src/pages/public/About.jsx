@@ -1,7 +1,9 @@
 import Seo from "../../components/Seo.jsx";
-import { anthem, assetPaths, leadershipWelcome, pledge, schoolInfo } from "../../data/siteData.js";
+import { anthem, assetPaths, leadershipWelcome, pledge } from "../../data/siteData.js";
+import { useSchool } from "../../context/SchoolContext.jsx";
 
 export default function About() {
+  const { schoolInfo } = useSchool();
   return (
     <>
       <Seo title="About" description="Mission, vision, history, accreditation, and leadership of Unique College." />

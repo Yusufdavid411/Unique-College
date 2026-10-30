@@ -6,6 +6,7 @@ import { ApplicantProvider, useApplicant } from "../context/ApplicantContext.jsx
 import ApplicantProgress from "./ApplicantProgress.jsx";
 import { assetPaths } from "../data/siteData.js";
 import { portalPath } from "../api/portalLinks.js";
+import { useSchool } from "../context/SchoolContext.jsx";
 
 const links = [
   ["Dashboard", "/applicant", LayoutDashboard],
@@ -17,6 +18,7 @@ const links = [
 ];
 
 function ApplicantShell() {
+  const { schoolInfo } = useSchool();
   const { logout, user } = useAuth();
   const { formAccess, loading } = useApplicant();
   const [menuOpen, setMenuOpen] = useState(false);
@@ -70,7 +72,7 @@ function ApplicantShell() {
         <aside id="applicant-sidebar" ref={sidebarRef} className="applicant-sidebar" role={mobile && menuOpen ? "dialog" : undefined} aria-modal={mobile && menuOpen ? true : undefined} aria-labelledby="applicant-sidebar-title" aria-hidden={mobile && !menuOpen ? true : undefined} inert={mobile && !menuOpen ? true : undefined}>
         <div className="applicant-brand">
           <img src={assetPaths.logo} alt="Unique College logo" />
-          <div><strong id="applicant-sidebar-title">Applicant Portal</strong><span>Unique College</span></div>
+          <div><strong id="applicant-sidebar-title">Applicant Portal</strong><span>{schoolInfo.shortName}</span></div>
           <button ref={closeRef} className="applicant-drawer-close" type="button" aria-label="Close navigation" onClick={() => setMenuOpen(false)}><X size={21} /></button>
         </div>
         <p className="applicant-nav-label">Applicant steps</p>
@@ -85,7 +87,7 @@ function ApplicantShell() {
         <div className="applicant-workspace" inert={menuOpen && mobile ? true : undefined}>
           <header className="applicant-topbar no-print">
             <button ref={menuRef} className="applicant-menu-toggle" type="button" aria-label="Open navigation" aria-expanded={menuOpen} aria-controls="applicant-sidebar" onClick={() => setMenuOpen(true)}><Menu size={23} /></button>
-            <div className="applicant-topbar-title"><strong>Pre-admission portal</strong><span>Unique College</span></div>
+            <div className="applicant-topbar-title"><strong>Pre-admission portal</strong><span>{schoolInfo.shortName}</span></div>
             <div className="applicant-account"><span className="applicant-account-avatar"><UserRound size={23} /></span><div><strong>{user?.name}</strong><span>Applicant account</span></div></div>
           </header>
           <main className="applicant-main"><ApplicantProgress /><Outlet /></main>

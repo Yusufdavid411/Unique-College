@@ -1,12 +1,14 @@
 import { GraduationCap, Printer } from "lucide-react";
 import { useState } from "react";
 import { useApplicant } from "../../context/ApplicantContext.jsx";
-import { assetPaths, schoolInfo } from "../../data/siteData.js";
+import { assetPaths } from "../../data/siteData.js";
+import { useSchool } from "../../context/SchoolContext.jsx";
 import ApplicationRecord from "../../components/ApplicationRecord.jsx";
 import ApplicationDownloads from "../../components/ApplicationDownloads.jsx";
 import FormPurchaseRequired from "../../components/FormPurchaseRequired.jsx";
 
 function PrintHeader() {
+  const { schoolInfo } = useSchool();
   return <header className="print-header"><img src={assetPaths.logo} alt="" /><div><strong>{schoolInfo.name}</strong><span>{schoolInfo.address}</span><span>{schoolInfo.email} · {schoolInfo.phoneDisplay}</span></div></header>;
 }
 

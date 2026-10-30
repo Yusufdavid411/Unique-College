@@ -4,6 +4,7 @@ import { useAuth } from "../context/AuthContext.jsx";
 import PasswordInput from "./PasswordInput.jsx";
 import { ErrorToast } from "./ToastNotifications.jsx";
 import { notify } from "../api/notifications.js";
+import { passwordValidationMessage } from "../api/passwordPolicy.js";
 
 export default function ChangePassword({ embedded = false }) {
   const { logout } = useAuth();
@@ -12,11 +13,14 @@ export default function ChangePassword({ embedded = false }) {
   async function submit(event) {
     event.preventDefault();
     const values = new FormData(event.currentTarget);
+    const passwordIssue = passwordValidationMessage(String(values.get("password") || ""));
+    if (passwordIssue) { event.currentTarget.elements.namedItem("password")?.focus(); return notify({ title: "Check your new password", message: passwordIssue }); }
     if (values.get("password") !== values.get("confirmation")) return notify({ title: "Check your new password", message: "Passwords do not match. Enter the same new password in both fields." });
     setBusy(true);
     setError("");
     try {
       await api.post("/auth/password", { currentPassword: values.get("currentPassword"), password: values.get("password") });
+      notify({ title: "Password changed", message: "Sign in again using your new password.", type: "info" });
       logout();
     } catch (requestError) {
       setError(apiErrorMessage(requestError));

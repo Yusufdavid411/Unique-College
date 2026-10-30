@@ -7,6 +7,7 @@ import { AdmissionsProvider } from "./context/AdmissionsContext.jsx";
 import "./styles/global.css";
 import AppErrorBoundary from "./components/AppErrorBoundary.jsx";
 import ToastNotifications from "./components/ToastNotifications.jsx";
+import { SchoolProvider } from "./context/SchoolContext.jsx";
 
 function ApplicationRoot() {
   React.useLayoutEffect(() => {
@@ -16,7 +17,7 @@ function ApplicationRoot() {
   return (
     <BrowserRouter>
       <AuthProvider>
-        <AdmissionsProvider><App /></AdmissionsProvider>
+        <SchoolProvider><AdmissionsProvider><App /></AdmissionsProvider></SchoolProvider>
       </AuthProvider>
     </BrowserRouter>
   );

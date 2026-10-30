@@ -7,9 +7,12 @@ import Seo from "../../components/Seo.jsx";
 import EventsPreview from "../../components/EventsPreview.jsx";
 import { useAdmissions } from "../../context/AdmissionsContext.jsx";
 import ApplyLink from "../../components/ApplyLink.jsx";
-import { assetPaths, heroSlides, leadershipWelcome, programs, schoolInfo, stats } from "../../data/siteData.js";
+import { assetPaths, heroSlides, leadershipWelcome, programs, stats } from "../../data/siteData.js";
+import { useSchool } from "../../context/SchoolContext.jsx";
 
 export default function Home() {
+  const { schoolInfo } = useSchool();
+  const displayStats = stats.map(([value, label]) => [label === "Registered Institution" ? schoolInfo.registrationNumber : label === "Admission Open" ? schoolInfo.admissionSession.replace(/ Academic Session$/i, "") : value, label === "Admission Open" ? "Academic session" : label]);
   const { policy } = useAdmissions();
   const [news, setNews] = useState([]);
   const [newsLoading, setNewsLoading] = useState(true);
@@ -102,7 +105,7 @@ export default function Home() {
           [Microscope, "Medical Laboratory Training", "Diagnostic support skills and safe laboratory practice."],
           [Activity, "Primary Health Care Focus", "Health personnel prepared for meaningful service in communities."],
           [BookOpen, "Seven Programmes", "Updated academic options including Artificial Intelligence in Healthcare System Management, effective next year."],
-          [ShieldCheck, "Approved Institution", `${schoolInfo.registrationNumber} with provisional approval in FCT-Abuja.`]
+          [ShieldCheck, "Approval and registration", `${schoolInfo.registrationNumber}. ${schoolInfo.approval}`]
         ].map(([Icon, title, text]) => (
           <article className="feature-card" key={title}>
             <Icon size={26} />
@@ -135,7 +138,7 @@ export default function Home() {
       </section>
 
       <section className="stats-band">
-        {stats.map(([value, label]) => (
+        {displayStats.map(([value, label]) => (
           <div key={label}>
             <strong>{value}</strong>
             <span>{label}</span>

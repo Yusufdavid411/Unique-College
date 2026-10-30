@@ -2,9 +2,10 @@ import { useState } from "react";
 import Seo from "../../components/Seo.jsx";
 import { api, apiErrorMessage } from "../../api/client.js";
 import { ErrorToast } from "../../components/ToastNotifications.jsx";
-import { schoolInfo } from "../../data/siteData.js";
+import { useSchool } from "../../context/SchoolContext.jsx";
 
 export default function Contact() {
+  const { schoolInfo } = useSchool();
   const [form, setForm] = useState({ name: "", email: "", phone: "", subject: "", message: "" });
   const [status, setStatus] = useState({ type: "", message: "" });
 

@@ -4,6 +4,25 @@ import { asyncHandler } from "../utils/asyncHandler.js";
 import { admissionsPolicyKey, getAdmissionsPolicy } from "../services/admissionsPolicy.js";
 import { z } from "zod";
 import { auditedMutation } from "../services/audit.js";
+import { readSchoolSettings, schoolSettingGroup, schoolSettingsPatchSchema, schoolSettingsSchema, schoolSettingKeys } from "../services/schoolSettings.js";
+
+export const readSchoolProfile = asyncHandler(async (req, res) => {
+  res.set("Cache-Control", "no-store");
+  ok(res, await readSchoolSettings(prisma));
+});
+
+export const updateSchoolProfile = asyncHandler(async (req, res) => {
+  const changes = schoolSettingsPatchSchema.parse(req.body);
+  const profile = await auditedMutation(prisma, { actorId: req.user.id, action: "school.profile_updated", targetType: "setting", targetId: "school_profile" }, async (transaction) => {
+    for (const [key, value] of Object.entries(changes)) {
+      const group = schoolSettingGroup(key);
+      await transaction.siteSetting.upsert({ where: { key }, update: { value, group }, create: { key, value, group } });
+    }
+    return readSchoolSettings(transaction);
+  });
+  res.set("Cache-Control", "no-store");
+  ok(res, profile, "School details updated");
+});
 
 export const readAdmissionsPolicy = asyncHandler(async (req, res) => {
   res.set("Cache-Control", "no-store");
@@ -11,9 +30,9 @@ export const readAdmissionsPolicy = asyncHandler(async (req, res) => {
 });
 
 export const saveAdmissionsPolicy = asyncHandler(async (req, res) => {
-  const policy = z.object({ open: z.boolean(), message: z.string().trim().min(5).max(500), applicationFee: z.number().finite().min(0).max(10000000).multipleOf(0.01).nullable().default(null), paymentInstructions: z.string().trim().max(3000).default("") })
+  const policy = z.object({ open: z.boolean(), message: z.string().trim().min(5).max(500), applicationFee: z.number().finite().min(0).max(10000000).multipleOf(0.01).nullable().default(null) })
     .refine((value) => !value.open || value.applicationFee !== null, { message: "Set the approved application fee before opening admissions", path: ["applicationFee"] })
-    .refine((value) => !value.open || !value.applicationFee || value.paymentInstructions.length >= 10, { message: "Provide the school's official payment instructions before opening paid admissions", path: ["paymentInstructions"] }).parse(req.body);
+    .parse(req.body);
   await auditedMutation(prisma, { actorId: req.user.id, action: policy.open ? "admissions.opened" : "admissions.closed", targetType: "setting" }, (transaction) => transaction.siteSetting.upsert({
     where: { key: admissionsPolicyKey },
     update: { value: JSON.stringify(policy), group: "admissions" },
@@ -30,6 +49,7 @@ export const listSettings = asyncHandler(async (req, res) => {
 export const upsertSetting = asyncHandler(async (req, res) => {
   req.body = z.object({ key: z.string().trim().min(1).max(100), value: z.string().max(10000), group: z.string().trim().max(100).optional() }).parse(req.body);
   if (req.body.key === admissionsPolicyKey) return res.status(422).json({ success: false, message: "Use the admissions controls to update this setting" });
+  if (schoolSettingKeys.includes(req.body.key)) req.body.value = schoolSettingsSchema.shape[req.body.key].parse(req.body.value);
   const setting = await auditedMutation(prisma, { actorId: req.user.id, action: "setting.updated", targetType: "setting" }, (transaction) => transaction.siteSetting.upsert({
     where: { key: req.body.key },
     update: { value: req.body.value, group: req.body.group || "general" },

@@ -10,8 +10,10 @@ import { useAdmissions } from "../../context/AdmissionsContext.jsx";
 import { assetPaths } from "../../data/siteData.js";
 import { portalPath, publicPageHref } from "../../api/portalLinks.js";
 import { ErrorToast } from "../../components/ToastNotifications.jsx";
+import { useSchool } from "../../context/SchoolContext.jsx";
 
 export default function ApplicantAccess() {
+  const { schoolInfo } = useSchool();
   const { pathname } = useLocation();
   const navigate = useNavigate();
   const { user, loading: authLoading, applicantLogin, registerApplicant } = useAuth();
@@ -54,7 +56,7 @@ export default function ApplicantAccess() {
         <section className="applicant-access-story">
           <Link className="applicant-access-brand" to={publicPageHref("/", window.location.hostname)}><img src={assetPaths.logo} alt="Unique College logo" /><span>Unique College</span></Link>
           <div>
-            <span className="eyebrow">2026/2027 Admissions</span>
+            <span className="eyebrow">{schoolInfo.admissionSession}</span>
             <h1>Your admission journey, in one secure place.</h1>
             <p>Pay your application fee, complete the official admission form, upload credentials, track every review stage, and download your records.</p>
             <div className="applicant-access-points">
