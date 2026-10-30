@@ -31,7 +31,6 @@ export default function AdminDashboard() {
   return (
     <div className="admin-page">
       <header className="admin-header"><span className="eyebrow">Dashboard</span><h1>Overview</h1></header>
-      <VisitorAnalytics />
       <AdminNotice type="error">{notice}</AdminNotice>
       {notice && <button className="button secondary" type="button" onClick={load}>Try again</button>}
       {!notice && <div className="admin-stats">
@@ -39,6 +38,7 @@ export default function AdminDashboard() {
           <article className="stat-card" key={label}><strong>{loading ? "..." : value}</strong><span>{label}</span></article>
         ))}
       </div>}
+      <VisitorAnalytics />
     </div>
   );
 }
