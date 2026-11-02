@@ -28,5 +28,6 @@ export function admissionFailure(application) {
   if (progress.response !== "ACCEPTED") return "The applicant must accept the offer before final admission.";
   if (!progress.paid) return "The quoted acceptance fee must be verified before final admission.";
   if (progress.clearanceStatus !== "CLEARED") return "Complete admissions clearance before final admission.";
+  if (application.requiresAcceptanceForm && !(application.schoolForms || []).some((form) => form.kind === "ACCEPTANCE" && form.status === "SUBMITTED")) return "Submit the acceptance form before final admission.";
   return null;
 }

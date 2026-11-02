@@ -9,8 +9,9 @@ import { env } from "../src/config/env.js";
 import { uploadRoot } from "../src/config/uploads.js";
 import { resolveUploadPath } from "../src/services/fileAccess.js";
 import { flutterwaveService } from "../src/services/flutterwave.js";
+import { defaultDocumentsPolicy } from "../src/services/admissionDocuments.js";
 
-test("applicant purchase, closure and admission approval enforce the full account lifecycle", { skip: !process.env.INTEGRATION_DATABASE_URL, timeout: 300000 }, async () => {
+test("applicant purchase, closure and admission approval enforce the full account lifecycle", { skip: !process.env.INTEGRATION_DATABASE_URL, timeout: 600000 }, async () => {
   assert.match(new URL(process.env.DATABASE_URL).pathname, /test/i);
   const marker = crypto.randomUUID();
   const email = marker + "@admissions.invalid";
@@ -21,6 +22,7 @@ test("applicant purchase, closure and admission approval enforce the full accoun
   const proofPaths = [];
   const previousPolicy = await prisma.siteSetting.findUnique({ where: { key: "admissions_policy" } });
   const previousAcceptance = await prisma.siteSetting.findUnique({ where: { key: "acceptance_fee_policy" } });
+  const previousDocuments = await prisma.siteSetting.findUnique({ where: { key: "admissions_documents_policy" } });
   const server = app.listen(0, "127.0.0.1");
   await new Promise((resolve) => server.once("listening", resolve));
   const base = "http://127.0.0.1:" + server.address().port + "/api";
@@ -81,8 +83,37 @@ test("applicant purchase, closure and admission approval enforce the full accoun
     assert.equal((await call("/applicant/dashboard", "GET", undefined, session.token)).status, 200);
     assert.equal((await call("/applications/" + application.id + "/status", "PATCH", { status: "ADMITTED" }, adminToken)).status, 409);
     await prisma.application.update({ where: { id: application.id }, data: { status: "REVIEWED", declarationAccepted: true, submittedAt: new Date() } });
-    assert.equal((await call("/applications/" + application.id + "/status", "PATCH", { status: "ACCEPTED" }, adminToken)).status, 422);
+    assert.equal((await call("/applications/" + application.id + "/status", "PATCH", { status: "ACCEPTED" }, adminToken)).status, 409);
     await prisma.applicationDocument.createMany({ data: ["PASSPORT", "BIRTH_CERTIFICATE", "NATIONAL_ID", "EDUCATIONAL_RESULT"].map((type) => ({ applicationId: application.id, type, label: "Isolated test document", path: proofPath, fileType: "application/pdf", fileSize: 20, reviewStatus: "VERIFIED" })) });
+    assert.equal((await call("/applications/" + application.id + "/status", "PATCH", { status: "ACCEPTED" }, adminToken)).status, 409);
+    const schedule = { ids: [application.id], date: new Date(Date.now() + 86400000).toISOString(), venue: "Fixture examination hall", instructions: "Bring your identification." };
+    assert.equal((await call("/screening/schedule", "POST", schedule, session.token)).status, 403);
+    assert.equal((await call("/screening/schedule", "POST", { ...schedule, ids: [application.id, application.id] }, adminToken)).status, 422);
+    assert.equal((await call("/screening/schedule", "POST", schedule, adminToken)).status, 200);
+    const repeatSchedule = await call("/screening/schedule", "POST", schedule, adminToken);
+    assert.equal((await repeatSchedule.json()).data.scheduled, 0);
+    assert.equal((await prisma.application.findUnique({ where: { id: application.id } })).screeningFeeAmount.toString(), "2000");
+    const outcome = { outcome: "PASSED", score: 75, note: "Fixture result" };
+    assert.equal((await call(`/screening/${application.id}/result`, "PATCH", outcome, adminToken)).status, 409);
+    let screeningReference;
+    const screeningId = `${Date.now()}01`;
+    const screeningGateway = flutterwaveService(prisma, async (url, options) => {
+      if (url.endsWith("/payments")) { const payload = JSON.parse(options.body); screeningReference = payload.tx_ref; assert.equal(payload.amount, "2000"); return { ok: true, json: async () => ({ status: "success", data: { link: "https://checkout.flutterwave.com/v3/hosted/pay/screening-fixture" } }) }; }
+      return { ok: true, json: async () => ({ status: "success", data: { id: screeningId, tx_ref: screeningReference, amount: 2000, currency: "NGN", status: "successful" } }) };
+    }, { enabled: true, mode: "live", secretKey: "FLWSECK-fixture-not-a-real-key", webhookHash: "fixture-only", returnUrl: "http://localhost:5173/applicant/payments" });
+    const screeningCheckout = await screeningGateway.start(applicant.id, "SCREENING_FEE");
+    assert.equal((await screeningGateway.start(applicant.id, "SCREENING_FEE")).reference, screeningCheckout.reference);
+    assert.equal(await prisma.payment.count({ where: { applicationId: application.id, type: "SCREENING_FEE", status: "PENDING" } }), 1);
+    assert.equal((await screeningGateway.verify(screeningCheckout.reference, applicant.id)).status, "VERIFIED");
+    await prisma.application.update({ where: { id: application.id }, data: { screeningAt: new Date(Date.now() - 60000) } });
+    assert.equal((await call(`/screening/${application.id}/result`, "PATCH", outcome, adminToken)).status, 200);
+    assert.equal((await call(`/screening/${application.id}/result`, "PATCH", outcome, adminToken)).status, 200);
+    assert.equal((await call(`/screening/${application.id}/result`, "PATCH", { ...outcome, outcome: "FAILED" }, adminToken)).status, 409);
+    const notifications = await prisma.applicationStatusHistory.findMany({ where: { applicationId: application.id, kind: { in: ["SCREENING_SCHEDULE", "SCREENING_RESULT"] } } });
+    assert.equal(notifications.length, 2);
+    assert.ok(notifications.every((event) => event.emailStatus === "PENDING" && event.notificationText));
+    await prisma.siteSetting.upsert({ where: { key: "admissions_documents_policy" }, create: { key: "admissions_documents_policy", group: "admissions", value: JSON.stringify({ ...defaultDocumentsPolicy, feeScheduleApproved: true, session: "2035/2036", duration: "Two years", effectiveDate: "2035-09-01", registrationOpen: "2035-08-01", registrationDeadline: "2035-09-30", resultDeadline: "2035-09-30", lecturesStart: "2035-09-01" }) }, update: { value: JSON.stringify({ ...defaultDocumentsPolicy, feeScheduleApproved: true, session: "2035/2036", duration: "Two years", effectiveDate: "2035-09-01", registrationOpen: "2035-08-01", registrationDeadline: "2035-09-30", resultDeadline: "2035-09-30", lecturesStart: "2035-09-01" }) } });
+    await prisma.application.update({ where: { id: application.id }, data: { courseOfInterest: "Community Health" } });
     assert.equal((await call("/settings/acceptance-fee", "PUT", { amount: 5000 }, adminToken)).status, 200);
     assert.equal((await call("/applications/" + application.id + "/status", "PATCH", { status: "ACCEPTED" }, adminToken)).status, 200);
     assert.equal((await call("/settings/acceptance-fee", "PUT", { amount: 7500 }, adminToken)).status, 200);
@@ -99,6 +130,21 @@ test("applicant purchase, closure and admission approval enforce the full accoun
     assert.equal((await gateway.verify(checkout.reference, applicant.id)).status, "VERIFIED");
     await gateway.webhook({ event: "charge.completed", data: { id: providerId } });
     assert.equal(await prisma.payment.count({ where: { applicationId: application.id, type: "ACCEPTANCE_FEE", status: "VERIFIED" } }), 1);
+    assert.equal(await prisma.admissionLetter.count({ where: { applicationId: application.id } }), 1);
+    assert.equal((await call(`/records/applications/${application.id}/issue-letter`, "POST", {}, adminToken)).status, 200);
+    assert.equal((await call(`/records/applications/${application.id}/issue-letter`, "POST", {}, adminToken)).status, 200);
+    assert.equal(await prisma.admissionLetter.count({ where: { applicationId: application.id } }), 1);
+    assert.equal((await call("/school-forms/ACCEPTANCE", "GET", undefined, session.token)).status, 200);
+    const schoolForm = { data: { contactAddress: "Fixture address Abuja", declaration: true }, submit: true, version: null };
+    assert.equal((await call("/school-forms/ACCEPTANCE", "PUT", { ...schoolForm, data: { ...schoolForm.data, unexpected: "not allowed" } }, session.token)).status, 422);
+    assert.equal((await call("/school-forms/ACCEPTANCE", "PUT", schoolForm, session.token)).status, 200);
+    assert.equal((await call("/school-forms/ACCEPTANCE", "PUT", schoolForm, session.token)).status, 409);
+    for (const credential of [session.token, adminToken]) for (const kind of ["LETTER", "ACCEPTANCE"]) {
+      const document = await call(`/records/applications/${application.id}/documents/${kind}`, "GET", undefined, credential);
+      assert.equal(document.status, 200);
+      assert.match(document.headers.get("content-type"), /application\/pdf/);
+      assert.ok((await document.arrayBuffer()).byteLength > 1000);
+    }
     const oldBirthCertificate = await prisma.applicationDocument.findFirst({ where: { applicationId: application.id, type: "BIRTH_CERTIFICATE" } });
     assert.equal((await call(`/applications/${application.id}/documents/${oldBirthCertificate.id}`, "PATCH", { reviewStatus: "REJECTED" }, adminToken)).status, 200);
     assert.equal((await call(`/applications/${application.id}/clearance`, "PATCH", { status: "CORRECTIONS_REQUIRED", note: "Upload the correct birth certificate." }, adminToken)).status, 200);
@@ -149,6 +195,8 @@ test("applicant purchase, closure and admission approval enforce the full accoun
     assert.equal((await repeated.json()).data.credentials, null);
   } finally {
     if (application) {
+      await prisma.schoolForm.deleteMany({ where: { applicationId: application.id } });
+      await prisma.admissionLetter.deleteMany({ where: { applicationId: application.id } });
       const profiles = await prisma.studentProfile.findMany({ where: { applicationId: application.id }, select: { id: true } });
       await prisma.studentEnrolment.deleteMany({ where: { studentId: { in: profiles.map((profile) => profile.id) } } });
       await prisma.studentProfile.deleteMany({ where: { applicationId: application.id } });
@@ -166,6 +214,8 @@ test("applicant purchase, closure and admission approval enforce the full accoun
     else await prisma.siteSetting.deleteMany({ where: { key: "admissions_policy" } });
     if (previousAcceptance) await prisma.siteSetting.update({ where: { key: "acceptance_fee_policy" }, data: { value: previousAcceptance.value, group: previousAcceptance.group } });
     else await prisma.siteSetting.deleteMany({ where: { key: "acceptance_fee_policy" } });
+    if (previousDocuments) await prisma.siteSetting.update({ where: { key: "admissions_documents_policy" }, data: { value: previousDocuments.value, group: previousDocuments.group } });
+    else await prisma.siteSetting.deleteMany({ where: { key: "admissions_documents_policy" } });
     for (const path of proofPaths) { const local = resolveUploadPath(uploadRoot, path); if (local) await fs.unlink(local).catch(() => {}); }
     await new Promise((resolve) => server.close(resolve));
     await prisma.$disconnect();

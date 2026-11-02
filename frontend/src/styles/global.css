@@ -1976,6 +1976,10 @@ textarea {
   min-width: 0;
 }
 
+.screening-selection { display: grid; gap: 14px; max-height: 400px; overflow-y: auto; }
+.screening-selection label { align-items: start; padding: 10px; border-bottom: 1px solid var(--line); }
+.screening-selection small { display: block; color: var(--muted); margin-top: 5px; }
+
 .student-shell { display: grid; grid-template-columns: 260px minmax(0, 1fr); min-height: 100dvh; background: #fff; color: #173449; }
 .student-sidebar { position: sticky; top: 0; height: 100dvh; display: flex; flex-direction: column; gap: 20px; padding: 28px 18px; background: #fff; border-right: 1px solid #e5ebf0; overflow-y: auto; }
 .student-brand { display: flex; align-items: center; gap: 12px; }

@@ -5,6 +5,7 @@ import { admissionsPolicyKey, getAdmissionsPolicy } from "../services/admissions
 import { z } from "zod";
 import { acceptancePolicy, acceptancePolicyKey, acceptancePolicySchema } from "../services/acceptance.js";
 import { auditedMutation } from "../services/audit.js";
+import { documentsPolicyKey, screeningPolicyKey } from "../services/admissionDocuments.js";
 import { readSchoolSettings, schoolSettingGroup, schoolSettingsPatchSchema, schoolSettingsSchema, schoolSettingKeys } from "../services/schoolSettings.js";
 
 export const readSchoolProfile = asyncHandler(async (req, res) => {
@@ -63,7 +64,7 @@ export const listSettings = asyncHandler(async (req, res) => {
 
 export const upsertSetting = asyncHandler(async (req, res) => {
   req.body = z.object({ key: z.string().trim().min(1).max(100), value: z.string().max(10000), group: z.string().trim().max(100).optional() }).parse(req.body);
-  if ([admissionsPolicyKey, acceptancePolicyKey].includes(req.body.key)) return res.status(422).json({ success: false, message: "Use the admissions controls to update this setting" });
+  if ([admissionsPolicyKey, acceptancePolicyKey, documentsPolicyKey, screeningPolicyKey].includes(req.body.key)) return res.status(422).json({ success: false, message: "Use the admissions controls to update this setting" });
   if (schoolSettingKeys.includes(req.body.key)) req.body.value = schoolSettingsSchema.shape[req.body.key].parse(req.body.value);
   const setting = await auditedMutation(prisma, { actorId: req.user.id, action: "setting.updated", targetType: "setting" }, (transaction) => transaction.siteSetting.upsert({
     where: { key: req.body.key },

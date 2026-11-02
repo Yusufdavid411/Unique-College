@@ -25,7 +25,7 @@ test("acceptance requires an explicit quote, exact fee, correct purpose and matc
 test("offer, editable future pricing, automatic acceptance payment, clearance and student activation share one identity", async () => {
   const owner = { id: "owner", name: "Fictional Applicant", email: "owner@example.invalid", passwordHash: await bcrypt.hash("ExistingApplicant123", 4), role: "APPLICANT", sessionVersion: 0, isActive: true, mustChangePassword: false };
   const originalHash = owner.passwordHash;
-  let application = { id: crypto.randomUUID(), applicantId: owner.id, applicationNumber: "TEST-HANDOVER-1234567", isTest: true, fullName: owner.name, email: owner.email, phoneNumber: "00000000000", status: "REVIEWED", formFeeAmount: 20000, declarationAccepted: true, submittedAt: new Date(), updatedAt: new Date(), offerResponse: "PENDING", clearanceStatus: "PENDING" };
+  let application = { id: crypto.randomUUID(), applicantId: owner.id, applicationNumber: "TEST-HANDOVER-1234567", isTest: true, fullName: owner.name, email: owner.email, phoneNumber: "00000000000", status: "REVIEWED", screeningStatus: "EXEMPT", formFeeAmount: 20000, declarationAccepted: true, submittedAt: new Date(), updatedAt: new Date(), offerResponse: "PENDING", clearanceStatus: "PENDING" };
   let payments = [{ id: "form", type: "APPLICATION_FEE", amount: 20000, currency: "NGN", status: "VERIFIED", isTest: true }];
   let documents = ["PASSPORT", "BIRTH_CERTIFICATE", "NATIONAL_ID", "EDUCATIONAL_RESULT"].map((type) => ({ id: crypto.randomUUID(), type, reviewStatus: "VERIFIED" }));
   let policy = { amount: 5000 };
@@ -56,7 +56,7 @@ test("offer, editable future pricing, automatic acceptance payment, clearance an
       update: async ({ where, data }) => { const document = documents.find((item) => item.id === where.id); Object.assign(document, data); return document; }
     },
     siteSetting: {
-      findUnique: async () => ({ value: JSON.stringify(policy) }),
+      findUnique: async ({ where }) => where.key === "acceptance_fee_policy" ? { value: JSON.stringify(policy) } : null,
       upsert: async ({ update }) => { policy = JSON.parse(update.value); return { id: "policy", value: update.value }; }
     },
     applicationStatusHistory: { create: async ({ data }) => { const row = { id: crypto.randomUUID(), ...data }; histories.push(row); return row; } },

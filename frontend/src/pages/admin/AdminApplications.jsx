@@ -4,6 +4,7 @@ import { api, apiErrorMessage } from "../../api/client.js";
 import PrivateFileButton from "../../components/PrivateFileButton.jsx";
 import ApplicationRecord from "../../components/ApplicationRecord.jsx";
 import ApplicationDownloads from "../../components/ApplicationDownloads.jsx";
+import ScreeningReview from "../../components/ScreeningReview.jsx";
 
 const readableStatus = (value) => ({ SUBMITTED: "New submission", PENDING: "Under review", REVIEWED: "Under review", RETURNED: "Corrections required", ACCEPTED: "Accepted", ADMITTED: "Admitted", DRAFT: "Not submitted" }[value] || value?.replaceAll("_", " ").toLowerCase().replace(/\b\w/g, (letter) => letter.toUpperCase()));
 const formatDate = (value) => value ? new Date(value).toLocaleDateString() : "Not submitted";
@@ -142,6 +143,7 @@ export default function AdminApplications() {
           </details>}
           {feedback && <p className="admin-feedback" role="status">{feedback}</p>}
           {ready && <>
+            <ScreeningReview application={selectedApplication} refresh={openApplication} />
             <details className="review-disclosure"><summary>View submitted application</summary><ApplicationRecord application={selectedApplication} /></details>
             <details className="review-disclosure"><summary>Review supporting documents</summary><div className="review-items">{selectedApplication.documents?.length ? selectedApplication.documents.map((document) => <div key={document.id} className="review-item"><PrivateFileButton path={document.path}>{readableStatus(document.type)}</PrivateFileButton><label>Document status<select disabled={saving} value={document.reviewStatus} onChange={(event) => updateDocument(document.id, event.target.value)}><option value="PENDING">Pending</option><option value="VERIFIED">Verified</option><option value="REJECTED">Corrections required</option></select></label></div>) : <p>No supporting documents supplied.</p>}</div></details>
           </>}

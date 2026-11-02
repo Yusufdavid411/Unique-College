@@ -13,6 +13,7 @@ import { auditedMutation } from "../services/audit.js";
 import { publicPaymentConfiguration } from "../services/flutterwave.js";
 import { attemptStatusEmail } from "../services/statusEmail.js";
 import { admissionProgressFor } from "../services/acceptance.js";
+import { screeningProgress } from "../services/admissionDocuments.js";
 
 const editableStatuses = ["DRAFT", "RETURNED"];
 const requiredDocumentTypes = requiredAdmissionDocuments;
@@ -27,7 +28,8 @@ function applicantInclude() {
     applicant: { select: { portalUsername: true, officialEmail: true, role: true } },
     documents: { orderBy: { createdAt: "desc" } },
     payments: { orderBy: { createdAt: "desc" } },
-    statusHistory: { orderBy: { createdAt: "desc" } }
+    statusHistory: { orderBy: { createdAt: "desc" } },
+    schoolForms: true, admissionLetters: { orderBy: { version: "desc" }, take: 1 }
   };
 }
 
@@ -87,7 +89,7 @@ export const registerApplicant = asyncHandler(async (req, res) => {
 
 export const getApplicantDashboard = asyncHandler(async (req, res) => {
   const application = await getApplicantApplication(req.user.id);
-  ok(res, { application, user: toPublicUser(req.user), formAccess: formAccessFor(application), admission: admissionProgressFor(application), paymentGateway: publicPaymentConfiguration(application) });
+  ok(res, { application, user: toPublicUser(req.user), screening: screeningProgress(application), formAccess: formAccessFor(application), admission: admissionProgressFor(application), paymentGateway: publicPaymentConfiguration(application) });
 });
 
 export const updateApplicantApplication = asyncHandler(async (req, res) => {

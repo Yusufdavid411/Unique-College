@@ -9,6 +9,7 @@ import { useSchool } from "../context/SchoolContext.jsx";
 const items = [
   ["Overview", "/admin", LayoutDashboard],
   ["Applications", "/admin/applications", Users],
+  ["Screening & exams", "/admin/screening", LayoutDashboard, "applications.review"],
   ["Students", "/admin/students", Users, "students.read"],
   ["Academic setup", "/admin/academic", LayoutDashboard, "academic.manage"],
   ["Announcements", "/admin/announcements", MessageSquare, "announcements.manage"],

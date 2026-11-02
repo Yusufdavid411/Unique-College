@@ -1,6 +1,10 @@
 import crypto from "node:crypto";
 import { Prisma } from "@prisma/client";
 import { admissionProgressFor } from "./acceptance.js";
+import { screeningProgress } from "./admissionDocuments.js";
+import { readyForReview } from "./applicationReview.js";
+import { releaseAdmissionLetter } from "./admissionLetters.js";
+import { attemptStatusEmail } from "./statusEmail.js";
 
 export function paymentConfiguration() {
   const enabled = process.env.PAYMENT_PROVIDER === "flutterwave";
@@ -89,7 +93,7 @@ export function flutterwaveService(database, fetcher = fetch, config = paymentCo
 
   async function start(applicantId, type = "APPLICATION_FEE") {
     requireReady();
-    if (!["APPLICATION_FEE", "ACCEPTANCE_FEE"].includes(type)) throw failure("Invalid payment purpose", 422);
+    if (!["APPLICATION_FEE", "SCREENING_FEE", "ACCEPTANCE_FEE"].includes(type)) throw failure("Invalid payment purpose", 422);
     let reserved;
     try {
       reserved = await database.$transaction(async (transaction) => {
@@ -97,7 +101,8 @@ export function flutterwaveService(database, fetcher = fetch, config = paymentCo
         if (!application) throw failure("Applicant record not found", 404);
         if (config.restrictedProductionTest && !application.isTest) throw failure("Test checkout is available only to the school's designated test account. Real payments are unavailable during testing.", 403);
         if (config.mode === "live" && application.isTest) throw failure("Test accounts cannot make live payments.", 403);
-        const amount = type === "APPLICATION_FEE" ? application.formFeeAmount : application.acceptanceFeeAmount;
+        const amount = type === "APPLICATION_FEE" ? application.formFeeAmount : type === "SCREENING_FEE" ? application.screeningFeeAmount : application.acceptanceFeeAmount;
+        if (type === "SCREENING_FEE" && (application.status !== "INTERVIEW_SCHEDULED" || !readyForReview(application) || application.screeningStatus !== "SCHEDULED" || screeningProgress(application).paid)) throw failure("Screening payment is available only for an active unpaid screening invitation.");
         if (type === "ACCEPTANCE_FEE" && !admissionProgressFor(application).canPay) throw failure("Accept an active admission offer before paying its acceptance fee, or check your existing payment.");
         if (amount == null || new Prisma.Decimal(amount).lte(0)) throw failure("No payment is required for this purpose.");
         if (application.payments.some((payment) => payment.type === type && payment.status === "VERIFIED")) throw failure("This fee is already verified. Do not pay again.");
@@ -126,13 +131,24 @@ export function flutterwaveService(database, fetcher = fetch, config = paymentCo
       tx_ref: payment.reference, amount, currency: payment.currency, redirect_url: config.returnUrl,
       payload_hash: payloadHash, session_duration: 1440,
       customer: { email: application.email, name: application.fullName, phonenumber: application.phoneNumber },
-      customizations: { title: "Unique College", description: payment.type === "ACCEPTANCE_FEE" ? "Admission acceptance fee" : "Application form fee" }
+      customizations: { title: "Unique College", description: payment.type === "ACCEPTANCE_FEE" ? "Admission acceptance fee" : payment.type === "SCREENING_FEE" ? "Entrance examination / screening fee" : "Application form fee" }
     });
     let checkout;
     try { checkout = new URL(result.link); } catch { throw failure("The payment provider returned an invalid checkout address.", 502); }
     if (!trustedFlutterwaveCheckout(checkout, config.mode)) throw failure("The payment provider returned an untrusted checkout address.", 502);
     await database.payment.updateMany({ where: { id: payment.id, status: "PENDING" }, data: { checkoutUrl: checkout.href } });
     return { paymentId: payment.id, reference: payment.reference, link: checkout.href };
+  }
+
+  async function preparePaidAdmissionLetter(payment) {
+    if (payment.type !== "ACCEPTANCE_FEE") return "NOT_REQUIRED";
+    try {
+      const result = await releaseAdmissionLetter(database, payment.applicationId, { id: "system:flutterwave", name: "Automatic payment confirmation" });
+      await attemptStatusEmail(result.eventId);
+      return "READY";
+    } catch (error) {
+      return error.statusCode === 422 ? "CONFIGURATION_REQUIRED" : "REGISTRY_REVIEW_REQUIRED";
+    }
   }
 
   async function reconcile(transaction, actorId) {
@@ -144,7 +160,7 @@ export function flutterwaveService(database, fetcher = fetch, config = paymentCo
     const transactionId = String(transaction.id);
     if (payment.status === "VERIFIED") {
       if (payment.providerTransactionId !== transactionId) throw failure("A different transaction is already recorded for this payment. Contact admissions.");
-      return { paymentId: payment.id, status: "VERIFIED" };
+      return { paymentId: payment.id, status: "VERIFIED", letterStatus: await preparePaidAdmissionLetter(payment) };
     }
     await database.$transaction(async (db) => {
       const changed = await db.payment.updateMany({ where: { id: payment.id, status: "PENDING" }, data: { status: "VERIFIED", providerTransactionId: transactionId, paidAt: new Date(), verifiedAt: new Date(), reviewNote: "Automatically verified with Flutterwave" } });
@@ -154,7 +170,7 @@ export function flutterwaveService(database, fetcher = fetch, config = paymentCo
         if (current?.status !== "VERIFIED" || current.providerTransactionId !== transactionId) throw failure("The payment record changed. Contact admissions before making another payment.");
       }
     });
-    return { paymentId: payment.id, status: "VERIFIED" };
+    return { paymentId: payment.id, status: "VERIFIED", letterStatus: await preparePaidAdmissionLetter(payment) };
   }
 
   async function verify(reference, applicantId) {
@@ -163,7 +179,7 @@ export function flutterwaveService(database, fetcher = fetch, config = paymentCo
     if (!payment) throw failure("Payment not found", 404);
     if (Boolean(payment.isTest) !== (config.mode === "test")) throw failure("This payment belongs to a different payment mode.", 403);
     if (config.restrictedProductionTest && !payment.application.isTest) throw failure("Test verification is restricted to designated test accounts.", 403);
-    if (payment.status === "VERIFIED") return { paymentId: payment.id, status: "VERIFIED" };
+    if (payment.status === "VERIFIED") return { paymentId: payment.id, status: "VERIFIED", letterStatus: await preparePaidAdmissionLetter(payment) };
     const transaction = await request(`/transactions/verify_by_reference?tx_ref=${encodeURIComponent(payment.reference)}`);
     assertVerifiedTransaction(payment, transaction);
     return reconcile(transaction, applicantId);

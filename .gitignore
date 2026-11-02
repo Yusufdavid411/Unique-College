@@ -21,3 +21,4 @@ Thumbs.db
 backups/
 *.dump
 admin-access.local.md
+tmp/

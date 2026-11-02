@@ -5,6 +5,7 @@ import FormPurchaseRequired from "../../components/FormPurchaseRequired.jsx";
 import { portalPath } from "../../api/portalLinks.js";
 import { ErrorToast } from "../../components/ToastNotifications.jsx";
 import AdmissionOffer from "../../components/AdmissionOffer.jsx";
+import ScreeningProgress from "../../components/ScreeningProgress.jsx";
 
 const statusText = {
   DRAFT: "Draft",
@@ -12,7 +13,7 @@ const statusText = {
   SUBMITTED: "Under review",
   PENDING: "Pending review",
   REVIEWED: "Under review",
-  INTERVIEW_SCHEDULED: "Interview scheduled",
+  INTERVIEW_SCHEDULED: "Entrance exam scheduled",
   ACCEPTED: "Application accepted",
   ADMITTED: "Admitted",
   REJECTED: "Not selected"
@@ -39,9 +40,11 @@ export default function ApplicantDashboard() {
       </header>
 
       <ErrorToast message={error} />
+      {application.statusHistory?.some((event) => event.notificationText) && <section className="student-card"><h2>Admissions notifications</h2><details><summary>View updates from admissions</summary>{application.statusHistory.filter((event) => event.notificationText).slice(0, 20).map((event) => <article key={event.id}><h3>{event.notificationSubject}</h3><time dateTime={event.createdAt}>{new Date(event.createdAt).toLocaleString("en-GB", { timeZone: "Africa/Lagos" })}</time><p>{event.notificationText}</p></article>)}</details></section>}
       {["SUBMITTED", "PENDING", "REVIEWED"].includes(application.status) && <section className="review-status-card" role="status"><span className="eyebrow">Application status</span><h2>Under review</h2><p>Your application has been submitted successfully. Please check back later for the admissions decision.</p></section>}
       {application.status === "RETURNED" && <section className="review-status-card" role="status"><h2>Corrections required</h2><p>Read the admissions note, update your form or documents, then submit again for review.</p><Link className="button" to={portalPath("/applicant/application")}>Correct application</Link></section>}
       <AdmissionOffer />
+      <ScreeningProgress />
       {!formAccess.unlocked && <FormPurchaseRequired amount={formAccess.amount} />}
       {application.reviewNote && <div className="portal-alert"><strong>Admissions note</strong><p>{application.reviewNote}</p></div>}
 

@@ -58,6 +58,7 @@ enum ReviewStatus {
 
 enum PaymentType {
   APPLICATION_FEE
+  SCREENING_FEE
   ACCEPTANCE_FEE
   SCHOOL_FEE
   OTHER
@@ -140,6 +141,13 @@ model Application {
   applicantId           String?           @unique
   applicationNumber     String?           @unique
   formFeeAmount         Decimal?          @db.Decimal(12, 2)
+  screeningFeeAmount    Decimal?          @db.Decimal(12, 2)
+  screeningStatus       String            @default("NOT_SCHEDULED")
+  screeningAt           DateTime?
+  screeningVenue        String?
+  screeningInstructions String?
+  screeningResultAt     DateTime?
+  requiresAcceptanceForm Boolean          @default(true)
   acceptanceFeeAmount   Decimal?          @db.Decimal(12, 2)
   offerResponse         String            @default("PENDING")
   offerIssuedAt         DateTime?
@@ -197,6 +205,8 @@ model Application {
   payments Payment[]
   statusHistory ApplicationStatusHistory[]
   studentProfile StudentProfile?
+  schoolForms SchoolForm[]
+  admissionLetters AdmissionLetter[]
 
   @@index([status])
   @@index([email])
@@ -260,6 +270,8 @@ model ApplicationStatusHistory {
   toStatus      ApplicationStatus
   note          String?
   kind          String             @default("STATUS")
+  notificationSubject String?
+  notificationText String?
   changedBy     String
   createdAt     DateTime           @default(now())
   emailStatus   String             @default("NOT_REQUIRED")
@@ -461,4 +473,30 @@ model PortalHandoff {
   @@index([expiresAt])
   @@index([userId])
   @@map("portal_handoffs")
+}
+
+model SchoolForm {
+  id String @id @default(uuid())
+  applicationId String
+  kind String
+  data Json
+  status String @default("DRAFT")
+  submittedAt DateTime?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  application Application @relation(fields: [applicationId], references: [id], onDelete: Restrict)
+  @@unique([applicationId, kind])
+  @@map("school_forms")
+}
+
+model AdmissionLetter {
+  id String @id @default(uuid())
+  applicationId String
+  version Int
+  snapshot Json
+  issuedAt DateTime @default(now())
+  issuedBy String
+  application Application @relation(fields: [applicationId], references: [id], onDelete: Restrict)
+  @@unique([applicationId, version])
+  @@map("admission_letters")
 }

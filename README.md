@@ -84,6 +84,8 @@ retained as a transitional Node-host deployment option.
 
 ## Uploads
 
+See [Screening and school documents](docs/SCREENING_AND_SCHOOL_DOCUMENTS.md) for the revised NGN 5,000 application, NGN 2,000 screening and NGN 5,000 acceptance workflow, editable letter settings and original-template downloads.
+
 Files are stored on the local server under:
 
 - `backend/uploads/applications`

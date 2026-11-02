@@ -14,7 +14,7 @@ function date(value) {
   return value ? new Date(value).toISOString().slice(0, 10) : "";
 }
 
-function fieldWriter(pages, font) {
+export function fieldWriter(pages, font) {
   const supported = new Set(font.getCharacterSet());
   return (pageIndex, value, x, top, width, label, maxSize = 10) => {
     const text = String(value ?? "").replace(/\s+/g, " ").trim();

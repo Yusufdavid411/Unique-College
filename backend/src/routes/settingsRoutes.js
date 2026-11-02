@@ -1,8 +1,10 @@
 import { Router } from "express";
+import admissionsDocumentsRoutes from "./admissionsDocumentsRoutes.js";
 import { listSettings, upsertSetting, readAdmissionsPolicy, saveAdmissionsPolicy, readSchoolProfile, updateSchoolProfile, readAcceptancePolicy, saveAcceptancePolicy } from "../controllers/settingsController.js";
 import { requireAuth, requirePermission } from "../middleware/auth.js";
 
 const router = Router();
+router.use("/admissions-documents", admissionsDocumentsRoutes);
 router.get("/acceptance-fee", requireAuth, requirePermission("settings.manage"), readAcceptancePolicy);
 router.put("/acceptance-fee", requireAuth, requirePermission("settings.manage"), saveAcceptancePolicy);
 router.get("/school", readSchoolProfile);

@@ -11,12 +11,13 @@ import { readyForReview } from "../services/applicationReview.js";
 import { attemptStatusEmail, statusEmailConfigured } from "../services/statusEmail.js";
 import { acceptancePolicy, admissionProgressFor, admissionFailure } from "../services/acceptance.js";
 import { studentProfileData } from "../services/studentRecords.js";
+import { screened, documentsPolicy, renderAdmissionMessage } from "../services/admissionDocuments.js";
 
 const applicationDetails = {
   applicant: { select: { id: true, name: true, email: true, role: true, portalUsername: true, officialEmail: true } },
   documents: { orderBy: { createdAt: "desc" } },
   payments: { orderBy: { createdAt: "desc" } },
-  statusHistory: { orderBy: { createdAt: "desc" } }
+  statusHistory: { orderBy: { createdAt: "desc" } }, schoolForms: true, admissionLetters: { orderBy: { version: "desc" }, take: 1 }
 };
 
 function studentCredentials(application) {
@@ -54,7 +55,7 @@ export const listApplications = asyncHandler(async (req, res) => {
     where: { isTest: req.query.testing === "true", ...(status ? { status } : {}) },
     select: {
       id: true, isTest: true, applicationNumber: true, fullName: true, email: true, status: true,
-      submittedAt: true, createdAt: true, courseOfInterest: true, formFeeAmount: true,
+      submittedAt: true, createdAt: true, courseOfInterest: true, formFeeAmount: true, screeningStatus: true, screeningAt: true, screeningFeeAmount: true,
       payments: { select: { status: true, amount: true, type: true, currency: true, isTest: true } }
     },
     orderBy: { createdAt: "desc" }
@@ -89,11 +90,12 @@ export const updateApplicationStatus = asyncHandler(async (req, res) => {
   }
   const current = await prisma.application.findUnique({
     where: { id: req.params.id },
-    include: { applicant: true, documents: true, payments: true }
+    include: { applicant: true, documents: true, payments: true, schoolForms: true }
   });
   if (!current) return res.status(404).json({ success: false, message: "Application not found" });
   if (!readyForReview(current)) return res.status(409).json({ success: false, message: "Only a paid, submitted application can be reviewed. Wait for the applicant to submit their form." });
   if (!canReviewTransition(current.status, req.body.status)) return res.status(409).json({ success: false, message: "This decision is not available from the current application status" });
+  if (req.body.status === "ACCEPTED" && current.status !== "ACCEPTED" && !screened(current)) return res.status(409).json({ message: "Publish a successful screening result before issuing an admission offer." });
   if (req.body.status === "ADMITTED" && current.status !== "ADMITTED" && admissionFailure(current)) return res.status(409).json({ success: false, message: admissionFailure(current) });
   if (current.status === "ACCEPTED" && !["ACCEPTED", "ADMITTED"].includes(req.body.status) && current.payments.some((payment) => payment.type === "ACCEPTANCE_FEE" && ["PENDING", "VERIFIED"].includes(payment.status))) return res.status(409).json({ success: false, message: "An acceptance payment is recorded. Resolve it with admissions before withdrawing this offer." });
   if (req.body.status === "RETURNED" && !req.body.reviewNote?.trim()) return res.status(422).json({ success: false, message: "Explain the corrections required before returning this application." });
@@ -118,7 +120,7 @@ export const updateApplicationStatus = asyncHandler(async (req, res) => {
   }
 
   const application = await auditedMutation(prisma, { actorId: req.user.id, action: "application.status:" + req.body.status, targetType: "application", targetId: current.id }, async (transaction) => {
-    const latest = await transaction.application.findUnique({ where: { id: current.id }, include: { applicant: true, documents: true, payments: true } });
+    const latest = await transaction.application.findUnique({ where: { id: current.id }, include: { applicant: true, documents: true, payments: true, schoolForms: true } });
     if (!latest || latest.status !== current.status || !readyForReview(latest)) throw Object.assign(new Error("This application changed. Refresh before saving."), { statusCode: 409 });
     if (latest.status === "ACCEPTED" && !["ACCEPTED", "ADMITTED"].includes(req.body.status) && latest.payments.some((payment) => payment.type === "ACCEPTANCE_FEE" && ["PENDING", "VERIFIED"].includes(payment.status))) throw Object.assign(new Error("Resolve the recorded acceptance payment before withdrawing this offer."), { statusCode: 409 });
     if (req.body.status === "ADMITTED" && current.status !== "ADMITTED") {
@@ -126,6 +128,7 @@ export const updateApplicationStatus = asyncHandler(async (req, res) => {
       if (issue || !hasVerifiedAdmissionDocuments(latest.documents) || !latest.declarationAccepted) throw Object.assign(new Error(issue || "Verify all required admission documents before admitting."), { statusCode: 409 });
     }
     if (req.body.status === "ACCEPTED" && (current.status !== "ACCEPTED" || current.acceptanceFeeAmount == null)) {
+      if (!screened(latest)) throw Object.assign(new Error("A successful screening result is required before an offer."), { statusCode: 409 });
       data.acceptanceFeeAmount = current.acceptanceFeeAmount ?? (await acceptancePolicy(transaction)).amount;
       data.offerIssuedAt = new Date();
       data.offerResponse = "PENDING";
@@ -153,6 +156,7 @@ export const updateApplicationStatus = asyncHandler(async (req, res) => {
       data
     });
     if (!changed.count) throw Object.assign(new Error("This application changed during review. Reload it before saving."), { statusCode: 409 });
+    const policy = req.body.status === "ACCEPTED" && current.status !== "ACCEPTED" ? await documentsPolicy(transaction) : null;
     const history = await transaction.applicationStatusHistory.create({
       data: {
         applicationId: current.id,
@@ -160,6 +164,7 @@ export const updateApplicationStatus = asyncHandler(async (req, res) => {
         toStatus: req.body.status,
         note: req.body.reviewNote || null,
         changedBy: req.user.name,
+        ...(policy ? { notificationSubject: "Admission offer ready", notificationText: renderAdmissionMessage(policy.offerMessage, { programme: current.courseOfInterest }) } : {}),
         ...(current.status !== req.body.status ? { emailStatus: "PENDING", emailRecipient: current.email } : {})
       }
     });

@@ -3,6 +3,7 @@ import { useSearchParams } from "react-router-dom";
 import AdminNotice from "../../components/AdminNotice.jsx";
 import LoadingButton from "../../components/LoadingButton.jsx";
 import ChangePassword from "../../components/ChangePassword.jsx";
+import AdmissionsDocumentsSettings from "../../components/AdmissionsDocumentsSettings.jsx";
 import { api, apiErrorMessage } from "../../api/client.js";
 import { useAdmissions } from "../../context/AdmissionsContext.jsx";
 import { useSchool } from "../../context/SchoolContext.jsx";
@@ -100,6 +101,7 @@ function SchoolSettings() {
         <LoadingButton type="submit" disabled={Boolean(saving)} loading={saving === "admissions"} loadingText="Saving…">Save admissions settings</LoadingButton>
       </form>}
       {acceptance && <form className="form-panel" onSubmit={saveAcceptance}><h2>Acceptance fee</h2><label>Acceptance fee (NGN)<input type="number" required min="0" max="10000000" step="0.01" disabled={Boolean(saving)} value={acceptance.amount ?? ""} onChange={(event) => setAcceptance({ amount: event.target.value === "" ? null : Number(event.target.value) })} /></label><p>Applies to newly issued offers. Existing offers keep their quoted fee. Set zero only to waive the fee for new offers.</p><LoadingButton type="submit" disabled={Boolean(saving)} loading={saving === "acceptance"} loadingText="Saving…">Save acceptance fee</LoadingButton></form>}
+      <AdmissionsDocumentsSettings />
       {schoolSettingsSections.map((section) => <details className="settings-panel" key={section.id}>
         <summary>{section.title}</summary>
         <form className="form-panel" onSubmit={(event) => saveSection(event, section)}>

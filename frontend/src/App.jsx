@@ -48,6 +48,8 @@ const StudentAnnouncement = studentPage("StudentAnnouncement");
 const AdminAcademic = lazy(() => import("./pages/admin/AdminAcademic.jsx"));
 const AdminStudentRecord = lazy(() => import("./pages/admin/AdminStudentRecord.jsx"));
 const AdminAnnouncements = lazy(() => import("./pages/admin/AdminAnnouncements.jsx"));
+const AdminScreening = lazy(() => import("./pages/admin/AdminScreening.jsx"));
+const SchoolFormEditor = lazy(() => import("./components/SchoolFormEditor.jsx"));
 
 export default function App() {
   const scope = portalScope();
@@ -87,6 +89,7 @@ export default function App() {
         <Route path="payments" element={<ApplicantPayments />} />
         <Route path="print" element={<ApplicantPrintCentre />} />
         <Route path="security" element={<ChangePassword />} />
+        <Route path="school-forms/:kind" element={<SchoolFormEditor />} />
       </Route>
       </>}
       {(!scope || scope === "student") && <>
@@ -97,6 +100,7 @@ export default function App() {
           <Route path="profile" element={<StudentProfile />} />
           <Route path="academic" element={<StudentAcademic />} />
           <Route path="records" element={<StudentRecords />} />
+          <Route path="school-forms/:kind" element={<SchoolFormEditor />} />
           <Route path="announcements" element={<StudentAnnouncements />} />
           <Route path="announcements/:id" element={<StudentAnnouncement />} />
           <Route path="security" element={<ChangePassword embedded />} />
@@ -114,6 +118,7 @@ export default function App() {
       >
         <Route index element={<AdminDashboard />} />
         <Route path="applications" element={<AdminApplications />} />
+        <Route path="screening" element={<AdminScreening />} />
         <Route path="news" element={<AdminNews />} />
         <Route path="gallery" element={<AdminGallery />} />
         <Route path="messages" element={<AdminMessages />} />

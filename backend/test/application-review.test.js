@@ -37,7 +37,7 @@ test("review API hides unsubmitted details and rejects premature decisions", asy
     Object.assign(application, { status: "SUBMITTED", submittedAt: new Date(), updatedAt: new Date(), statusHistory: [] });
     assert.equal((await decision({ status: "RETURNED", reviewNote: "" })).status, 422);
     application.status = "REVIEWED";
-    assert.equal((await decision({ status: "ACCEPTED" })).status, 422);
+    assert.equal((await decision({ status: "ACCEPTED" })).status, 409);
     const history = [];
     prisma.$transaction = async (callback) => callback({
       siteSetting: { findUnique: async () => null },
@@ -55,7 +55,7 @@ test("review API hides unsubmitted details and rejects premature decisions", asy
     assert.equal(history[0].emailRecipient, application.email);
     assert.equal((await returned.json()).data.application.reviewReady, false);
     Object.assign(application, {
-      status: "REVIEWED", isTest: true, declarationAccepted: true, formFeeAmount: 20000,
+      status: "REVIEWED", screeningStatus: "EXEMPT", isTest: true, declarationAccepted: true, formFeeAmount: 20000,
       applicant: { id: "test-user", role: "APPLICANT" },
       payments: [{ type: "APPLICATION_FEE", status: "VERIFIED", currency: "NGN", amount: 20000, isTest: true }],
       documents: ["PASSPORT", "BIRTH_CERTIFICATE", "NATIONAL_ID", "EDUCATIONAL_RESULT"].map((type) => ({ type, reviewStatus: "VERIFIED" }))

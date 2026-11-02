@@ -35,6 +35,7 @@ export default function AdmissionOffer() {
     {admission.response === "ACCEPTED" && !admitted && <>
       <ol className="admission-checklist"><li>Offer: accepted</li><li>Acceptance fee: {admission.paid ? Number(admission.amount) === 0 ? "not required" : "confirmed" : "awaiting payment"}</li><li>Clearance: {admission.clearanceStatus.toLowerCase().replaceAll("_", " ")}</li><li>Final admission: awaiting admissions decision</li></ol>
       {!admission.paid && <Link className="button" to={portalPath("/applicant/payments")}>Pay acceptance fee</Link>}
+      {admission.paid && <Link className="button" to={portalPath("/applicant/school-forms/ACCEPTANCE")}>Complete acceptance form</Link>}
       {admission.clearanceNote && <p><strong>Clearance note:</strong> {admission.clearanceNote}</p>}
       {admission.clearanceStatus === "CORRECTIONS_REQUIRED" && <Link className="button secondary" to={portalPath("/applicant/documents")}>Update clearance documents</Link>}
       <button className="button secondary" type="button" disabled={busy} onClick={refresh}>Refresh status</button>

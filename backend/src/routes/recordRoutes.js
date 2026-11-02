@@ -6,8 +6,10 @@ import { hasPermission } from "../services/permissions.js";
 import { formAccessFor } from "../services/formAccess.js";
 import { applicationFormPdf, paymentReceiptPdf } from "../services/applicationPdf.js";
 import { canDownloadApplication } from "../services/applicationReview.js";
+import schoolDocumentRecordsRoutes from "./schoolDocumentRecordsRoutes.js";
 
 const router = Router();
+router.use("/applications", schoolDocumentRecordsRoutes);
 router.use(requireAuth);
 router.get("/applications/:id/:kind", asyncHandler(async (req, res) => {
   if (req.params.kind !== "form") return res.sendStatus(404);

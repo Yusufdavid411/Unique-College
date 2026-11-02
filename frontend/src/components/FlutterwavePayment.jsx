@@ -10,7 +10,7 @@ import { trustedPaymentCheckout } from "../api/paymentCheckout.js";
 import { ErrorToast } from "./ToastNotifications.jsx";
 
 export default function FlutterwavePayment() {
-  const { application, formAccess, admission, paymentGateway, refresh } = useApplicant();
+  const { application, formAccess, admission, screening, paymentGateway, refresh } = useApplicant();
   const { search } = useLocation();
   const navigate = useNavigate();
   const [busy, setBusy] = useState(false);
@@ -73,7 +73,7 @@ export default function FlutterwavePayment() {
     const blocked = Boolean(pending && (!canResume || pending.type !== type));
     return <section className="portal-alert payment-bank-card" key={type} aria-label={label}>
       <span className="eyebrow">{label}</span><strong className="payment-fee-value">{amount == null ? "Not quoted" : `NGN ${Number(amount).toLocaleString("en-NG", { minimumFractionDigits: 2 })}`}</strong>
-      {paid ? <p><CheckCircle2 size={18} /> {type === "APPLICATION_FEE" ? "Your application form is available." : Number(amount) === 0 ? "No acceptance payment is required. Track clearance on your dashboard." : "Acceptance fee confirmed. Track clearance on your dashboard."}</p> : !available ? <p>{admission?.response === "DECLINED" ? "This offer was declined. Contact admissions if you need assistance." : "Accept your active admission offer on the dashboard before paying this fee."}</p> : <>
+      {paid ? <p><CheckCircle2 size={18} /> {type === "APPLICATION_FEE" ? "Your application form is available." : type === "SCREENING_FEE" ? "Screening payment confirmed. Check your exam invitation." : Number(amount) === 0 ? "No acceptance payment is required. Track clearance on your dashboard." : "Acceptance fee confirmed. Track clearance on your dashboard."}</p> : !available ? <p>{admission?.response === "DECLINED" ? "This offer was declined. Contact admissions if you need assistance." : "Accept your active admission offer on the dashboard before paying this fee."}</p> : <>
         {!paymentGateway.ready && <p role="status">Online payments are temporarily unavailable for this account. Please check back shortly. Do not transfer money outside this checkout.</p>}
         {blocked && <p>Another payment is awaiting confirmation. Check its status before paying again.</p>}
         {pending && !onlinePending && <button type="button" className="button secondary" disabled={busy} onClick={withdrawLegacyReceipt}>Withdraw incorrect receipt</button>}
@@ -86,6 +86,7 @@ export default function FlutterwavePayment() {
   return <div className="portal-page">
     <header className="portal-page-header"><div><span className="eyebrow">Secure online payment</span><h1>Payments</h1><p>Pay through Flutterwave. Confirmation and separate receipts are automatic.</p></div></header>
     {feeCard("APPLICATION_FEE", "Application form fee", formAccess.amount, formAccess.unlocked, true)}
+    {screening?.status === "SCHEDULED" && feeCard("SCREENING_FEE", "Screening / entrance-exam fee", screening.amount, screening.paid, true)}
     {admission?.offered && feeCard("ACCEPTANCE_FEE", "Acceptance fee", admission.amount, admission.paid, admission.canPay)}
     <ErrorToast message={notice} />
     <section className="payment-history"><h2>Payment history</h2>

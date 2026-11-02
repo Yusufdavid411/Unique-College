@@ -7,6 +7,7 @@ export function ApplicantProvider({ children }) {
   const [application, setApplication] = useState(null);
   const [formAccess, setFormAccess] = useState({ unlocked: false, amount: null });
   const [admission, setAdmission] = useState(null);
+  const [screening, setScreening] = useState(null);
   const [paymentGateway, setPaymentGateway] = useState({ provider: "MANUAL", ready: false });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -19,6 +20,7 @@ export function ApplicantProvider({ children }) {
       setApplication(response.data.data.application);
       setFormAccess(response.data.data.formAccess || { unlocked: false, amount: null });
       setAdmission(response.data.data.admission || null);
+      setScreening(response.data.data.screening || null);
       setPaymentGateway(response.data.data.paymentGateway || { provider: "MANUAL", ready: false });
     } catch (requestError) {
       setFormAccess({ unlocked: false, amount: null });
@@ -30,7 +32,7 @@ export function ApplicantProvider({ children }) {
 
   useEffect(() => { refresh(); }, [refresh]);
 
-  const value = useMemo(() => ({ application, formAccess, admission, paymentGateway, loading, error, refresh, setApplication }), [application, formAccess, admission, paymentGateway, loading, error, refresh]);
+  const value = useMemo(() => ({ application, formAccess, admission, screening, paymentGateway, loading, error, refresh, setApplication }), [application, formAccess, admission, screening, paymentGateway, loading, error, refresh]);
   return <ApplicantContext.Provider value={value}>{children}</ApplicantContext.Provider>;
 }
 

@@ -5,6 +5,10 @@ export function statusEmailConfigured(configuration = process.env) {
 }
 
 export function statusEmailContent(event) {
+  if (event.notificationSubject && event.notificationText) return {
+    subject: `${event.application?.isTest ? "[TEST] " : ""}Unique College: ${event.notificationSubject}`,
+    text: ["Unique College of Health Science and Technology", event.application?.isTest ? "TEST RECORD — NOT VALID FOR REAL ADMISSION" : "", event.notificationText, "", "View your secure applicant portal: https://apply.uniquecollegekwali.com/"].filter(Boolean).join("\n")
+  };
   const labels = { SUBMITTED: "Under review", REVIEWED: "Under review", RETURNED: "Corrections required", ACCEPTED: "Application accepted", ADMITTED: "Admitted", REJECTED: "Application decision", INTERVIEW_SCHEDULED: "Interview scheduled" };
   const status = event.kind === "OFFER_RESPONSE" ? "Offer response recorded" : event.kind === "CLEARANCE" ? "Clearance updated" : labels[event.toStatus] || "Application status updated";
   const instructions = ["OFFER_RESPONSE", "CLEARANCE"].includes(event.kind) ? "Sign in to see your offer response, acceptance payment and clearance progress."
