@@ -54,4 +54,5 @@ each frontend origin; portal root redirects and deep links; login and authorized
 downloads. API / returns 404 by design; use the health endpoints instead.
 
 Staff and student portal domains are reserved architectural names only until
-Stages 3 and 4 are implemented. Do not describe these portals as available.
+their features are implemented. The student foundation is now implemented at
+portal.uniquecollegekwali.com; staff remains deferred. See STUDENT_PORTAL.md.

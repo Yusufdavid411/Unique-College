@@ -7,6 +7,7 @@ export function sessionScope(pathname, hostname = globalThis.location?.hostname)
   if (hostScope) return hostScope;
   if (/^\/admin(?:\/|$)/.test(pathname)) return "admin";
   if (/^\/applicant(?:\/|$)/.test(pathname)) return "applicant";
+  if (/^\/student(?:\/|$)/.test(pathname)) return "student";
   return null;
 }
 
@@ -30,5 +31,5 @@ export function clearSession(scope, storage = localStorage) {
 }
 
 export function scopeForUser(user) {
-  return user?.role === "ADMIN" ? "admin" : ["APPLICANT", "STUDENT"].includes(user?.role) ? "applicant" : null;
+  return user?.role === "ADMIN" ? "admin" : user?.role === "STUDENT" ? "student" : user?.role === "APPLICANT" ? "applicant" : null;
 }

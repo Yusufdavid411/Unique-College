@@ -17,6 +17,9 @@ import recordRoutes from "./recordRoutes.js";
 import paymentGatewayRoutes from "./paymentGatewayRoutes.js";
 import analyticsRoutes from "./analyticsRoutes.js";
 import studentRoutes from "./studentRoutes.js";
+import studentPortalRoutes from "./studentPortalRoutes.js";
+import academicRoutes from "./academicRoutes.js";
+import announcementRoutes from "./announcementRoutes.js";
 
 const router = Router();
 
@@ -47,6 +50,9 @@ router.use("/files", fileRoutes);
 router.use("/events", eventRoutes);
 router.use("/users", userRoutes);
 router.use("/students", studentRoutes);
+router.use("/student", studentPortalRoutes);
+router.use("/academic", academicRoutes);
+router.use("/announcements", announcementRoutes);
 router.use("/records", recordRoutes);
 router.use("/payments/flutterwave", paymentGatewayRoutes);
 router.use("/analytics", analyticsRoutes);

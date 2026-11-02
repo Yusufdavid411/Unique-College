@@ -88,16 +88,17 @@ email/recovery feature; it is not provided by knowing a student's email address.
 
 ## Deferred database and portal work
 
-- Stage 2: Student profile linked uniquely to the existing User, plus enrolments
-  referencing actual programmes, sessions, intake and level records. Keep identity
-  separate from enrolment so repeat years, transfers and future applications do not
-  require duplicate accounts. Preserve the admission/application link and history.
+- Implemented foundation: StudentProfile linked uniquely to the existing User and
+  Application, with academic assignments referencing real programmes, sessions and
+  levels. Intake, transfer, repeat-year and academic progression rules remain later
+  work. See STUDENT_PORTAL.md for the current scope.
 - Richer intake/offer records, deadlines and configurable programme-specific clearance
   checklists can extend the current response/clearance foundation later. Preserve
   existing admitted students, identifiers and quoted fees.
 - Stage 3: permission-scoped staff workflows for Admissions, Registrar and Finance.
-- Stage 4: student activation and student-facing profile/enrolment portal at
-  portal.uniquecollegekwali.com. Do not advertise that portal as complete yet.
+- Student portal foundation: portal.uniquecollegekwali.com now supports activation,
+  profile, academic details, records and announcements. It is not the full later-stage
+  academic/finance platform.
 - Stage 6: general institutional fees, invoicing and broader finance workflows.
   The approved acceptance-fee handover is implemented now; an absent quote is not paid.
 

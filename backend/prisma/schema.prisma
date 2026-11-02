@@ -93,6 +93,8 @@ model User {
   newsItems News[]
   galleryItems Gallery[]
   application Application?
+  studentProfile StudentProfile?
+  portalHandoffs PortalHandoff[]
   roleAssignments UserRoleAssignment[]
 
   @@map("users")
@@ -194,6 +196,7 @@ model Application {
   documents ApplicationDocument[]
   payments Payment[]
   statusHistory ApplicationStatusHistory[]
+  studentProfile StudentProfile?
 
   @@index([status])
   @@index([email])
@@ -353,4 +356,109 @@ model SiteSetting {
 
   @@index([group])
   @@map("site_settings")
+}
+
+model StudentProfile {
+  id String @id @default(uuid())
+  userId String @unique
+  applicationId String @unique
+  phoneNumber String?
+  address String?
+  guardianName String?
+  guardianRelationship String?
+  guardianPhone String?
+  guardianAddress String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  user User @relation(fields: [userId], references: [id], onDelete: Restrict)
+  application Application @relation(fields: [applicationId], references: [id], onDelete: Restrict)
+  enrolments StudentEnrolment[]
+  @@map("student_profiles")
+}
+
+model AcademicDepartment {
+  id String @id @default(uuid())
+  code String @unique
+  name String
+  isActive Boolean @default(true)
+  programmes AcademicProgramme[]
+  @@map("academic_departments")
+}
+
+model AcademicProgramme {
+  id String @id @default(uuid())
+  code String @unique
+  name String
+  departmentId String
+  isActive Boolean @default(true)
+  department AcademicDepartment @relation(fields: [departmentId], references: [id], onDelete: Restrict)
+  enrolments StudentEnrolment[]
+  @@index([departmentId])
+  @@map("academic_programmes")
+}
+
+model AcademicSession {
+  id String @id @default(uuid())
+  name String @unique
+  startsAt DateTime
+  endsAt DateTime
+  isActive Boolean @default(true)
+  enrolments StudentEnrolment[]
+  @@map("academic_sessions")
+}
+
+model AcademicLevel {
+  id String @id @default(uuid())
+  code String @unique
+  name String
+  isActive Boolean @default(true)
+  enrolments StudentEnrolment[]
+  @@map("academic_levels")
+}
+
+model StudentEnrolment {
+  id String @id @default(uuid())
+  studentId String
+  programmeId String
+  sessionId String
+  levelId String
+  status String @default("ASSIGNED")
+  assignedBy String
+  confirmedAt DateTime?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  student StudentProfile @relation(fields: [studentId], references: [id], onDelete: Restrict)
+  programme AcademicProgramme @relation(fields: [programmeId], references: [id], onDelete: Restrict)
+  session AcademicSession @relation(fields: [sessionId], references: [id], onDelete: Restrict)
+  level AcademicLevel @relation(fields: [levelId], references: [id], onDelete: Restrict)
+  @@unique([studentId, sessionId])
+  @@index([programmeId])
+  @@index([sessionId])
+  @@index([levelId])
+  @@map("student_enrolments")
+}
+
+model StudentAnnouncement {
+  id String @id @default(uuid())
+  title String
+  body String
+  isPublished Boolean @default(false)
+  publishedAt DateTime?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  @@index([isPublished, publishedAt])
+  @@map("student_announcements")
+}
+
+model PortalHandoff {
+  tokenHash String @id
+  browserHash String
+  userId String
+  sessionVersion Int
+  expiresAt DateTime
+  consumedAt DateTime?
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  @@index([expiresAt])
+  @@index([userId])
+  @@map("portal_handoffs")
 }

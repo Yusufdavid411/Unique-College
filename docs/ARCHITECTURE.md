@@ -13,6 +13,8 @@ STAGE_1_WORKLIST.md. The initial audit below records the starting position.
 
 See STUDENT_HANDOVER.md for the researched applicant-to-student lifecycle,
 the Stage 1 admitted-student register and the deferred enrolment/portal work.
+See STUDENT_PORTAL.md for the implemented student foundation and its minimal
+academic prerequisites. Later academic/finance modules remain deliberately deferred.
 
 ### Already in place
 
@@ -46,7 +48,7 @@ the Stage 1 admitted-student register and the deferred enrolment/portal work.
 | admin.uniquecollegekwali.com | Administration portal | Same React deployment; login/dashboard at hostname root |
 | apply.uniquecollegekwali.com | Pre-admission portal | Same React deployment; registration/dashboard at hostname root |
 | staff.uniquecollegekwali.com | Staff/faculty portal | Future Stage 3 UI; do not publish before built |
-| portal.uniquecollegekwali.com | Student portal | Future Stage 4 UI; do not publish before built |
+| portal.uniquecollegekwali.com | Student portal | Profile, academic assignments, records, notices and security foundation |
 | api.uniquecollegekwali.com | Single REST API | Express API, shared PostgreSQL |
 
 The purchased .com domain supersedes the proposed .edu.ng web addresses. Existing

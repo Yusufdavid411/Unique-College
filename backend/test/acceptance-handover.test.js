@@ -33,6 +33,7 @@ test("offer, editable future pricing, automatic acceptance payment, clearance an
   let audits = [];
   let providerAmount = 5000;
   const model = {
+    studentProfile: { upsert: async ({ create }) => ({ id: "student-profile", ...create }) },
     user: {
       findUnique: async ({ where }) => where.id === "admin" ? { id: "admin", name: "Registrar", role: "ADMIN", isActive: true, sessionVersion: 0 } : where.id === owner.id ? owner : { id: where.id, name: "Other applicant", role: "APPLICANT", isActive: true, sessionVersion: 0 },
       findFirst: async ({ where }) => where.OR.some((entry) => Object.entries(entry).some(([key, value]) => owner[key] === value)) ? owner : null,

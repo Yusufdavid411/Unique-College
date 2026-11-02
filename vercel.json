@@ -5,6 +5,36 @@
   "framework": "vite",
   "redirects": [
     {
+      "source": "/student/login",
+      "has": [{ "type": "host", "value": "www.uniquecollegekwali.com" }],
+      "destination": "https://portal.uniquecollegekwali.com/",
+      "permanent": false
+    },
+    {
+      "source": "/student/:path*",
+      "has": [{ "type": "host", "value": "www.uniquecollegekwali.com" }],
+      "destination": "https://portal.uniquecollegekwali.com/:path*",
+      "permanent": false
+    },
+    {
+      "source": "/student/login",
+      "has": [{ "type": "host", "value": "portal.uniquecollegekwali.com" }],
+      "destination": "/",
+      "permanent": false
+    },
+    {
+      "source": "/student/:path*",
+      "has": [{ "type": "host", "value": "portal.uniquecollegekwali.com" }],
+      "destination": "/:path*",
+      "permanent": false
+    },
+    {
+      "source": "/login",
+      "has": [{ "type": "host", "value": "portal.uniquecollegekwali.com" }],
+      "destination": "/",
+      "permanent": false
+    },
+    {
       "source": "/",
       "has": [{ "type": "host", "value": "uniquecollegekwali.vercel.app" }],
       "destination": "https://www.uniquecollegekwali.com/",

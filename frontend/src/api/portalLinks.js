@@ -3,6 +3,7 @@ const schoolHosts = new Set([
   "www.uniquecollegekwali.com",
   "admin.uniquecollegekwali.com",
   "apply.uniquecollegekwali.com",
+  "portal.uniquecollegekwali.com",
   "uniquecollegekwali.vercel.app",
   "uniquecollegekwali-yusufdavid411s-projects.vercel.app"
 ]);
@@ -19,6 +20,7 @@ export function retiredPaymentSandbox(hostname = globalThis.location?.hostname) 
 export function portalScope(hostname = globalThis.location?.hostname) {
   if (hostname === "admin.uniquecollegekwali.com") return "admin";
   if (hostname === "apply.uniquecollegekwali.com") return "applicant";
+  if (hostname === "portal.uniquecollegekwali.com") return "student";
   return null;
 }
 
@@ -27,6 +29,7 @@ export function portalPath(path, hostname = globalThis.location?.hostname) {
   if (!scope || !new RegExp(`^/${scope}(?:/|$)`).test(path)) return path;
   const cleanPath = path.slice(scope.length + 1) || "/";
   if (scope === "admin" && cleanPath === "/login") return "/";
+  if (scope === "student" && cleanPath === "/login") return "/";
   if (scope === "applicant" && cleanPath === "/register") return "/";
   return cleanPath;
 }
@@ -45,6 +48,10 @@ export function applicantLoginHref(hostname = globalThis.location?.hostname) {
   return schoolHosts.has(hostname) ? "https://apply.uniquecollegekwali.com/login" : "/applicant/login";
 }
 
+export function studentPortalHref(hostname = globalThis.location?.hostname) {
+  return schoolHosts.has(hostname) ? "https://portal.uniquecollegekwali.com/" : "/student";
+}
+
 export function canonicalPortalHref(pathname, hostname = globalThis.location?.hostname) {
   if (retiredPaymentSandbox(hostname)) return "https://apply.uniquecollegekwali.com/";
   if (!schoolHosts.has(hostname) || portalScope(hostname)) return null;
@@ -55,5 +62,6 @@ export function canonicalPortalHref(pathname, hostname = globalThis.location?.ho
   if (/^\/admin(?:\/|$)/.test(pathname)) {
     return `https://admin.uniquecollegekwali.com${portalPath(pathname, "admin.uniquecollegekwali.com")}`;
   }
+  if (/^\/student(?:\/|$)/.test(pathname)) return `https://portal.uniquecollegekwali.com${portalPath(pathname, "portal.uniquecollegekwali.com")}`;
   return legacyWebsiteHosts.has(hostname) ? `https://www.uniquecollegekwali.com${pathname}` : null;
 }

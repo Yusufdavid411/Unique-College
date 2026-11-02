@@ -1,5 +1,19 @@
 # Stage 1 Worklist
 
+## Student foundation checkpoint — 2 November 2026
+
+- Student profile, dashboard, own-record downloads, contact updates, academic
+  assignment/confirmation, published announcements and account security are built.
+- Same-identity transfer from applicant to student uses a short-lived one-time code
+  and browser-bound API cookie rather than exposing a session JWT in a redirect URL.
+- Minimal department/programme/session/level records support authentic assignments;
+  no production academic records or results are invented. See STUDENT_PORTAL.md.
+- The isolated database integration suite explicitly passed all three tests,
+  including the new student privacy, transfer, assignment and notice workflow.
+- Browser-based visual inspection was unavailable because local browser automation
+  is disabled in Work settings. Build, API and database verification do not replace
+  manual desktop/mobile visual acceptance by the school.
+
 ## Acceptance handover checkpoint — 2 November 2026
 
 - The approved acceptance fee starts at NGN 5,000 and is editable under Settings.

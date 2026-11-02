@@ -68,6 +68,7 @@ test("review API hides unsubmitted details and rejects premature decisions", asy
     application.payments.push({ type: "ACCEPTANCE_FEE", status: "VERIFIED", currency: "NGN", amount: 5000, isTest: true });
     prisma.$transaction = async (callback) => callback({
       user: { update: async ({ data }) => { Object.assign(application.applicant, data); } },
+      studentProfile: { upsert: async () => ({ id: "student-profile" }) },
       application: { updateMany: async ({ data }) => { Object.assign(application, data); return { count: 1 }; }, findUnique: async () => application },
       applicationStatusHistory: { create: async ({ data }) => { history.push(data); return {}; } },
       auditLog: { create: async () => ({}) }

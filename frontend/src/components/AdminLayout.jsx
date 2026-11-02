@@ -10,6 +10,8 @@ const items = [
   ["Overview", "/admin", LayoutDashboard],
   ["Applications", "/admin/applications", Users],
   ["Students", "/admin/students", Users, "students.read"],
+  ["Academic setup", "/admin/academic", LayoutDashboard, "academic.manage"],
+  ["Announcements", "/admin/announcements", MessageSquare, "announcements.manage"],
   ["News", "/admin/news", Newspaper],
   ["Events", "/admin/events", LayoutDashboard],
   ["Gallery", "/admin/gallery", Images],

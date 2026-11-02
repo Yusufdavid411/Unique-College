@@ -1,9 +1,9 @@
 import { Navigate, Route, Routes, useLocation } from "react-router-dom";
-import { useEffect } from "react";
+import { lazy, Suspense, useEffect } from "react";
 import PublicLayout from "./components/PublicLayout.jsx";
 import ProtectedRoute from "./components/ProtectedRoute.jsx";
 import AdminLayout from "./components/AdminLayout.jsx";
-import ApplicantLayout from "./components/ApplicantLayout.jsx";
+import { ApplicantTransition, StudentContinuation } from "./components/StudentTransfer.jsx";
 import Home from "./pages/public/Home.jsx";
 import About from "./pages/public/About.jsx";
 import Leadership from "./pages/public/Leadership.jsx";
@@ -36,6 +36,19 @@ import ChangePassword from "./components/ChangePassword.jsx";
 import { RecoveryScreen } from "./components/AppErrorBoundary.jsx";
 import { canonicalPortalHref, portalPath, portalScope, retiredPaymentSandbox } from "./api/portalLinks.js";
 
+const StudentLayout = lazy(() => import("./components/StudentLayout.jsx"));
+const StudentLogin = lazy(() => import("./pages/student/StudentLogin.jsx"));
+const studentPage = (name) => lazy(() => import("./pages/student/StudentPages.jsx").then((module) => ({ default: module[name] })));
+const StudentDashboard = studentPage("StudentDashboard");
+const StudentProfile = studentPage("StudentProfile");
+const StudentAcademic = studentPage("StudentAcademic");
+const StudentRecords = studentPage("StudentRecords");
+const StudentAnnouncements = studentPage("StudentAnnouncements");
+const StudentAnnouncement = studentPage("StudentAnnouncement");
+const AdminAcademic = lazy(() => import("./pages/admin/AdminAcademic.jsx"));
+const AdminStudentRecord = lazy(() => import("./pages/admin/AdminStudentRecord.jsx"));
+const AdminAnnouncements = lazy(() => import("./pages/admin/AdminAnnouncements.jsx"));
+
 export default function App() {
   const scope = portalScope();
   const { pathname, search, hash } = useLocation();
@@ -45,7 +58,7 @@ export default function App() {
   }, [destination, search, hash]);
   if (destination) return <div className="loading-screen" role="status">Opening your secure portal…</div>;
   return (
-    <Routes>
+    <Suspense fallback={<div className="loading-screen" role="status">Loading your portal…</div>}><Routes>
       {!scope && <Route element={<PublicLayout />}>
         <Route index element={<Home />} />
         <Route path="about" element={<About />} />
@@ -61,12 +74,12 @@ export default function App() {
         <Route path="apply" element={<Navigate to="/applicant/register" replace />} />
         <Route path="application" element={<Navigate to="/applicant/register" replace />} />
       </Route>}
-      {scope !== "admin" && <>
+      {(!scope || scope === "applicant") && <>
       <Route path={portalPath("/applicant/login")} element={<ApplicantAccess />} />
       {scope !== "applicant" && <Route path="/applicant/register" element={<ApplicantAccess />} />}
       <Route
         path={portalPath("/applicant")}
-        element={<ProtectedRoute roles={["APPLICANT", "STUDENT"]} redirectTo="/applicant/login" entry={scope === "applicant" ? <ApplicantAccess /> : null}><ApplicantLayout /></ProtectedRoute>}
+        element={<ProtectedRoute roles={["APPLICANT", "STUDENT"]} transferStudent redirectTo="/applicant/login" entry={scope === "applicant" ? <ApplicantAccess /> : null}><ApplicantTransition /></ProtectedRoute>}
       >
         <Route index element={<ApplicantDashboard />} />
         <Route path="application" element={<ApplicantApplicationForm />} />
@@ -76,7 +89,20 @@ export default function App() {
         <Route path="security" element={<ChangePassword />} />
       </Route>
       </>}
-      {scope !== "applicant" && <>
+      {(!scope || scope === "student") && <>
+        {scope !== "student" && <Route path="/student/login" element={<StudentLogin />} />}
+        <Route path={portalPath("/student/continue")} element={<StudentContinuation />} />
+        <Route path={portalPath("/student")} element={<ProtectedRoute roles={["STUDENT"]} redirectTo="/student/login" entry={scope === "student" ? <StudentLogin /> : null}><StudentLayout /></ProtectedRoute>}>
+          <Route index element={<StudentDashboard />} />
+          <Route path="profile" element={<StudentProfile />} />
+          <Route path="academic" element={<StudentAcademic />} />
+          <Route path="records" element={<StudentRecords />} />
+          <Route path="announcements" element={<StudentAnnouncements />} />
+          <Route path="announcements/:id" element={<StudentAnnouncement />} />
+          <Route path="security" element={<ChangePassword embedded />} />
+        </Route>
+      </>}
+      {(!scope || scope === "admin") && <>
       {scope !== "admin" && <Route path="/admin/login" element={<AdminLogin />} />}
       <Route
         path={portalPath("/admin")}
@@ -97,10 +123,13 @@ export default function App() {
         <Route path="events" element={<AdminEvents />} />
         <Route path="users" element={<AdminUsers />} />
         <Route path="students" element={<AdminStudents />} />
+        <Route path="students/:id" element={<AdminStudentRecord />} />
+        <Route path="academic" element={<AdminAcademic />} />
+        <Route path="announcements" element={<AdminAnnouncements />} />
         <Route path="security" element={<Navigate to={`${portalPath("/admin/settings")}?tab=security`} replace />} />
       </Route>
       </>}
       <Route path="*" element={<RecoveryScreen title="Page not found" message="This address is not available. Return to the homepage to continue." />} />
-    </Routes>
+    </Routes></Suspense>
   );
 }

@@ -8,6 +8,7 @@ const defaultClientUrls = [
   "https://www.uniquecollegekwali.com",
   "https://admin.uniquecollegekwali.com",
   "https://apply.uniquecollegekwali.com",
+  "https://portal.uniquecollegekwali.com",
   "https://uniquecollegekwali.edu.ng",
   "https://www.uniquecollegekwali.edu.ng",
   "https://admin.uniquecollegekwali.edu.ng",

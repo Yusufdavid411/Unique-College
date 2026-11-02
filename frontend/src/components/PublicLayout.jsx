@@ -5,6 +5,7 @@ import { assetPaths } from "../data/siteData.js";
 import { useSchool } from "../context/SchoolContext.jsx";
 import ApplyLink from "./ApplyLink.jsx";
 import PublicVisitorTracker from "./PublicVisitorTracker.jsx";
+import { studentPortalHref } from "../api/portalLinks.js";
 
 const navItems = [
   ["Home", "/"],
@@ -128,6 +129,7 @@ export default function PublicLayout() {
           </div>
         </div>
         <div className="footer-contact-list">
+          <a href={studentPortalHref()} target="_blank" rel="noopener noreferrer">Student portal</a>
           <Link to="/privacy">Website privacy</Link>
           <span><MapPin size={18} />{schoolInfo.address}</span>
           <span><Mail size={18} />{schoolInfo.email}</span>

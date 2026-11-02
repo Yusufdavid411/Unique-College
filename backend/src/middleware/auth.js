@@ -20,7 +20,7 @@ export async function requireAuth(req, res, next) {
     }
 
     req.user = user;
-    if (user.mustChangePassword && !(req.baseUrl === "/api/auth" && ["/me", "/password"].includes(req.path))) {
+    if (user.mustChangePassword && !((req.baseUrl === "/api/auth" && ["/me", "/password"].includes(req.path)) || (req.baseUrl === "/api/auth/student" && req.path === "/handoff"))) {
       return res.status(403).json({ success: false, code: "PASSWORD_CHANGE_REQUIRED", message: "Change your temporary password before continuing" });
     }
     next();
@@ -46,4 +46,8 @@ export function requirePermission(permission) {
     if (!hasPermission(req.user, permission)) return res.status(403).json({ success: false, message: "Insufficient permission" });
     next();
   };
+}
+
+export function requireAnyPermission(...permissions) {
+  return (req, res, next) => permissions.some((permission) => hasPermission(req.user, permission)) ? next() : res.status(403).json({ success: false, message: "Insufficient permission" });
 }

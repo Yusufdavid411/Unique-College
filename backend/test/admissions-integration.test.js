@@ -148,6 +148,11 @@ test("applicant purchase, closure and admission approval enforce the full accoun
     assert.equal(repeated.status, 200);
     assert.equal((await repeated.json()).data.credentials, null);
   } finally {
+    if (application) {
+      const profiles = await prisma.studentProfile.findMany({ where: { applicationId: application.id }, select: { id: true } });
+      await prisma.studentEnrolment.deleteMany({ where: { studentId: { in: profiles.map((profile) => profile.id) } } });
+      await prisma.studentProfile.deleteMany({ where: { applicationId: application.id } });
+    }
     if (application) await prisma.application.delete({ where: { id: application.id } });
     if (applicant) {
       await prisma.auditLog.deleteMany({ where: { actorId: applicant.id } });

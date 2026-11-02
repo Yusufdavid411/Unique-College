@@ -10,6 +10,7 @@ import { formAccessFor } from "../services/formAccess.js";
 import { readyForReview } from "../services/applicationReview.js";
 import { attemptStatusEmail, statusEmailConfigured } from "../services/statusEmail.js";
 import { acceptancePolicy, admissionProgressFor, admissionFailure } from "../services/acceptance.js";
+import { studentProfileData } from "../services/studentRecords.js";
 
 const applicationDetails = {
   applicant: { select: { id: true, name: true, email: true, role: true, portalUsername: true, officialEmail: true } },
@@ -135,6 +136,7 @@ export const updateApplicationStatus = asyncHandler(async (req, res) => {
       data.clearedAt = null;
     }
     if (credentials) {
+      await transaction.studentProfile.upsert({ where: { userId: current.applicant.id }, update: {}, create: studentProfileData(latest) });
       await transaction.user.update({
         where: { id: current.applicant.id },
         data: {

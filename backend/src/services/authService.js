@@ -17,7 +17,7 @@ function publicUser(user) {
   };
 }
 
-function signInResult(user) {
+export function signInResult(user) {
   const token = jwt.sign({ sub: user.id, role: user.role, version: user.sessionVersion }, env.jwtSecret, {
     expiresIn: env.jwtExpiresIn
   });

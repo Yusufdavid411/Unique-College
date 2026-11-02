@@ -38,7 +38,7 @@ export default function AdminStudents() {
       <div className="admin-table-card"><div className="admin-table-wrap"><table className="review-queue" aria-label="Admitted students" aria-busy={loading}>
         <thead><tr><th>Student</th><th>Student number</th><th>Programme</th><th>Account</th><th>Admitted</th></tr></thead>
         <tbody>{loading ? <tr><td colSpan={5}>Loading students…</td></tr> : result.students.length ? result.students.map((student) => <tr key={student.id}>
-          <td data-label="Student"><strong>{student.fullName}</strong><small>{student.email}</small><small>{student.applicationNumber}</small></td>
+          <td data-label="Student"><Link to={portalPath(`/admin/students/${student.id}`)}><strong>{student.fullName}</strong></Link><small>{student.email}</small><small>{student.applicationNumber}</small></td>
           <td data-label="Student number">{student.studentNumber || "Not assigned"}</td>
           <td data-label="Programme">{student.courseOfInterest || "Not assigned"}</td>
           <td data-label="Account"><strong>{student.applicant.portalUsername || "Not assigned"}</strong><small>{!student.applicant.isActive ? "Inactive" : student.applicant.mustChangePassword ? "Activation pending" : "Active"}</small></td>
