@@ -40,6 +40,7 @@ test("review API hides unsubmitted details and rejects premature decisions", asy
     assert.equal((await decision({ status: "ACCEPTED" })).status, 422);
     const history = [];
     prisma.$transaction = async (callback) => callback({
+      siteSetting: { findUnique: async () => null },
       application: {
         updateMany: async ({ data }) => { Object.assign(application, data); return { count: 1 }; },
         findUnique: async () => application
@@ -61,6 +62,10 @@ test("review API hides unsubmitted details and rejects premature decisions", asy
     });
     assert.equal((await decision({ status: "ACCEPTED" })).status, 200);
     assert.equal(canDownloadApplication(application), true);
+    assert.equal(Number(application.acceptanceFeeAmount), 5000);
+    assert.equal((await decision({ status: "ADMITTED" })).status, 409);
+    Object.assign(application, { offerResponse: "ACCEPTED", clearanceStatus: "CLEARED" });
+    application.payments.push({ type: "ACCEPTANCE_FEE", status: "VERIFIED", currency: "NGN", amount: 5000, isTest: true });
     prisma.$transaction = async (callback) => callback({
       user: { update: async ({ data }) => { Object.assign(application.applicant, data); } },
       application: { updateMany: async ({ data }) => { Object.assign(application, data); return { count: 1 }; }, findUnique: async () => application },
@@ -73,6 +78,8 @@ test("review API hides unsubmitted details and rejects premature decisions", asy
     assert.match(result.credentials.studentNumber, /^TEST\//);
     assert.match(result.credentials.portalUsername, /^TEST/);
     assert.equal(result.credentials.officialEmail, null);
+    assert.equal(result.credentials.temporaryPassword, undefined);
+    assert.equal(application.applicant.passwordHash, undefined);
     assert.equal(result.application.isTest, true);
   } finally {
     prisma.user.findUnique = original.user;

@@ -1,5 +1,3 @@
-import bcrypt from "bcryptjs";
-import crypto from "node:crypto";
 import { prisma } from "../config/prisma.js";
 import { created, ok } from "../utils/apiResponse.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
@@ -11,6 +9,7 @@ import { canReviewTransition, hasVerifiedAdmissionDocuments, reviewStatusesFor }
 import { formAccessFor } from "../services/formAccess.js";
 import { readyForReview } from "../services/applicationReview.js";
 import { attemptStatusEmail, statusEmailConfigured } from "../services/statusEmail.js";
+import { acceptancePolicy, admissionProgressFor, admissionFailure } from "../services/acceptance.js";
 
 const applicationDetails = {
   applicant: { select: { id: true, name: true, email: true, role: true, portalUsername: true, officialEmail: true } },
@@ -25,8 +24,7 @@ function studentCredentials(application) {
   const studentNumber = application.studentNumber || `${application.isTest ? "TEST" : "UCHK"}/${year}/${suffix}`;
   const portalUsername = `${application.isTest ? "TEST" : "UC"}${year}${suffix}`;
   const officialEmail = application.isTest ? null : `${portalUsername.toLowerCase()}@uniquecollegekwali.com`;
-  const temporaryPassword = `Uc!${crypto.randomBytes(5).toString("base64url")}7`;
-  return { studentNumber, portalUsername, officialEmail, temporaryPassword };
+  return { studentNumber, portalUsername, officialEmail };
 }
 
 export const createApplication = asyncHandler(async (req, res) => {
@@ -73,7 +71,7 @@ function reviewResponse(application) {
     reviewNote: application.reviewNote, statusHistory: application.statusHistory, emailConfigured: statusEmailConfigured(),
     payments: application.payments.filter((payment) => payment.status === "VERIFIED"), allowedStatuses: []
   };
-  return { ...application, reviewReady, paymentConfirmed, allowedStatuses: reviewStatusesFor(application.status), emailConfigured: statusEmailConfigured() };
+  return { ...application, admission: admissionProgressFor(application), reviewReady, paymentConfirmed, allowedStatuses: reviewStatusesFor(application.status).filter((status) => status !== "ADMITTED" || application.status === "ADMITTED" || !admissionFailure(application)), emailConfigured: statusEmailConfigured() };
 }
 
 export const getApplication = asyncHandler(async (req, res) => {
@@ -95,13 +93,14 @@ export const updateApplicationStatus = asyncHandler(async (req, res) => {
   if (!current) return res.status(404).json({ success: false, message: "Application not found" });
   if (!readyForReview(current)) return res.status(409).json({ success: false, message: "Only a paid, submitted application can be reviewed. Wait for the applicant to submit their form." });
   if (!canReviewTransition(current.status, req.body.status)) return res.status(409).json({ success: false, message: "This decision is not available from the current application status" });
+  if (req.body.status === "ADMITTED" && current.status !== "ADMITTED" && admissionFailure(current)) return res.status(409).json({ success: false, message: admissionFailure(current) });
+  if (current.status === "ACCEPTED" && !["ACCEPTED", "ADMITTED"].includes(req.body.status) && current.payments.some((payment) => payment.type === "ACCEPTANCE_FEE" && ["PENDING", "VERIFIED"].includes(payment.status))) return res.status(409).json({ success: false, message: "An acceptance payment is recorded. Resolve it with admissions before withdrawing this offer." });
   if (req.body.status === "RETURNED" && !req.body.reviewNote?.trim()) return res.status(422).json({ success: false, message: "Explain the corrections required before returning this application." });
   if (["ACCEPTED", "ADMITTED"].includes(req.body.status) && current.status !== req.body.status && (!current.applicant || !current.declarationAccepted || !formAccessFor(current).unlocked || !hasVerifiedAdmissionDocuments(current.documents))) {
     return res.status(422).json({ success: false, message: "Admission requires an applicant account, verified form payment, declaration, and verified supporting documents" });
   }
 
   let credentials = null;
-  let passwordHash = null;
   const data = {
     status: req.body.status,
     reviewNote: req.body.reviewNote || null,
@@ -115,10 +114,26 @@ export const updateApplicationStatus = asyncHandler(async (req, res) => {
     credentials = studentCredentials(current);
     data.studentNumber = credentials.studentNumber;
     data.admittedAt = new Date();
-    passwordHash = await bcrypt.hash(credentials.temporaryPassword, 12);
   }
 
   const application = await auditedMutation(prisma, { actorId: req.user.id, action: "application.status:" + req.body.status, targetType: "application", targetId: current.id }, async (transaction) => {
+    const latest = await transaction.application.findUnique({ where: { id: current.id }, include: { applicant: true, documents: true, payments: true } });
+    if (!latest || latest.status !== current.status || !readyForReview(latest)) throw Object.assign(new Error("This application changed. Refresh before saving."), { statusCode: 409 });
+    if (latest.status === "ACCEPTED" && !["ACCEPTED", "ADMITTED"].includes(req.body.status) && latest.payments.some((payment) => payment.type === "ACCEPTANCE_FEE" && ["PENDING", "VERIFIED"].includes(payment.status))) throw Object.assign(new Error("Resolve the recorded acceptance payment before withdrawing this offer."), { statusCode: 409 });
+    if (req.body.status === "ADMITTED" && current.status !== "ADMITTED") {
+      const issue = admissionFailure(latest);
+      if (issue || !hasVerifiedAdmissionDocuments(latest.documents) || !latest.declarationAccepted) throw Object.assign(new Error(issue || "Verify all required admission documents before admitting."), { statusCode: 409 });
+    }
+    if (req.body.status === "ACCEPTED" && (current.status !== "ACCEPTED" || current.acceptanceFeeAmount == null)) {
+      data.acceptanceFeeAmount = current.acceptanceFeeAmount ?? (await acceptancePolicy(transaction)).amount;
+      data.offerIssuedAt = new Date();
+      data.offerResponse = "PENDING";
+      data.offerRespondedAt = null;
+      data.clearanceStatus = "PENDING";
+      data.clearanceNote = null;
+      data.clearedBy = null;
+      data.clearedAt = null;
+    }
     if (credentials) {
       await transaction.user.update({
         where: { id: current.applicant.id },
@@ -126,7 +141,6 @@ export const updateApplicationStatus = asyncHandler(async (req, res) => {
           role: "STUDENT",
           portalUsername: credentials.portalUsername,
           officialEmail: credentials.officialEmail,
-          passwordHash,
           mustChangePassword: true,
           sessionVersion: { increment: 1 }
         }
@@ -148,7 +162,7 @@ export const updateApplicationStatus = asyncHandler(async (req, res) => {
       }
     });
     return { updated: await transaction.application.findUnique({ where: { id: req.params.id }, include: applicationDetails }), historyId: current.status !== req.body.status ? history?.id : null };
-  });
+  }, { isolationLevel: "Serializable", timeout: 15000 });
 
   const email = await attemptStatusEmail(application.historyId);
   const refreshed = await prisma.application.findUnique({ where: { id: current.id }, include: applicationDetails });
@@ -166,14 +180,17 @@ export const retryApplicationNotification = asyncHandler(async (req, res) => {
 export const reviewApplicationDocument = asyncHandler(async (req, res) => {
   const application = await prisma.application.findUnique({ where: { id: req.params.id }, include: { payments: true } });
   if (!application || !readyForReview(application)) return res.status(409).json({ success: false, message: "Documents can be reviewed only after payment and application submission." });
+  if (application.status === "ADMITTED") return res.status(409).json({ success: false, message: "Admission is final. Student document changes require the student records workflow." });
   const document = await prisma.applicationDocument.findFirst({
     where: { id: req.params.documentId, applicationId: req.params.id }
   });
   if (!document) return res.status(404).json({ success: false, message: "Document not found" });
-  const updated = await auditedMutation(prisma, { actorId: req.user.id, action: "document.review:" + req.body.reviewStatus, targetType: "document", targetId: document.id }, (transaction) => transaction.applicationDocument.update({
-    where: { id: document.id },
-    data: { reviewStatus: req.body.reviewStatus, reviewNote: req.body.reviewNote || null }
-  }));
+  const updated = await auditedMutation(prisma, { actorId: req.user.id, action: "document.review:" + req.body.reviewStatus, targetType: "document", targetId: document.id }, async (transaction) => {
+    const latest = await transaction.application.findUnique({ where: { id: application.id }, include: { payments: true } });
+    if (!latest || latest.status === "ADMITTED" || !readyForReview(latest)) throw Object.assign(new Error("The admission record changed. Refresh before reviewing documents."), { statusCode: 409 });
+    if (latest.clearanceStatus === "CLEARED" && req.body.reviewStatus !== "VERIFIED") await transaction.application.update({ where: { id: latest.id }, data: { clearanceStatus: "PENDING", clearedBy: null, clearedAt: null } });
+    return transaction.applicationDocument.update({ where: { id: document.id }, data: { reviewStatus: req.body.reviewStatus, reviewNote: req.body.reviewNote || null } });
+  }, { isolationLevel: "Serializable", timeout: 15000 });
   ok(res, updated, "Document review updated");
 });
 
@@ -205,6 +222,10 @@ export const reviewApplicationPayment = asyncHandler(async (req, res) => {
 });
 
 export const deleteApplication = asyncHandler(async (req, res) => {
-  await auditedMutation(prisma, { actorId: req.user.id, action: "application.deleted", targetType: "application", targetId: req.params.id }, (transaction) => transaction.application.delete({ where: { id: req.params.id } }));
+  await auditedMutation(prisma, { actorId: req.user.id, action: "application.deleted", targetType: "application", targetId: req.params.id }, async (transaction) => {
+    const application = await transaction.application.findUnique({ where: { id: req.params.id }, include: { payments: true } });
+    if (application?.status === "ADMITTED" || application?.payments.some((payment) => payment.type === "ACCEPTANCE_FEE" && ["PENDING", "VERIFIED"].includes(payment.status))) throw Object.assign(new Error("Student records and acceptance payments must be retained. Use the archival workflow instead of deleting them."), { statusCode: 409 });
+    return transaction.application.delete({ where: { id: req.params.id } });
+  }, { isolationLevel: "Serializable", timeout: 15000 });
   ok(res, null, "Application deleted");
 });

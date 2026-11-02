@@ -19,7 +19,8 @@ router.post("/webhook", asyncHandler(async (req, res) => {
 
 router.use(requireAuth, requireRole("APPLICANT", "STUDENT"), limit);
 router.post("/checkout", asyncHandler(async (req, res) => {
-  ok(res, await flutterwaveService(prisma).start(req.user.id));
+  const { type } = z.object({ type: z.enum(["APPLICATION_FEE", "ACCEPTANCE_FEE"]).default("APPLICATION_FEE") }).parse(req.body || {});
+  ok(res, await flutterwaveService(prisma).start(req.user.id, type));
 }));
 router.post("/verify", asyncHandler(async (req, res) => {
   const { reference } = z.object({ reference: z.string().min(1).max(100) }).parse(req.body);

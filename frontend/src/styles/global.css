@@ -1976,6 +1976,39 @@ textarea {
   min-width: 0;
 }
 
+.admission-offer {
+  display: grid;
+  gap: 14px;
+}
+
+.admission-offer h2,
+.admission-offer p {
+  margin: 0;
+}
+
+.admission-checklist {
+  display: grid;
+  gap: 10px;
+  padding-left: 24px;
+}
+
+.admission-summary {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 220px), 1fr));
+  gap: 18px;
+}
+
+.admission-summary dt {
+  font-size: 13px;
+  color: var(--muted);
+}
+
+.admission-summary dd {
+  margin: 4px 0 0;
+  font-weight: 650;
+  overflow-wrap: anywhere;
+}
+
 .staff-account-fields {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));

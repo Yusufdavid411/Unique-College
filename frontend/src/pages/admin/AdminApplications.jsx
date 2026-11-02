@@ -83,6 +83,20 @@ export default function AdminApplications() {
     finally { setSaving(false); }
   }
 
+  async function saveClearance(event) {
+    event.preventDefault();
+    if (saving) return;
+    const fields = new FormData(event.currentTarget);
+    setSaving(true);
+    setFeedback("");
+    try {
+      const { data } = await api.patch(`/applications/${selectedApplication.id}/clearance`, { status: fields.get("status"), note: fields.get("note") });
+      await openApplication(selectedApplication.id);
+      setFeedback(data.message);
+    } catch (error) { setFeedback(apiErrorMessage(error, "Clearance could not be updated.")); }
+    finally { setSaving(false); }
+  }
+
   function dialogKeyDown(event) {
     if (event.key === "Escape" && !saving) setSelectedApplication(null);
     if (event.key !== "Tab") return;
@@ -122,6 +136,10 @@ export default function AdminApplications() {
               <button className="button" type="submit" disabled={saving}>{saving ? "Saving…" : "Update application status"}</button>
             </form>}
           </section>
+          {selectedApplication.admission?.offered && <details className="review-disclosure"><summary>Offer, acceptance fee and clearance</summary>
+            <dl className="admission-summary"><div><dt>Applicant response</dt><dd>{selectedApplication.admission.response.toLowerCase()}</dd></div><div><dt>Quoted acceptance fee</dt><dd>{selectedApplication.admission.amount == null ? "Not quoted" : `NGN ${Number(selectedApplication.admission.amount).toLocaleString("en-NG")}`}</dd></div><div><dt>Payment</dt><dd>{selectedApplication.admission.paid ? "Confirmed" : "Awaiting payment"}</dd></div><div><dt>Clearance</dt><dd>{selectedApplication.admission.clearanceStatus.toLowerCase().replaceAll("_", " ")}</dd></div></dl>
+            {selectedApplication.status === "ACCEPTED" && <form className="application-review-form" key={`${selectedApplication.id}-${selectedApplication.clearanceStatus}`} onSubmit={saveClearance}><label>Clearance decision<select name="status" defaultValue={selectedApplication.clearanceStatus || "PENDING"} disabled={saving}><option value="PENDING">Pending clearance</option><option value="CORRECTIONS_REQUIRED">Corrections required</option><option value="CLEARED">Cleared for final admission</option></select></label><label>Clearance note<textarea name="note" rows={3} maxLength={2000} defaultValue={selectedApplication.clearanceNote || ""} disabled={saving} /></label><p>Clearance requires the applicant's acceptance, confirmed acceptance fee and verified required documents. Once cleared, choose Admitted in Update status.</p><button className="button" type="submit" disabled={saving}>{saving ? "Saving…" : "Save clearance"}</button></form>}
+          </details>}
           {feedback && <p className="admin-feedback" role="status">{feedback}</p>}
           {ready && <>
             <details className="review-disclosure"><summary>View submitted application</summary><ApplicationRecord application={selectedApplication} /></details>
@@ -133,7 +151,7 @@ export default function AdminApplications() {
             {notification && notification.emailStatus !== "SENT" && <button type="button" className="button secondary" disabled={saving || !selectedApplication.emailConfigured} onClick={retryEmail}>Retry email notification</button>}
             <ol className="review-history">{selectedApplication.statusHistory?.map((event) => <li key={event.id}><strong>{readableStatus(event.toStatus)}</strong><span>{formatDate(event.createdAt)}</span>{event.note && <p>{event.note}</p>}</li>)}</ol>
           </details>}
-          {credentials && <div className="admission-credentials"><strong>Student portal credentials created</strong><span>Username: {credentials.portalUsername}</span><span>Temporary password: {credentials.temporaryPassword}</span><small>Share securely. The student must change this password at first sign-in.</small></div>}
+          {credentials && <div className="admission-credentials"><strong>Student account assigned</strong><span>Username: {credentials.portalUsername}</span><small>The student keeps their existing applicant login and must change their password at the next sign-in to activate student access. No separate password is issued.</small></div>}
         </div>
       </section>
     </div>}

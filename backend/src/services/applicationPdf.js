@@ -117,7 +117,7 @@ export async function paymentReceiptPdf(application, payment) {
   const page = document.addPage([612, 792]);
   page.drawPage(header, { x: 72, y: 694, width: 470, height: 84 });
   const write = fieldWriter([page], font);
-  write(0, payment.type === "APPLICATION_FEE" ? "APPLICATION FORM PAYMENT RECEIPT" : "PAYMENT RECEIPT", 72, 125, 468, "Receipt title", 16);
+  write(0, payment.type === "APPLICATION_FEE" ? "APPLICATION FORM PAYMENT RECEIPT" : payment.type === "ACCEPTANCE_FEE" ? "ACCEPTANCE FEE PAYMENT RECEIPT" : "PAYMENT RECEIPT", 72, 125, 468, "Receipt title", 16);
   const fields = [
     ["Applicant", application.fullName], ["Application number", application.applicationNumber],
     ["Programme", application.courseOfInterest], ["Payment purpose", payment.type.replaceAll("_", " ")],

@@ -13,6 +13,7 @@ import {
 import { requireAuth, requireRole } from "../middleware/auth.js";
 import { requireAdmissionsOpen } from "../services/admissionsPolicy.js";
 import { requireFormAccess } from "../services/formAccess.js";
+import { respondToOffer } from "../controllers/handoverController.js";
 import { documentUpload } from "../middleware/upload.js";
 import { validate } from "../middleware/validate.js";
 import {
@@ -28,6 +29,7 @@ const upload = documentUpload("documents");
 router.post("/register", requireAdmissionsOpen, validate(applicantRegisterSchema), registerApplicant);
 router.use(requireAuth, requireRole("APPLICANT", "STUDENT"));
 router.get("/dashboard", getApplicantDashboard);
+router.post("/offer-response", respondToOffer);
 router.patch("/application", requireFormAccess, validate(applicantApplicationSchema), updateApplicantApplication);
 router.post("/application/submit", requireFormAccess, submitApplicantApplication);
 router.post("/documents", requireFormAccess, upload.single("file"), validate(applicantDocumentSchema), uploadApplicantDocument);

@@ -138,6 +138,14 @@ model Application {
   applicantId           String?           @unique
   applicationNumber     String?           @unique
   formFeeAmount         Decimal?          @db.Decimal(12, 2)
+  acceptanceFeeAmount   Decimal?          @db.Decimal(12, 2)
+  offerResponse         String            @default("PENDING")
+  offerIssuedAt         DateTime?
+  offerRespondedAt      DateTime?
+  clearanceStatus       String            @default("PENDING")
+  clearanceNote         String?
+  clearedBy             String?
+  clearedAt             DateTime?
   fullName              String
   surname               String?
   firstName             String?
@@ -248,6 +256,7 @@ model ApplicationStatusHistory {
   fromStatus    ApplicationStatus?
   toStatus      ApplicationStatus
   note          String?
+  kind          String             @default("STATUS")
   changedBy     String
   createdAt     DateTime           @default(now())
   emailStatus   String             @default("NOT_REQUIRED")

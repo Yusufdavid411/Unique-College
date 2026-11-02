@@ -1,4 +1,5 @@
 import { Router } from "express";
+import { updateClearance } from "../controllers/handoverController.js";
 import {
   deleteApplication,
   getApplication,
@@ -18,6 +19,7 @@ router.post("/", (req, res) => res.status(410).json({ success: false, message: "
 router.get("/", requireAuth, requirePermission("applications.read"), listApplications);
 router.get("/:id", requireAuth, requirePermission("applications.read"), validate(idParamSchema), getApplication);
 router.patch("/:id/status", requireAuth, requirePermission("applications.review"), validate(statusSchema), updateApplicationStatus);
+router.patch("/:id/clearance", requireAuth, requirePermission("applications.admit"), validate(idParamSchema), updateClearance);
 router.post("/:id/notifications/retry", requireAuth, requirePermission("applications.review"), validate(idParamSchema), retryApplicationNotification);
 router.patch("/:id/documents/:documentId", requireAuth, requirePermission("applications.review"), validate(documentReviewSchema), reviewApplicationDocument);
 router.patch("/:id/payments/:paymentId", requireAuth, requirePermission("payments.verify"), validate(paymentReviewSchema), reviewApplicationPayment);

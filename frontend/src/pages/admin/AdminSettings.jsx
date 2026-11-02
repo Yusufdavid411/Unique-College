@@ -18,6 +18,7 @@ function SchoolSettings() {
   const dirtyFields = useRef(new Set());
   const [values, setValues] = useState(() => schoolSettingsFormValues());
   const [admissions, setAdmissions] = useState(null);
+  const [acceptance, setAcceptance] = useState(null);
   const [saving, setSaving] = useState("");
   const [loading, setLoading] = useState(true);
   const [failed, setFailed] = useState(false);
@@ -30,8 +31,8 @@ function SchoolSettings() {
     const controller = new AbortController();
     setLoading(true);
     setFailed(false);
-    Promise.all([api.get("/settings/school", { signal: controller.signal }), api.get("/settings/admissions", { signal: controller.signal })])
-      .then(([profile, policy]) => { if (!controller.signal.aborted) { dirtyFields.current.clear(); setValues(schoolSettingsFormValues(profile.data.data)); setAdmissions(policy.data.data); } })
+    Promise.all([api.get("/settings/school", { signal: controller.signal }), api.get("/settings/admissions", { signal: controller.signal }), api.get("/settings/acceptance-fee", { signal: controller.signal })])
+      .then(([profile, policy, fee]) => { if (!controller.signal.aborted) { dirtyFields.current.clear(); setValues(schoolSettingsFormValues(profile.data.data)); setAdmissions(policy.data.data); setAcceptance(fee.data.data); } })
       .catch((error) => { if (!controller.signal.aborted) { setFailed(true); setNotice({ type: "error", message: apiErrorMessage(error, "Settings could not be loaded.") }); } })
       .finally(() => { if (!controller.signal.aborted) setLoading(false); });
     return () => controller.abort();
@@ -72,6 +73,19 @@ function SchoolSettings() {
     finally { setSaving(""); }
   }
 
+  async function saveAcceptance(event) {
+    event.preventDefault();
+    if (saving) return;
+    setSaving("acceptance");
+    setNotice({ type: "", message: "" });
+    try {
+      const { data } = await api.put("/settings/acceptance-fee", acceptance);
+      setAcceptance(data.data);
+      setNotice({ type: "success", message: data.message });
+    } catch (error) { setNotice({ type: "error", message: apiErrorMessage(error) }); }
+    finally { setSaving(""); }
+  }
+
   return <div className="school-settings">
     <AdminNotice type={notice.type}>{notice.message}</AdminNotice>
     {loading ? <p role="status">Loading school settings…</p> : failed ? <div className="empty-state"><p>Settings could not load.</p><button type="button" className="button" onClick={() => setRevision((value) => value + 1)}>Try again</button></div> : <>
@@ -85,6 +99,7 @@ function SchoolSettings() {
         <details className="settings-help"><summary>How these controls work</summary><p>New applicants keep the form price quoted when they register. Closing admissions stops new registrations without removing existing applicants' access. Payments use the configured online checkout; bank instructions are no longer needed here.</p></details>
         <LoadingButton type="submit" disabled={Boolean(saving)} loading={saving === "admissions"} loadingText="Saving…">Save admissions settings</LoadingButton>
       </form>}
+      {acceptance && <form className="form-panel" onSubmit={saveAcceptance}><h2>Acceptance fee</h2><label>Acceptance fee (NGN)<input type="number" required min="0" max="10000000" step="0.01" disabled={Boolean(saving)} value={acceptance.amount ?? ""} onChange={(event) => setAcceptance({ amount: event.target.value === "" ? null : Number(event.target.value) })} /></label><p>Applies to newly issued offers. Existing offers keep their quoted fee. Set zero only to waive the fee for new offers.</p><LoadingButton type="submit" disabled={Boolean(saving)} loading={saving === "acceptance"} loadingText="Saving…">Save acceptance fee</LoadingButton></form>}
       {schoolSettingsSections.map((section) => <details className="settings-panel" key={section.id}>
         <summary>{section.title}</summary>
         <form className="form-panel" onSubmit={(event) => saveSection(event, section)}>

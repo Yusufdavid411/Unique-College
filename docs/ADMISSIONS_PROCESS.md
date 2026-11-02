@@ -2,7 +2,9 @@
 
 The backend foundation is the current priority. Complete PostgreSQL connectivity,
 migrations, permission assignments, private storage, and operational verification
-before activating paid admissions in production.
+before activating paid admissions in production. See STUDENT_HANDOVER.md for the
+current offer acceptance, NGN 5,000 configurable acceptance fee, clearance and
+student activation workflow. Earlier manual-payment checkpoints below are historical.
 
 ## Applicant journey
 
@@ -17,7 +19,8 @@ Account creation is distinct from purchasing or submitting a form. Payment must 
 linked to one applicant and admissions intake, with a stable reference. Check the
 amount, currency, merchant account, payment status, and applicant before unlocking
 the form. Payment callbacks must be verified server-side and processed idempotently.
-Keep evidence-based manual verification available only through authorised finance staff.
+Historical manual evidence is retained. Current online payments are verified by
+Flutterwave, not by an administrator approving a receipt.
 
 ## Availability controls implemented now
 
@@ -31,11 +34,11 @@ not bypass the policy.
 
 ## Still pending
 
-Hosted checkout, intake-specific pricing and submission deadlines await approved
-school policy and merchant configuration. The current portal supports a quoted
-form-purchase gate with manual finance verification;
-do not advertise it as live online checkout. Do not invent fee amounts or create a
-merchant account on the school's behalf.
+Live merchant activation, intake-specific pricing, submission deadlines and the
+full academic student portal remain separate work. Hosted Flutterwave checkout
+for application and acceptance fees is implemented, currently in restricted test
+mode. Email delivery requires a configured sender. Do not advertise test payments
+as live money collection or invent additional fees.
 
 ## Research
 

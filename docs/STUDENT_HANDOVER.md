@@ -26,8 +26,10 @@ Recommended Unique College sequence:
 7. Academic registration and subsequent student services use the same identity.
 
 An application-fee payment is not acceptance of an offer or student enrolment.
-Acceptance charges, deadlines and programme-specific clearance requirements require
-school approval; no new charges or automatic policy decisions are introduced here.
+The school approved an initial NGN 5,000 acceptance fee. Administrators can edit
+the amount under Settings; a quote is captured when an offer is issued. Changes
+apply to new offers only. Zero explicitly waives the fee for new offers. No offer
+deadline or additional programme-specific clearance requirement has been invented.
 
 ## Current Stage 1 implementation
 
@@ -39,8 +41,9 @@ school approval; no new charges or automatic policy decisions are introduced her
 - The existing admission action already requires the admissions permission, a paid
   submitted application, declaration and verified required documents. It atomically
   changes the linked user to STUDENT, assigns a student number/portal username,
-  generates a temporary password, requires first-login password change and revokes
-  old sessions. Status history, receipts and the original application are retained.
+  preserves their existing password, requires a password change on the next sign-in
+  to activate student access, and revokes old sessions. No duplicate account or
+  plaintext student password is created. History, receipts and the application remain.
 - Students lists only ADMITTED applications linked to a STUDENT user. ACCEPTED
   applications are not included. Preview records are separate and excluded by default.
 - GET /api/students requires students.read, returns only register fields, disables
@@ -49,20 +52,39 @@ school approval; no new charges or automatic policy decisions are introduced her
   foundation. Existing configurable staff roles need an explicit permission assignment;
   the separate staff portal and its navigation remain Stage 3 work.
 
-## Important differences from the recommended final workflow
+## Acceptance and clearance implemented
 
-ACCEPTED currently means an administrator accepted the application; it does not
-record the applicant accepting an offer. The current transition rules can admit a
-reviewed applicant without a separately recorded offer acceptance or clearance
-checklist. These rules are preserved in this release, not represented as completed
-enrolment. The Students register does not imply that fees, course registration or
-academic enrolment are complete.
+ACCEPTED means the school has issued an offer; the separate offerResponse records
+the applicant's acceptance or decline, with its own timestamp. Responses are
+idempotent and cannot be changed after confirmation without admissions intervention.
+Issuing/reissuing an offer captures the configured price only if a quote has not
+already been recorded. Existing quoted prices are preserved on reissue.
+
+Only an accepted active offer can start ACCEPTANCE_FEE checkout. The same
+Flutterwave service verifies amount, currency, reference and transaction status.
+An application-form payment cannot satisfy the acceptance fee. Preview and real
+payments remain isolated. Repeated checkout/verification cannot duplicate the fee.
+Applicants and administrators download acceptance receipts separately from forms.
+
+An authorised admissions officer records PENDING, CORRECTIONS_REQUIRED or CLEARED
+clearance, with a note and actor/timestamp. Clearing requires an accepted offer,
+verified quoted acceptance payment and verified required admission documents.
+Applicants can upload document corrections when specifically requested in clearance.
+Rejecting a required document invalidates previous clearance. Final admission
+rechecks the requirements inside a serializable transaction; the earlier direct
+review-to-admitted shortcut is blocked. Offers with pending/verified acceptance
+payments cannot be casually withdrawn or deleted. Final student records are retained.
+
+The Students register shows Activation pending until the student changes their
+password using their existing login. Students retain access to their admissions
+records; academic enrolment/course registration is not implied by admission.
 
 The current officialEmail field reserves an address; it does not provision a mailbox.
 Resend delivery and the full student portal are not activated by this register.
-Temporary credentials are shown once to the administrator; they must be shared
-securely. The next identity-delivery improvement should use expiring one-time
-activation links, not email a plaintext password.
+Email notifications never contain a password. Existing first-login password-change
+controls handle activation without requiring a new account, email delivery or a
+password-reset link. Forgotten-password recovery still requires the separate
+email/recovery feature; it is not provided by knowing a student's email address.
 
 ## Deferred database and portal work
 
@@ -70,14 +92,27 @@ activation links, not email a plaintext password.
   referencing actual programmes, sessions, intake and level records. Keep identity
   separate from enrolment so repeat years, transfers and future applications do not
   require duplicate accounts. Preserve the admission/application link and history.
-- Before extending final admission policy: explicit offer and offer-response records,
-  clearance requirements/checks, approval actor/timestamps and transaction-safe,
-  retry-safe finalisation. Keep existing admitted students and identifiers intact.
+- Richer intake/offer records, deadlines and configurable programme-specific clearance
+  checklists can extend the current response/clearance foundation later. Preserve
+  existing admitted students, identifiers and quoted fees.
 - Stage 3: permission-scoped staff workflows for Admissions, Registrar and Finance.
 - Stage 4: student activation and student-facing profile/enrolment portal at
   portal.uniquecollegekwali.com. Do not advertise that portal as complete yet.
-- Stage 6: acceptance and institutional fees only after school-defined policy and
-  verified payment/ledger support. Never treat an unconfigured fee as paid.
+- Stage 6: general institutional fees, invoicing and broader finance workflows.
+  The approved acceptance-fee handover is implemented now; an absent quote is not paid.
 
 Application status notifications depend on the configured email provider. Generating
 an address or credentials must never be described as successful email delivery.
+
+## Migration and activation boundaries
+
+Migration 202611020011_acceptance_handover is additive. Existing admitted students
+are grandfathered with a zero acceptance quote and cleared state; no retrospective
+charge is imposed. Existing active offers receive the approved initial quote.
+The release preflight refuses automatic migration if prior acceptance payments
+exist and require financial reconciliation. Application/payment records are retained.
+
+Flutterwave currently remains restricted test mode on the official portal. The new
+flow is available to designated test accounts through the same server verification
+logic; live payments still require verified school merchant credentials. Resend
+delivery must be configured before promising automated notification delivery.

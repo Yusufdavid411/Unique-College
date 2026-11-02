@@ -6,11 +6,13 @@ export function statusEmailConfigured(configuration = process.env) {
 
 export function statusEmailContent(event) {
   const labels = { SUBMITTED: "Under review", REVIEWED: "Under review", RETURNED: "Corrections required", ACCEPTED: "Application accepted", ADMITTED: "Admitted", REJECTED: "Application decision", INTERVIEW_SCHEDULED: "Interview scheduled" };
-  const status = labels[event.toStatus] || "Application status updated";
-  const instructions = event.toStatus === "RETURNED"
+  const status = event.kind === "OFFER_RESPONSE" ? "Offer response recorded" : event.kind === "CLEARANCE" ? "Clearance updated" : labels[event.toStatus] || "Application status updated";
+  const instructions = ["OFFER_RESPONSE", "CLEARANCE"].includes(event.kind) ? "Sign in to see your offer response, acceptance payment and clearance progress."
+    : event.toStatus === "ADMITTED" ? "Sign in using your existing applicant email and password. You must change your password to activate student access. Your account and admission records are preserved."
+    : event.toStatus === "RETURNED"
     ? "Sign in, read the admissions note, correct your form or documents, and submit again."
-    : ["ACCEPTED", "ADMITTED"].includes(event.toStatus)
-      ? "Your application has been accepted. Sign in to download your application form and see the next steps."
+    : event.toStatus === "ACCEPTED"
+      ? "An admission offer is available. Sign in to accept or decline it, download your application, view your quoted acceptance fee and track clearance. Final admission follows these checks."
       : event.toStatus === "SUBMITTED" || event.toStatus === "REVIEWED"
         ? "Your application is under review. Please check back later for the admissions decision."
         : "Sign in to view your application status and the admissions office's instructions.";

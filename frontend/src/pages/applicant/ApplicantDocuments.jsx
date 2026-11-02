@@ -23,7 +23,7 @@ export default function ApplicantDocuments() {
   if (!application) return <div className="portal-error">Applicant record could not be loaded.</div>;
   if (!formAccess.unlocked) return <FormPurchaseRequired amount={formAccess.amount} />;
 
-  const editable = ["DRAFT", "RETURNED"].includes(application.status);
+  const editable = ["DRAFT", "RETURNED"].includes(application.status) || (application.status === "ACCEPTED" && application.clearanceStatus === "CORRECTIONS_REQUIRED");
 
   async function upload(type, label, file) {
     if (!file) return;

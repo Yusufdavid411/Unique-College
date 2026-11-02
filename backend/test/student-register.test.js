@@ -50,7 +50,7 @@ test("student register is permission-protected, read-only, paginated and isolate
     assert.equal(query.take, 25);
     assert.ok(query.where.OR.every((entry) => Object.values(entry)[0].contains === "Admitted"));
     assert.deepEqual(Object.keys(query.select).sort(), ["id", "fullName", "email", "applicationNumber", "studentNumber", "courseOfInterest", "admittedAt", "applicant"].sort());
-    assert.deepEqual(query.select.applicant.select, { portalUsername: true, isActive: true });
+    assert.deepEqual(query.select.applicant.select, { portalUsername: true, isActive: true, mustChangePassword: true });
     assert.equal((await fetch(base + "?testing=true", { headers: headers("registrar") })).status, 200);
     assert.equal(calls.at(-1).where.isTest, true);
     for (const queryString of ["?page=0", "?page=10001", "?testing=invalid", `?search=${"x".repeat(101)}`]) assert.equal((await fetch(base + queryString, { headers: headers("admin") })).status, 422);

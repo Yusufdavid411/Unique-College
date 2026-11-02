@@ -19,7 +19,7 @@ router.get("/", requireAuth, requirePermission("students.read"), asyncHandler(as
   const [students, total] = await prisma.$transaction([
     prisma.application.findMany({
       where,
-      select: { id: true, fullName: true, email: true, applicationNumber: true, studentNumber: true, courseOfInterest: true, admittedAt: true, applicant: { select: { portalUsername: true, isActive: true } } },
+      select: { id: true, fullName: true, email: true, applicationNumber: true, studentNumber: true, courseOfInterest: true, admittedAt: true, applicant: { select: { portalUsername: true, isActive: true, mustChangePassword: true } } },
       orderBy: [{ admittedAt: "desc" }, { id: "desc" }], skip: (page - 1) * 25, take: 25
     }),
     prisma.application.count({ where })

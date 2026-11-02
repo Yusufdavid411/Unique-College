@@ -10,7 +10,7 @@ import { trustedPaymentCheckout } from "../api/paymentCheckout.js";
 import { ErrorToast } from "./ToastNotifications.jsx";
 
 export default function FlutterwavePayment() {
-  const { application, formAccess, paymentGateway, refresh } = useApplicant();
+  const { application, formAccess, admission, paymentGateway, refresh } = useApplicant();
   const { search } = useLocation();
   const navigate = useNavigate();
   const [busy, setBusy] = useState(false);
@@ -43,13 +43,13 @@ export default function FlutterwavePayment() {
     verify(reference);
   }, [search, verify]);
 
-  async function checkout() {
+  async function checkout(type) {
     if (operation.current) return;
     operation.current = true;
     setBusy(true);
     setNotice("");
     try {
-      const response = await api.post("/payments/flutterwave/checkout");
+      const response = await api.post("/payments/flutterwave/checkout", { type });
       const link = new URL(response.data.data.link);
       if (!trustedPaymentCheckout(link, paymentGateway.mode)) throw new Error("Invalid payment address");
       window.location.assign(link.href);
@@ -67,27 +67,35 @@ export default function FlutterwavePayment() {
     finally { operation.current = false; setBusy(false); }
   }
 
-  return <div className="portal-page">
-    <header className="portal-page-header"><div><span className="eyebrow">Secure online payment</span><h1>Application form payment</h1><p>Pay securely through Flutterwave. Your form unlocks automatically after your payment is verified.</p></div></header>
-    <section className="portal-alert payment-bank-card">
-      <span className="eyebrow">Application fee</span><strong className="payment-fee-value">NGN {Number(formAccess.amount || 0).toLocaleString("en-NG", { minimumFractionDigits: 2 })}</strong>
-      {formAccess.unlocked ? <p><CheckCircle2 size={18} /> Your application form is available.</p> : <>
+  function feeCard(type, label, amount, paid, available) {
+    const feePending = pending?.type === type ? pending : null;
+    const canResume = feePending?.provider === "FLUTTERWAVE";
+    const blocked = Boolean(pending && (!canResume || pending.type !== type));
+    return <section className="portal-alert payment-bank-card" key={type} aria-label={label}>
+      <span className="eyebrow">{label}</span><strong className="payment-fee-value">{amount == null ? "Not quoted" : `NGN ${Number(amount).toLocaleString("en-NG", { minimumFractionDigits: 2 })}`}</strong>
+      {paid ? <p><CheckCircle2 size={18} /> {type === "APPLICATION_FEE" ? "Your application form is available." : Number(amount) === 0 ? "No acceptance payment is required. Track clearance on your dashboard." : "Acceptance fee confirmed. Track clearance on your dashboard."}</p> : !available ? <p>{admission?.response === "DECLINED" ? "This offer was declined. Contact admissions if you need assistance." : "Accept your active admission offer on the dashboard before paying this fee."}</p> : <>
         {!paymentGateway.ready && <p role="status">Online payments are temporarily unavailable for this account. Please check back shortly. Do not transfer money outside this checkout.</p>}
-        {pending && !onlinePending && <div><p>An existing receipt is awaiting review. Do not pay twice. Wait for its review, or withdraw an incorrect receipt before paying online.</p><button type="button" className="button secondary" disabled={busy} onClick={withdrawLegacyReceipt}>Withdraw incorrect receipt</button></div>}
-        <LoadingButton type="button" loading={busy} loadingText="Please wait…" disabled={busy || !paymentGateway.ready || Boolean(pending && !onlinePending)} onClick={checkout}><CreditCard size={18} /> {onlinePending ? "Resume Flutterwave checkout" : "Pay with Flutterwave"}</LoadingButton>
-        {onlinePending && <button type="button" className="button secondary" disabled={busy} onClick={() => verify(pending.reference)}>Check payment status</button>}
-        <p>No receipt upload or admin approval is needed for payments verified through Flutterwave. If you have already paid, check the status instead of paying again.</p>
+        {blocked && <p>Another payment is awaiting confirmation. Check its status before paying again.</p>}
+        {pending && !onlinePending && <button type="button" className="button secondary" disabled={busy} onClick={withdrawLegacyReceipt}>Withdraw incorrect receipt</button>}
+        <LoadingButton type="button" loading={busy} loadingText="Please wait…" disabled={busy || !paymentGateway.ready || blocked || amount == null} onClick={() => checkout(type)}><CreditCard size={18} /> {canResume ? "Resume Flutterwave checkout" : "Pay with Flutterwave"}</LoadingButton>
+        {canResume && <button type="button" className="button secondary" disabled={busy} onClick={() => verify(feePending.reference)}>Check payment status</button>}
       </>}
-    </section>
+    </section>;
+  }
+
+  return <div className="portal-page">
+    <header className="portal-page-header"><div><span className="eyebrow">Secure online payment</span><h1>Payments</h1><p>Pay through Flutterwave. Confirmation and separate receipts are automatic.</p></div></header>
+    {feeCard("APPLICATION_FEE", "Application form fee", formAccess.amount, formAccess.unlocked, true)}
+    {admission?.offered && feeCard("ACCEPTANCE_FEE", "Acceptance fee", admission.amount, admission.paid, admission.canPay)}
     <ErrorToast message={notice} />
     <section className="payment-history"><h2>Payment history</h2>
       {!history.length && <div className="empty-state">No payments yet.</div>}
       {history.map((payment) => <article key={payment.id}>
         <span className={`payment-status-icon ${payment.status.toLowerCase()}`}><CreditCard /></span>
-        <div><strong>Application form fee</strong><span>NGN {Number(payment.amount).toLocaleString()} · {payment.reference}</span><small>{payment.status === "VERIFIED" ? "Payment verified" : payment.provider === "FLUTTERWAVE" ? "Awaiting payment confirmation" : payment.status}</small></div>
+        <div><strong>{payment.type === "ACCEPTANCE_FEE" ? "Acceptance fee" : payment.type === "APPLICATION_FEE" ? "Application form fee" : payment.type.replaceAll("_", " ")}</strong><span>NGN {Number(payment.amount).toLocaleString()} · {payment.reference}</span><small>{payment.status === "VERIFIED" ? "Payment verified" : payment.provider === "FLUTTERWAVE" ? "Awaiting payment confirmation" : payment.status}</small></div>
         <div className="payment-receipt-actions">{payment.status === "VERIFIED" && <PrivateFileButton endpoint={`/records/applications/${application.id}/payments/${payment.id}/receipt`} filename={`${payment.reference}-receipt.pdf`}>Download receipt</PrivateFileButton>}{payment.proofPath && <PrivateFileButton path={payment.proofPath}>Download evidence</PrivateFileButton>}</div>
       </article>)}
     </section>
-    <div className="applicant-next-step"><p>{formAccess.unlocked ? "Continue to your application form." : "Your form unlocks once Flutterwave confirms payment."}</p><button type="button" className="button primary" disabled={!formAccess.unlocked || busy} onClick={() => navigate(portalPath("/applicant/application"))}>Next: Application form</button></div>
+    {admission?.offered ? <div className="applicant-next-step"><p>Return to your dashboard to track your offer and clearance.</p><button type="button" className="button" onClick={() => navigate(portalPath("/applicant"))}>View admission progress</button></div> : <div className="applicant-next-step"><p>{formAccess.unlocked ? "Continue to your application form." : "Your form unlocks once Flutterwave confirms payment."}</p><button type="button" className="button primary" disabled={!formAccess.unlocked || busy} onClick={() => navigate(portalPath("/applicant/application"))}>Next: Application form</button></div>}
   </div>;
 }

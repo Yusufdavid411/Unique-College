@@ -1,5 +1,25 @@
 # Stage 1 Worklist
 
+## Acceptance handover checkpoint — 2 November 2026
+
+- The approved acceptance fee starts at NGN 5,000 and is editable under Settings.
+  Each offer retains its quoted price when future pricing changes.
+- Applicant acceptance/decline, automatic acceptance-fee verification, clearance
+  notes/corrections, final admission and existing-account student activation are
+  implemented. See STUDENT_HANDOVER.md for policy and migration details.
+- PostgreSQL TCP connectivity is working for the isolated test database. Both
+  previously skipped integration checks were explicitly executed and passed:
+  persistent role assignments/audit rollback, and the complete applicant-to-student
+  lifecycle including document corrections, separate receipt/form downloads by
+  admin and applicant, session revocation and password-based student activation.
+- Payment-provider responses are simulated in the database-backed integration
+  test; this is not evidence of a new completed charge at Flutterwave. Test data,
+  uploaded fixture files and settings changes are cleaned up afterward.
+- Production merchant activation and actual email delivery remain external
+  configuration gates, not reasons to duplicate accounts or bypass acceptance fees.
+- Earlier connectivity failures and manual-payment notes below are historical
+  checkpoints, not the status of this acceptance-handover verification.
+
 ## Implementation checkpoint — 19 October 2026
 
 The repository now includes configurable access roles, role/staff administration

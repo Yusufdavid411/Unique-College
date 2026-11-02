@@ -1,5 +1,6 @@
 import crypto from "node:crypto";
 import { Prisma } from "@prisma/client";
+import { admissionProgressFor } from "./acceptance.js";
 
 export function paymentConfiguration() {
   const enabled = process.env.PAYMENT_PROVIDER === "flutterwave";
@@ -86,8 +87,9 @@ export function flutterwaveService(database, fetcher = fetch, config = paymentCo
     }
   }
 
-  async function start(applicantId) {
+  async function start(applicantId, type = "APPLICATION_FEE") {
     requireReady();
+    if (!["APPLICATION_FEE", "ACCEPTANCE_FEE"].includes(type)) throw failure("Invalid payment purpose", 422);
     let reserved;
     try {
       reserved = await database.$transaction(async (transaction) => {
@@ -95,12 +97,15 @@ export function flutterwaveService(database, fetcher = fetch, config = paymentCo
         if (!application) throw failure("Applicant record not found", 404);
         if (config.restrictedProductionTest && !application.isTest) throw failure("Test checkout is available only to the school's designated test account. Real payments are unavailable during testing.", 403);
         if (config.mode === "live" && application.isTest) throw failure("Test accounts cannot make live payments.", 403);
-        if (application.formFeeAmount == null || new Prisma.Decimal(application.formFeeAmount).lte(0)) throw failure("No form payment is required for this account.");
-        if (application.payments.some((payment) => payment.type === "APPLICATION_FEE" && payment.status === "VERIFIED")) throw failure("Your application fee is already verified. Continue to your form.");
+        const amount = type === "APPLICATION_FEE" ? application.formFeeAmount : application.acceptanceFeeAmount;
+        if (type === "ACCEPTANCE_FEE" && !admissionProgressFor(application).canPay) throw failure("Accept an active admission offer before paying its acceptance fee, or check your existing payment.");
+        if (amount == null || new Prisma.Decimal(amount).lte(0)) throw failure("No payment is required for this purpose.");
+        if (application.payments.some((payment) => payment.type === type && payment.status === "VERIFIED")) throw failure("This fee is already verified. Do not pay again.");
         let payment = application.payments.find((item) => item.status === "PENDING");
         if (payment && payment.provider !== "FLUTTERWAVE") throw failure("An existing receipt is awaiting review. Resolve or withdraw it before paying online.");
+        if (payment && payment.type !== type) throw failure("Another payment is awaiting confirmation. Check its status before paying a different fee.");
         if (!payment) {
-          payment = await transaction.payment.create({ data: { applicationId: application.id, isTest: config.mode === "test", type: "APPLICATION_FEE", provider: "FLUTTERWAVE", amount: application.formFeeAmount, currency: "NGN", reference: `UCHK-FLW-${crypto.randomUUID()}` } });
+          payment = await transaction.payment.create({ data: { applicationId: application.id, isTest: config.mode === "test", type, provider: "FLUTTERWAVE", amount, currency: "NGN", reference: `UCHK-FLW-${crypto.randomUUID()}` } });
           await transaction.auditLog.create({ data: { actorId: applicantId, action: "payment.checkout.created", targetType: "payment", targetId: payment.id } });
         }
         return { payment, application };
@@ -121,7 +126,7 @@ export function flutterwaveService(database, fetcher = fetch, config = paymentCo
       tx_ref: payment.reference, amount, currency: payment.currency, redirect_url: config.returnUrl,
       payload_hash: payloadHash, session_duration: 1440,
       customer: { email: application.email, name: application.fullName, phonenumber: application.phoneNumber },
-      customizations: { title: "Unique College", description: "Application form fee" }
+      customizations: { title: "Unique College", description: payment.type === "ACCEPTANCE_FEE" ? "Admission acceptance fee" : "Application form fee" }
     });
     let checkout;
     try { checkout = new URL(result.link); } catch { throw failure("The payment provider returned an invalid checkout address.", 502); }

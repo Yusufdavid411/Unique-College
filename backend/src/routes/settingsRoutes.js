@@ -1,8 +1,10 @@
 import { Router } from "express";
-import { listSettings, upsertSetting, readAdmissionsPolicy, saveAdmissionsPolicy, readSchoolProfile, updateSchoolProfile } from "../controllers/settingsController.js";
+import { listSettings, upsertSetting, readAdmissionsPolicy, saveAdmissionsPolicy, readSchoolProfile, updateSchoolProfile, readAcceptancePolicy, saveAcceptancePolicy } from "../controllers/settingsController.js";
 import { requireAuth, requirePermission } from "../middleware/auth.js";
 
 const router = Router();
+router.get("/acceptance-fee", requireAuth, requirePermission("settings.manage"), readAcceptancePolicy);
+router.put("/acceptance-fee", requireAuth, requirePermission("settings.manage"), saveAcceptancePolicy);
 router.get("/school", readSchoolProfile);
 router.patch("/school", requireAuth, requirePermission("settings.manage"), updateSchoolProfile);
 router.get("/admissions", readAdmissionsPolicy);

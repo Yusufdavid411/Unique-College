@@ -4,14 +4,20 @@ import { useApplicant } from "../context/ApplicantContext.jsx";
 import { portalPath } from "../api/portalLinks.js";
 
 export default function ApplicantProgress() {
-  const { application, formAccess, paymentGateway, loading, refresh } = useApplicant();
+  const { application, formAccess, admission, paymentGateway, loading, refresh } = useApplicant();
   const { pathname } = useLocation();
   if (!application) return null;
   const paid = !loading && formAccess.unlocked;
   const submitted = !["DRAFT", "RETURNED"].includes(application.status);
   const pending = application.payments?.some((payment) => payment.type === "APPLICATION_FEE" && payment.status === "PENDING");
   const automatic = paymentGateway.provider === "FLUTTERWAVE";
-  const steps = [
+  const steps = admission?.offered ? [
+    { title: "Account", path: "/applicant", complete: true },
+    { title: "Offer", path: "/applicant", complete: admission.response === "ACCEPTED" },
+    { title: "Acceptance fee", path: "/applicant/payments", locked: admission.response !== "ACCEPTED", complete: admission.paid },
+    { title: "Clearance", path: "/applicant", locked: !admission.paid, complete: admission.clearanceStatus === "CLEARED" },
+    { title: "Admission", path: "/applicant", locked: admission.clearanceStatus !== "CLEARED", complete: application.status === "ADMITTED" }
+  ] : [
     { title: "Account", path: "/applicant", complete: true },
     { title: "Payment", path: "/applicant/payments", complete: paid },
     { title: "Application", path: "/applicant/application", locked: !paid, complete: paid && submitted },
