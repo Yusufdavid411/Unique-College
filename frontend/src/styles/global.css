@@ -1970,6 +1970,37 @@ textarea {
   align-items: start;
 }
 
+.staff-accounts {
+  display: grid;
+  gap: 24px;
+  min-width: 0;
+}
+
+.staff-account-fields {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 20px;
+}
+
+.student-search {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: end;
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
+.student-search label {
+  flex: 1 1 260px;
+  min-width: 0;
+}
+
+@media (max-width: 640px) {
+  .staff-account-fields {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
 .table-wrap {
   overflow-x: auto;
   background: white;

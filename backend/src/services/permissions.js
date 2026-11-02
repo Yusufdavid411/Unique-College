@@ -1,5 +1,5 @@
 export const permissionKeys = Object.freeze([
-  "applications.read", "applications.review", "applications.admit",
+  "applications.read", "applications.review", "applications.admit", "students.read",
   "payments.verify", "content.manage", "settings.manage", "roles.manage", "audit.read", "users.manage", "analytics.read"
 ]);
 

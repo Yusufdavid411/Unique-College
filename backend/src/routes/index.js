@@ -16,6 +16,7 @@ import userRoutes from "./userRoutes.js";
 import recordRoutes from "./recordRoutes.js";
 import paymentGatewayRoutes from "./paymentGatewayRoutes.js";
 import analyticsRoutes from "./analyticsRoutes.js";
+import studentRoutes from "./studentRoutes.js";
 
 const router = Router();
 
@@ -45,6 +46,7 @@ router.use("/audit", auditRoutes);
 router.use("/files", fileRoutes);
 router.use("/events", eventRoutes);
 router.use("/users", userRoutes);
+router.use("/students", studentRoutes);
 router.use("/records", recordRoutes);
 router.use("/payments/flutterwave", paymentGatewayRoutes);
 router.use("/analytics", analyticsRoutes);

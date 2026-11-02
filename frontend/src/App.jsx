@@ -29,6 +29,7 @@ import AdminRoles from "./pages/admin/AdminRoles.jsx";
 import AdminAudit from "./pages/admin/AdminAudit.jsx";
 import AdminEvents from "./pages/admin/AdminEvents.jsx";
 import AdminUsers from "./pages/admin/AdminUsers.jsx";
+import AdminStudents from "./pages/admin/AdminStudents.jsx";
 import Events from "./pages/public/Events.jsx";
 import Privacy from "./pages/public/Privacy.jsx";
 import ChangePassword from "./components/ChangePassword.jsx";
@@ -95,6 +96,7 @@ export default function App() {
         <Route path="audit" element={<AdminAudit />} />
         <Route path="events" element={<AdminEvents />} />
         <Route path="users" element={<AdminUsers />} />
+        <Route path="students" element={<AdminStudents />} />
         <Route path="security" element={<Navigate to={`${portalPath("/admin/settings")}?tab=security`} replace />} />
       </Route>
       </>}

@@ -11,6 +11,9 @@ Prisma ORM, PostgreSQL database, JWT authentication, and role-based security.
 For the latest implementation and live validation checkpoint, see
 STAGE_1_WORKLIST.md. The initial audit below records the starting position.
 
+See STUDENT_HANDOVER.md for the researched applicant-to-student lifecycle,
+the Stage 1 admitted-student register and the deferred enrolment/portal work.
+
 ### Already in place
 
 - React/Vite public website and administration interface.

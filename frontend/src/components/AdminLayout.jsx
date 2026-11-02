@@ -9,6 +9,7 @@ import { useSchool } from "../context/SchoolContext.jsx";
 const items = [
   ["Overview", "/admin", LayoutDashboard],
   ["Applications", "/admin/applications", Users],
+  ["Students", "/admin/students", Users, "students.read"],
   ["News", "/admin/news", Newspaper],
   ["Events", "/admin/events", LayoutDashboard],
   ["Gallery", "/admin/gallery", Images],
@@ -42,7 +43,7 @@ export default function AdminLayout() {
         </div>
         <button className="admin-menu-toggle" type="button" aria-label={menuOpen ? "Close admin navigation" : "Open admin navigation"} aria-expanded={menuOpen} aria-controls="admin-navigation" onClick={() => setMenuOpen((open) => !open)}>{menuOpen ? <X size={22} /> : <Menu size={22} />}</button>
         <nav id="admin-navigation" aria-label="Admin navigation">
-          {items.map(([label, path, Icon]) => (
+          {items.filter(([, , , permission]) => !permission || user?.role === "ADMIN" || user?.permissions?.includes(permission)).map(([label, path, Icon]) => (
             <NavLink key={path} to={portalPath(path)} end={path === "/admin"} onClick={() => setMenuOpen(false)}>
               <Icon size={18} />
               {label}
