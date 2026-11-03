@@ -85,8 +85,8 @@ export default function FlutterwavePayment() {
 
   return <div className="portal-page">
     <header className="portal-page-header"><div><span className="eyebrow">Secure online payment</span><h1>Payments</h1><p>Pay through Flutterwave. Confirmation and separate receipts are automatic.</p></div></header>
-    {feeCard("APPLICATION_FEE", "Application form fee", formAccess.amount, formAccess.unlocked, true)}
     {screening?.eligible && feeCard("SCREENING_FEE", "Screening / entrance-exam fee", screening.amount, screening.paid, true)}
+    {feeCard("APPLICATION_FEE", "Application form fee", formAccess.amount, formAccess.unlocked, true)}
     {admission?.offered && feeCard("ACCEPTANCE_FEE", "Acceptance fee", admission.amount, admission.paid, admission.canPay)}
     <ErrorToast message={notice} />
     <section className="payment-history"><h2>Payment history</h2>
