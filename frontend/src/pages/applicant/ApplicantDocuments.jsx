@@ -22,6 +22,7 @@ export default function ApplicantDocuments() {
   const { application, journey, formAccess, loading, refresh } = useApplicant();
   const navigate = useNavigate();
   const operation = useRef(false);
+  const submitDialog = useRef(null);
   const [busy, setBusy] = useState("");
   const [notice, setNotice] = useState({ type: "", message: "" });
   if (loading) return <div className="portal-loading">Loading documents...</div>;
@@ -61,7 +62,6 @@ export default function ApplicantDocuments() {
 
   async function submitForReview() {
     if (operation.current || !journey.canSubmit) return;
-    if (!window.confirm("Submit your saved application and supporting documents for admissions review? They will be locked while the school reviews them.")) return;
     operation.current = true;
     setBusy("submit");
     setNotice({ type: "", message: "" });
@@ -103,7 +103,15 @@ export default function ApplicantDocuments() {
         })}
       </section>
       {["DRAFT", "RETURNED"].includes(application.status) && <section className="student-card"><h2>Submit your application for review</h2>{journey.documentsMissing.length ? <><p>Upload or replace these required documents before submitting:</p><ul>{journey.documentsMissing.map((label) => <li key={label}>{label}</li>)}</ul></> : <p>All required uploads are present. Check your saved details and documents before submitting.</p>}<details><summary>Review saved application details</summary><ApplicationRecord application={application} /></details></section>}
-      {["DRAFT", "RETURNED"].includes(application.status) && <div className="document-page-actions"><Link className="button secondary" to={portalPath("/applicant/application")}><ArrowLeft size={18} />Previous: Application form</Link><LoadingButton type="button" disabled={Boolean(busy) || !journey.canSubmit} loading={busy === "submit"} loadingText="Submitting…" onClick={submitForReview}><Send size={18} />Submit for review</LoadingButton></div>}
+      {["DRAFT", "RETURNED"].includes(application.status) && <div className="document-page-actions"><Link className="button secondary" to={portalPath("/applicant/application")}><ArrowLeft size={18} />Previous: Application form</Link><LoadingButton type="button" disabled={Boolean(busy) || !journey.canSubmit} loading={busy === "submit"} loadingText="Submitting…" onClick={() => submitDialog.current.showModal()}><Send size={18} />Submit for review</LoadingButton></div>}
+      <dialog ref={submitDialog} className="private-preview-dialog application-submit-dialog" aria-labelledby="submit-review-title" aria-describedby="submit-review-description">
+        <h2 id="submit-review-title">Submit your application?</h2>
+        <p id="submit-review-description">Your saved form and supporting documents will be locked while admissions reviews them.</p>
+        <form method="dialog" className="document-page-actions">
+          <button className="button secondary" type="submit">Keep editing</button>
+          <button className="button primary" type="button" onClick={() => { submitDialog.current.close(); submitForReview(); }}><Send size={18} />Confirm submission</button>
+        </form>
+      </dialog>
       {!["DRAFT", "RETURNED"].includes(application.status) && <div className="document-page-actions"><Link className="button secondary" to={portalPath("/applicant/application")}><ArrowLeft size={18} />Previous: Application form</Link><Link className="button" to={portalPath("/applicant")}>View application status</Link></div>}
     </div>
   );
