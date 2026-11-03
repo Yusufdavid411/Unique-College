@@ -4,6 +4,7 @@ import AdminNotice from "../../components/AdminNotice.jsx";
 import LoadingButton from "../../components/LoadingButton.jsx";
 import ChangePassword from "../../components/ChangePassword.jsx";
 import AdmissionsDocumentsSettings from "../../components/AdmissionsDocumentsSettings.jsx";
+import PlatformReadiness from "../../components/PlatformReadiness.jsx";
 import { api, apiErrorMessage } from "../../api/client.js";
 import { useAdmissions } from "../../context/AdmissionsContext.jsx";
 import { useSchool } from "../../context/SchoolContext.jsx";
@@ -88,6 +89,7 @@ function SchoolSettings() {
   }
 
   return <div className="school-settings">
+    <PlatformReadiness />
     <AdminNotice type={notice.type}>{notice.message}</AdminNotice>
     {loading ? <p role="status">Loading school settings…</p> : failed ? <div className="empty-state"><p>Settings could not load.</p><button type="button" className="button" onClick={() => setRevision((value) => value + 1)}>Try again</button></div> : <>
       {admissions && <form className="form-panel" onSubmit={saveAdmissions}>

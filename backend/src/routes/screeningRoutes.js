@@ -8,6 +8,7 @@ import { ok } from "../utils/apiResponse.js";
 import { readyForReview } from "../services/applicationReview.js";
 import { documentsPolicy, screeningPolicy, screeningProgress, renderAdmissionMessage } from "../services/admissionDocuments.js";
 import { attemptStatusEmail, statusEmailConfigured } from "../services/statusEmail.js";
+import { processNotificationQueue } from "../services/notificationQueue.js";
 
 const router = Router();
 const conflict = (message) => Object.assign(new Error(message), { statusCode: 409 });
@@ -59,8 +60,7 @@ router.patch("/:id/result", requirePermission("applications.admit"), asyncHandle
 }));
 router.post("/dispatch", requirePermission("applications.review"), asyncHandler(async (req, res) => {
   if (!statusEmailConfigured()) return res.status(503).json({ message: "Email delivery is not configured. Portal notifications are available; configure the verified school sender to send email." });
-  const events = await prisma.applicationStatusHistory.findMany({ where: { emailStatus: { in: ["PENDING", "FAILED"] }, emailRecipient: { not: null } }, orderBy: { createdAt: "asc" }, take: 5, select: { id: true } });
-  const results = await Promise.all(events.map((event) => attemptStatusEmail(event.id)));
-  ok(res, { attempted: events.length, sent: results.filter((event) => event.status === "SENT").length }, "Email queue batch processed. Check notification history for delivery status.");
+  const result = await processNotificationQueue({ limit: 5 });
+  ok(res, result, "Email queue batch processed. Check notification history for delivery status.");
 }));
 export default router;

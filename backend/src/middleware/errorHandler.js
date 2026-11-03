@@ -14,6 +14,10 @@ export function errorHandler(error, req, res, next) {
     console.error("database_unavailable", { code: error.code });
     return res.status(503).json({ success: false, message: "The service is temporarily unavailable. Please try again shortly." });
   }
+  if (["P1017", "P2024", "P2028"].includes(error.code)) {
+    console.error("database_request_interrupted", { code: error.code });
+    return res.status(503).json({ success: false, message: "The database connection was interrupted or timed out. Refresh your records before trying again; do not repeat a payment." });
+  }
   if (error.code === "P2002") return res.status(409).json({ success: false, message: "A record with these details already exists" });
   if (error.code === "P2034") return res.status(409).json({ success: false, message: "The record changed during another request. Refresh before trying again." });
   if (error.code === "P2025") return res.status(404).json({ success: false, message: "Record not found" });

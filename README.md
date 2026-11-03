@@ -86,6 +86,8 @@ retained as a transitional Node-host deployment option.
 
 See [Screening and school documents](docs/SCREENING_AND_SCHOOL_DOCUMENTS.md) for the revised NGN 5,000 application, NGN 2,000 screening and NGN 5,000 acceptance workflow, editable letter settings and original-template downloads.
 
+See [Live activation checklist](docs/ACTIVATION_CHECKLIST.md) for the admin setup dashboard, secure email/payment configuration and daily notification retries. Official dates and programme durations remain administrator-controlled.
+
 Files are stored on the local server under:
 
 - `backend/uploads/applications`

@@ -26,17 +26,21 @@ export function statusEmailContent(event) {
   };
 }
 
-export async function deliverStatusEmail(eventId, { database = prisma, request = fetch, configuration = process.env, now = new Date() } = {}) {
-  if (!statusEmailConfigured(configuration)) return { status: "NOT_CONFIGURED" };
+export function retryableStatusEmails(now = new Date()) {
   const retryBefore = new Date(now.getTime() - 60000);
   const staleBefore = new Date(now.getTime() - 120000);
   const idempotencyWindow = new Date(now.getTime() - 23 * 60 * 60 * 1000);
-  const claimed = await database.applicationStatusHistory.updateMany({
-    where: { id: eventId, emailRecipient: { not: null }, OR: [
+  return { emailRecipient: { not: null }, OR: [
       { emailStatus: "PENDING" },
       { emailStatus: "FAILED", emailLastAttemptAt: { lt: retryBefore }, OR: [{ emailError: { not: "DELIVERY_UNCONFIRMED" } }, { createdAt: { gt: idempotencyWindow } }] },
       { emailStatus: "SENDING", emailLastAttemptAt: { lt: staleBefore }, createdAt: { gt: idempotencyWindow } }
-    ] },
+    ] };
+}
+
+export async function deliverStatusEmail(eventId, { database = prisma, request = fetch, configuration = process.env, now = new Date() } = {}) {
+  if (!statusEmailConfigured(configuration)) return { status: "NOT_CONFIGURED" };
+  const claimed = await database.applicationStatusHistory.updateMany({
+    where: { id: eventId, ...retryableStatusEmails(now) },
     data: { emailStatus: "SENDING", emailLastAttemptAt: now, emailAttempts: { increment: 1 }, emailError: null }
   });
   if (!claimed.count) return { status: "UNCHANGED" };
