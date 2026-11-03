@@ -15,7 +15,7 @@ import { screened, documentsPolicy, renderAdmissionMessage } from "../services/a
 
 const applicationDetails = {
   applicant: { select: { id: true, name: true, email: true, role: true, portalUsername: true, officialEmail: true } },
-  documents: { orderBy: { createdAt: "desc" } },
+  documents: { where: { supersededAt: null }, orderBy: { createdAt: "desc" } },
   payments: { orderBy: { createdAt: "desc" } },
   statusHistory: { orderBy: { createdAt: "desc" } }, schoolForms: true, admissionLetters: { orderBy: { version: "desc" }, take: 1 }
 };
@@ -90,7 +90,7 @@ export const updateApplicationStatus = asyncHandler(async (req, res) => {
   }
   const current = await prisma.application.findUnique({
     where: { id: req.params.id },
-    include: { applicant: true, documents: true, payments: true, schoolForms: true }
+    include: { applicant: true, documents: { where: { supersededAt: null } }, payments: true, schoolForms: true }
   });
   if (!current) return res.status(404).json({ success: false, message: "Application not found" });
   if (!readyForReview(current)) return res.status(409).json({ success: false, message: "Only a paid, submitted application can be reviewed. Wait for the applicant to submit their form." });
@@ -120,7 +120,7 @@ export const updateApplicationStatus = asyncHandler(async (req, res) => {
   }
 
   const application = await auditedMutation(prisma, { actorId: req.user.id, action: "application.status:" + req.body.status, targetType: "application", targetId: current.id }, async (transaction) => {
-    const latest = await transaction.application.findUnique({ where: { id: current.id }, include: { applicant: true, documents: true, payments: true, schoolForms: true } });
+    const latest = await transaction.application.findUnique({ where: { id: current.id }, include: { applicant: true, documents: { where: { supersededAt: null } }, payments: true, schoolForms: true } });
     if (!latest || latest.status !== current.status || !readyForReview(latest)) throw Object.assign(new Error("This application changed. Refresh before saving."), { statusCode: 409 });
     if (latest.status === "ACCEPTED" && !["ACCEPTED", "ADMITTED"].includes(req.body.status) && latest.payments.some((payment) => payment.type === "ACCEPTANCE_FEE" && ["PENDING", "VERIFIED"].includes(payment.status))) throw Object.assign(new Error("Resolve the recorded acceptance payment before withdrawing this offer."), { statusCode: 409 });
     if (req.body.status === "ADMITTED" && current.status !== "ADMITTED") {
@@ -189,14 +189,14 @@ export const reviewApplicationDocument = asyncHandler(async (req, res) => {
   if (!application || !readyForReview(application)) return res.status(409).json({ success: false, message: "Documents can be reviewed only after payment and application submission." });
   if (application.status === "ADMITTED") return res.status(409).json({ success: false, message: "Admission is final. Student document changes require the student records workflow." });
   const document = await prisma.applicationDocument.findFirst({
-    where: { id: req.params.documentId, applicationId: req.params.id }
+    where: { id: req.params.documentId, applicationId: req.params.id, supersededAt: null }
   });
   if (!document) return res.status(404).json({ success: false, message: "Document not found" });
   const updated = await auditedMutation(prisma, { actorId: req.user.id, action: "document.review:" + req.body.reviewStatus, targetType: "document", targetId: document.id }, async (transaction) => {
     const latest = await transaction.application.findUnique({ where: { id: application.id }, include: { payments: true } });
     if (!latest || latest.status === "ADMITTED" || !readyForReview(latest)) throw Object.assign(new Error("The admission record changed. Refresh before reviewing documents."), { statusCode: 409 });
     if (latest.clearanceStatus === "CLEARED" && req.body.reviewStatus !== "VERIFIED") await transaction.application.update({ where: { id: latest.id }, data: { clearanceStatus: "PENDING", clearedBy: null, clearedAt: null } });
-    return transaction.applicationDocument.update({ where: { id: document.id }, data: { reviewStatus: req.body.reviewStatus, reviewNote: req.body.reviewNote || null } });
+    return transaction.applicationDocument.update({ where: { id: document.id, supersededAt: null }, data: { reviewStatus: req.body.reviewStatus, reviewNote: req.body.reviewNote || null } });
   }, { isolationLevel: "Serializable", timeout: 15000 });
   ok(res, updated, "Document review updated");
 });

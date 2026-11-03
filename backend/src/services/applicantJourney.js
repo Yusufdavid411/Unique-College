@@ -14,7 +14,7 @@ export function applicationFormMissing(application) {
 }
 
 export function applicationDocumentsMissing(application) {
-  return requiredAdmissionDocuments.filter((type) => !(application.documents || []).some((document) => document.type === type && document.reviewStatus !== "REJECTED")).map((type) => documentLabels[type]);
+  return requiredAdmissionDocuments.filter((type) => !(application.documents || []).some((document) => !document.supersededAt && document.type === type && document.reviewStatus !== "REJECTED")).map((type) => documentLabels[type]);
 }
 
 export function applicantJourney(application) {

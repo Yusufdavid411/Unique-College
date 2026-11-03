@@ -8,6 +8,7 @@ import { prisma } from "../src/config/prisma.js";
 import { env } from "../src/config/env.js";
 import { uploadRoot } from "../src/config/uploads.js";
 import { resolveUploadPath } from "../src/services/fileAccess.js";
+import { replaceApplicationDocument } from "../src/services/applicationDocuments.js";
 
 test("saved applicant resumes at the first incomplete stage and submits only after documents", { skip: !process.env.INTEGRATION_DATABASE_URL, timeout: 240000 }, async () => {
   assert.match(new URL(process.env.DATABASE_URL).pathname, /test/i);
@@ -47,6 +48,33 @@ test("saved applicant resumes at the first incomplete stage and submits only aft
       uploaded.push((await response.json()).data.path);
     }
     assert.equal((await progress()).canSubmit, true);
+    const oldPassport = await prisma.applicationDocument.findFirst({ where: { applicationId: application.id, type: "PASSPORT", supersededAt: null } });
+    for (let replacement = 0; replacement < 2; replacement++) {
+      const data = new FormData();
+      data.set("type", "PASSPORT");
+      data.set("label", "Replacement passport");
+      data.set("file", new Blob(["%PDF-1.7\nReplacement fixture"], { type: "application/pdf" }), "replacement.pdf");
+      const response = await call("/documents", "POST", data);
+      assert.equal(response.status, 201);
+      const document = (await response.json()).data;
+      uploaded.push(document.path);
+      assert.equal(document.reviewStatus, "PENDING");
+      assert.equal(await prisma.applicationDocument.count({ where: { applicationId: application.id, type: "PASSPORT", supersededAt: null } }), 1);
+      const dashboard = (await (await call("/dashboard")).json()).data;
+      assert.equal(dashboard.application.documents.filter((record) => record.type === "PASSPORT").length, 1);
+      assert.equal(dashboard.application.passportPath, document.path);
+    }
+    assert.ok((await prisma.applicationDocument.findUnique({ where: { id: oldPassport.id } })).supersededAt);
+    assert.equal(await prisma.applicationDocument.count({ where: { applicationId: application.id, type: "PASSPORT" } }), 3);
+    const oldFile = await fetch(`http://127.0.0.1:${server.address().port}/api/files?path=${encodeURIComponent(oldPassport.path)}`, { headers: { Authorization: `Bearer ${jwt.sign({ sub: user.id, version: 0 }, env.jwtSecret)}` } });
+    assert.equal(oldFile.status, 404);
+    await assert.rejects(() => prisma.applicationDocument.create({ data: { applicationId: application.id, type: "PASSPORT", label: "Duplicate rejected by constraint", path: "/uploads/documents/duplicate.pdf", fileType: "application/pdf", fileSize: 10 } }), (error) => error.code === "P2002");
+    const beforeFailure = await prisma.application.findUnique({ where: { id: application.id } });
+    const failingAudit = { $transaction: (callback, options) => prisma.$transaction((transaction) => callback({ ...transaction, auditLog: { create: async () => { throw new Error("Fixture audit failure"); } } }), options) };
+    await assert.rejects(() => replaceApplicationDocument(failingAudit, beforeFailure, { type: "PASSPORT", label: "Must roll back", path: "/uploads/documents/rollback.pdf", fileType: "application/pdf", fileSize: 10 }, user.id), /Fixture audit failure/);
+    assert.equal((await prisma.application.findUnique({ where: { id: application.id } })).passportPath, beforeFailure.passportPath);
+    assert.equal(await prisma.applicationDocument.count({ where: { applicationId: application.id, type: "PASSPORT", supersededAt: null } }), 1);
+    assert.equal(await prisma.applicationDocument.count({ where: { applicationId: application.id, type: "PASSPORT" } }), 3);
     assert.equal((await call("/application", "PATCH", { guardianPhone: "" })).status, 200);
     assert.equal((await progress()).current, "application");
     assert.equal((await call("/application/submit", "POST")).status, 422);

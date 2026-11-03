@@ -3,7 +3,7 @@ export const studentInclude = {
   user: { select: { id: true, name: true, email: true, portalUsername: true, officialEmail: true, isActive: true, mustChangePassword: true, role: true } },
   application: { select: { id: true, applicantId: true, isTest: true, status: true, fullName: true, dateOfBirth: true, gender: true, nationality: true, studentNumber: true, applicationNumber: true, courseOfInterest: true, admittedAt: true,
     offerResponse: true, acceptanceFeeAmount: true, schoolForms: true, admissionLetters: { orderBy: { version: "desc" }, take: 1 },
-    documents: { select: { id: true, type: true, label: true, path: true, reviewStatus: true } },
+    documents: { where: { supersededAt: null }, select: { id: true, type: true, label: true, path: true, reviewStatus: true } },
     payments: { where: { status: "VERIFIED" }, select: { id: true, type: true, amount: true, currency: true, reference: true, status: true, isTest: true, paidAt: true } } } },
   enrolments: { include: enrolmentInclude, orderBy: [{ session: { startsAt: "desc" } }, { id: "desc" }] }
 };

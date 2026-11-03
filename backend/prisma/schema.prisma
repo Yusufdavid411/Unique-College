@@ -223,6 +223,7 @@ model ApplicationDocument {
   fileSize      Int
   reviewStatus  ReviewStatus @default(PENDING)
   reviewNote    String?
+  supersededAt  DateTime?
   createdAt     DateTime     @default(now())
   updatedAt     DateTime     @updatedAt
 

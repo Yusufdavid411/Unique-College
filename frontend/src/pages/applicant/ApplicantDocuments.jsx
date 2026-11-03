@@ -34,6 +34,8 @@ export default function ApplicantDocuments() {
   async function upload(type, label, file) {
     if (!file || operation.current) return;
     if (file.size > MAX_UPLOAD_BYTES) return setNotice({ type: "error", message: "Choose a document of 4 MB or less." });
+    const replacing = (application.documents || []).some((document) => document.type === type && !document.supersededAt);
+    if (replacing && !window.confirm(`Replace your ${label.toLowerCase()}? Only the new file will be included in your application.`)) return;
     operation.current = true;
     setBusy(type);
     setNotice({ type: "", message: "" });
@@ -44,7 +46,7 @@ export default function ApplicantDocuments() {
     try {
       await api.post("/applicant/documents", data);
       await refresh();
-      setNotice({ type: "success", message: `${label} uploaded successfully.` });
+      setNotice({ type: "success", message: `${label} ${replacing ? "replaced" : "uploaded"} successfully.` });
     } catch (error) {
       setNotice({ type: "error", message: apiErrorMessage(error, "The document could not be uploaded.") });
     } finally {
@@ -74,29 +76,31 @@ export default function ApplicantDocuments() {
 
   return (
     <div className="portal-page">
-      <header className="portal-page-header"><div><span className="eyebrow">Credentials</span><h1>Supporting documents</h1><p>Upload clear scans, up to 4 MB each. Admissions reviews each document independently.</p></div></header>
+      <header className="portal-page-header"><div><span className="eyebrow">Credentials</span><h1>Supporting documents</h1><p>One file per document type, up to 4 MB each. Uploaded files are verified by admissions after you submit.</p></div></header>
       {!editable && <div className="portal-alert"><strong>Uploads locked during review</strong><p>Admissions will return your application if any replacement is required.</p></div>}
       {notice.type === "error" ? <ErrorToast message={notice.message} incident={notice} /> : notice.message && <p className={`form-status ${notice.type}`}>{notice.message}</p>}
       <section className="document-upload-grid">
         {documentTypes.map(([type, label, help], index) => {
-          const uploaded = (application.documents || []).filter((document) => document.type === type);
+          const document = (application.documents || []).find((record) => record.type === type && !record.supersededAt);
           const required = index < 4;
           return (
             <article className="document-upload-card" key={type}>
               <div className="document-upload-heading"><span><FileText /></span><div><h2>{label}{required && <sup>Required</sup>}</h2><p>{help}</p></div></div>
-              {uploaded.map((document) => (
+              {document && (
                 <div className="uploaded-document" key={document.id}>
                   <PrivateFileButton path={document.path}>{document.label}</PrivateFileButton>
-                  <span className={`review-pill ${document.reviewStatus.toLowerCase()}`}>{document.reviewStatus === "VERIFIED" ? <CheckCircle2 /> : document.reviewStatus === "REJECTED" ? <XCircle /> : null}{document.reviewStatus}</span>
+                  <span className={`review-pill ${document.reviewStatus.toLowerCase()}`}>{document.reviewStatus === "VERIFIED" ? <CheckCircle2 /> : document.reviewStatus === "REJECTED" ? <XCircle /> : null}{document.reviewStatus === "VERIFIED" ? "Verified" : document.reviewStatus === "REJECTED" ? "Replace required" : journey.submitted ? "Awaiting review" : "Uploaded"}</span>
                 </div>
-              ))}
-              {editable && <label className="document-dropzone"><UploadCloud /><span>{busy === type ? "Uploading..." : uploaded.length ? "Upload another file" : "Choose file to upload"}</span><input type="file" accept="application/pdf,image/png,image/jpeg,image/webp" disabled={Boolean(busy)} onChange={(event) => upload(type, label, event.target.files?.[0])} /></label>}
+              )}
+              {document?.reviewNote && <p className="document-review-note">{document.reviewNote}</p>}
+              {editable && <label className="document-dropzone"><UploadCloud /><span>{busy === type ? "Uploading..." : document ? "Replace file" : "Choose file to upload"}</span><input type="file" accept="application/pdf,image/png,image/jpeg,image/webp" disabled={Boolean(busy)} onChange={(event) => { const file = event.target.files?.[0]; event.target.value = ""; upload(type, label, file); }} /></label>}
             </article>
           );
         })}
       </section>
-      {["DRAFT", "RETURNED"].includes(application.status) && <section className="student-card"><h2>Submit your application for review</h2>{journey.documentsMissing.length ? <><p>Upload or replace these required documents before submitting:</p><ul>{journey.documentsMissing.map((label) => <li key={label}>{label}</li>)}</ul></> : <p>All required uploads are present. Check your saved details and documents before submitting.</p>}<details><summary>Review saved application details</summary><ApplicationRecord application={application} /></details><div className="portal-form-actions"><Link className="button secondary" to={portalPath("/applicant/application")}><ArrowLeft size={18} />Previous: Application form</Link><LoadingButton type="button" disabled={Boolean(busy) || !journey.canSubmit} loading={busy === "submit"} loadingText="Submitting…" onClick={submitForReview}><Send size={18} />Submit for review</LoadingButton></div></section>}
-      {!["DRAFT", "RETURNED"].includes(application.status) && <div className="portal-form-actions"><Link className="button secondary" to={portalPath("/applicant/application")}><ArrowLeft size={18} />Previous: Application form</Link><Link className="button" to={portalPath("/applicant")}>View application status</Link></div>}
+      {["DRAFT", "RETURNED"].includes(application.status) && <section className="student-card"><h2>Submit your application for review</h2>{journey.documentsMissing.length ? <><p>Upload or replace these required documents before submitting:</p><ul>{journey.documentsMissing.map((label) => <li key={label}>{label}</li>)}</ul></> : <p>All required uploads are present. Check your saved details and documents before submitting.</p>}<details><summary>Review saved application details</summary><ApplicationRecord application={application} /></details></section>}
+      {["DRAFT", "RETURNED"].includes(application.status) && <div className="document-page-actions"><Link className="button secondary" to={portalPath("/applicant/application")}><ArrowLeft size={18} />Previous: Application form</Link><LoadingButton type="button" disabled={Boolean(busy) || !journey.canSubmit} loading={busy === "submit"} loadingText="Submitting…" onClick={submitForReview}><Send size={18} />Submit for review</LoadingButton></div>}
+      {!["DRAFT", "RETURNED"].includes(application.status) && <div className="document-page-actions"><Link className="button secondary" to={portalPath("/applicant/application")}><ArrowLeft size={18} />Previous: Application form</Link><Link className="button" to={portalPath("/applicant")}>View application status</Link></div>}
     </div>
   );
 }

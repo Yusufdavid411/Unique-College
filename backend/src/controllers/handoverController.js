@@ -46,7 +46,7 @@ export const updateClearance = asyncHandler(async (req, res) => {
   const { status, note } = z.object({ status: z.enum(["PENDING", "CLEARED", "CORRECTIONS_REQUIRED"]), note: z.string().trim().max(2000).default("") }).strict()
     .refine((value) => value.status !== "CORRECTIONS_REQUIRED" || value.note.length >= 5, { path: ["note"], message: "Explain the required clearance corrections" }).parse(req.body);
   const result = await transaction(async (database) => {
-    const application = await database.application.findUnique({ where: { id: req.params.id }, include: { payments: true, documents: true, schoolForms: true } });
+    const application = await database.application.findUnique({ where: { id: req.params.id }, include: { payments: true, documents: { where: { supersededAt: null } }, schoolForms: true } });
     if (!application || application.status !== "ACCEPTED") throw conflict("Clearance is available only for an active admission offer.");
     const progress = admissionProgressFor(application);
     if (status === "CLEARED" && application.requiresAcceptanceForm && !(application.schoolForms || []).some((form) => form.kind === "ACCEPTANCE" && form.status === "SUBMITTED")) throw conflict("The applicant must submit the paid acceptance form before clearance.");

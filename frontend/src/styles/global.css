@@ -4879,3 +4879,7 @@ th {
 .registration-resume .button, .portal-form-actions .button { white-space: normal; text-align: center; }
 .document-upload-grid + .student-card { margin-top: 1.5rem; min-width: 0; }
 .document-upload-grid + .student-card details { overflow-x: auto; }
+.document-page-actions { display: flex; justify-content: space-between; gap: 1rem; flex-wrap: wrap; margin-top: 1.5rem; padding-top: 1rem; border-top: 1px solid var(--line); }
+.document-page-actions .button { white-space: normal; text-align: center; }
+.document-review-note { color: var(--muted); overflow-wrap: anywhere; }
+@media (max-width: 600px) { .document-page-actions { flex-direction: column; } .document-page-actions .button { width: 100%; } }

@@ -14,6 +14,7 @@ import { attemptStatusEmail } from "../services/statusEmail.js";
 import { admissionProgressFor } from "../services/acceptance.js";
 import { screeningProgress } from "../services/admissionDocuments.js";
 import { applicantJourney, applicationFormMissing, applicationDocumentsMissing } from "../services/applicantJourney.js";
+import { replaceApplicationDocument } from "../services/applicationDocuments.js";
 
 const editableStatuses = ["DRAFT", "RETURNED"];
 const documentsEditable = (application) => editableStatuses.includes(application.status) || (application.status === "ACCEPTED" && application.clearanceStatus === "CORRECTIONS_REQUIRED");
@@ -25,7 +26,7 @@ function applicationNumber() {
 function applicantInclude() {
   return {
     applicant: { select: { portalUsername: true, officialEmail: true, role: true } },
-    documents: { orderBy: { createdAt: "desc" } },
+    documents: { where: { supersededAt: null }, orderBy: { createdAt: "desc" } },
     payments: { orderBy: { createdAt: "desc" } },
     statusHistory: { orderBy: { createdAt: "desc" } },
     schoolForms: true, admissionLetters: { orderBy: { version: "desc" }, take: 1 }
@@ -159,6 +160,7 @@ export const submitApplicantApplication = asyncHandler(async (req, res) => {
 
 export const requireCompletedApplicationForm = asyncHandler(async (req, res, next) => {
   const application = await getApplicantApplication(req.user.id);
+  if (!documentsEditable(application)) return res.status(409).json({ success: false, message: "Documents cannot be changed during review" });
   if (editableStatuses.includes(application.status) && applicationFormMissing(application).length) return res.status(409).json({ success: false, message: "Complete and save your application form before uploading supporting documents." });
   next();
 });
@@ -173,20 +175,7 @@ export const uploadApplicantDocument = asyncHandler(async (req, res) => {
   if (editableStatuses.includes(application.status) && applicationFormMissing(application).length) return res.status(409).json({ success: false, message: "Complete and save your application form before uploading supporting documents." });
 
   const metadata = fileMetadata(req.file, "documents");
-  const document = await prisma.$transaction(async (transaction) => {
-    const changed = await transaction.application.updateMany({ where: { id: application.id, updatedAt: application.updatedAt, status: application.status, ...(application.status === "ACCEPTED" ? { clearanceStatus: "CORRECTIONS_REQUIRED" } : {}) }, data: {
-      updatedAt: new Date(), ...(req.body.type === "PASSPORT" ? { passportPath: metadata.path, passportFileType: metadata.fileType, passportFileSize: metadata.fileSize } : {})
-    } });
-    if (!changed.count) throw Object.assign(new Error("The admission record changed. Refresh before uploading."), { statusCode: 409 });
-    return transaction.applicationDocument.create({ data: {
-      applicationId: application.id,
-      type: req.body.type,
-      label: req.body.label,
-      path: metadata.path,
-      fileType: metadata.fileType,
-      fileSize: metadata.fileSize
-    } });
-  }, { isolationLevel: "Serializable", timeout: 15000 });
+  const document = await replaceApplicationDocument(prisma, application, { type: req.body.type, label: req.body.label, ...metadata }, req.user.id);
 
   created(res, document, "Document uploaded");
 });
@@ -197,14 +186,14 @@ export const deleteApplicantDocument = asyncHandler(async (req, res) => {
     return res.status(409).json({ success: false, message: "Documents cannot be changed during review" });
   }
   const document = await prisma.applicationDocument.findFirst({
-    where: { id: req.params.documentId, applicationId: application.id }
+    where: { id: req.params.documentId, applicationId: application.id, supersededAt: null }
   });
   if (!document) return res.status(404).json({ success: false, message: "Document not found" });
   if (application.status === "ACCEPTED" && document.reviewStatus === "VERIFIED") return res.status(409).json({ success: false, message: "Verified admission documents must be retained. Upload a correction instead." });
   await prisma.$transaction(async (transaction) => {
-    const changed = await transaction.application.updateMany({ where: { id: application.id, updatedAt: application.updatedAt, status: application.status, ...(application.status === "ACCEPTED" ? { clearanceStatus: "CORRECTIONS_REQUIRED" } : {}) }, data: { updatedAt: new Date() } });
+    const changed = await transaction.application.updateMany({ where: { id: application.id, updatedAt: application.updatedAt, status: application.status, ...(application.status === "ACCEPTED" ? { clearanceStatus: "CORRECTIONS_REQUIRED" } : {}) }, data: { updatedAt: new Date(), ...(document.type === "PASSPORT" ? { passportPath: null, passportFileType: null, passportFileSize: null } : {}) } });
     if (!changed.count) throw Object.assign(new Error("The admission record changed. Refresh before removing a document."), { statusCode: 409 });
-    await transaction.applicationDocument.delete({ where: { id: document.id } });
+    await transaction.applicationDocument.update({ where: { id: document.id }, data: { supersededAt: new Date() } });
   }, { isolationLevel: "Serializable", timeout: 15000 });
   ok(res, null, "Document removed");
 });

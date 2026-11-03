@@ -21,5 +21,5 @@ export function reviewStatusesFor(status) {
 }
 
 export function hasVerifiedAdmissionDocuments(documents) {
-  return requiredAdmissionDocuments.every((type) => documents.some((document) => document.type === type && document.reviewStatus === "VERIFIED"));
+  return requiredAdmissionDocuments.every((type) => documents.some((document) => !document.supersededAt && document.type === type && document.reviewStatus === "VERIFIED"));
 }

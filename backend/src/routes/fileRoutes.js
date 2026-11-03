@@ -36,7 +36,7 @@ router.get("/", requireAuth, asyncHandler(async (req, res, next) => {
   }
   if (!permitted) {
     const application = await prisma.application.findFirst({
-      where: { OR: [{ passportPath: storedPath }, { documents: { some: { path: storedPath } } }, { payments: { some: { proofPath: storedPath } } }] },
+      where: { OR: [{ passportPath: storedPath }, { documents: { some: { path: storedPath, ...(permissions.includes("applications.read") ? {} : { supersededAt: null }) } } }, { payments: { some: { proofPath: storedPath } } }] },
       select: { applicantId: true }
     });
     permitted = application && canReadApplicantFile(req.user, application.applicantId, permissions);
