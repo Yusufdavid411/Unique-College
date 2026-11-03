@@ -55,6 +55,7 @@ export const listApplications = asyncHandler(async (req, res) => {
     where: { isTest: req.query.testing === "true", ...(status ? { status } : {}) },
     select: {
       id: true, isTest: true, applicationNumber: true, fullName: true, email: true, status: true,
+      applicant: { select: { isActive: true } },
       submittedAt: true, createdAt: true, courseOfInterest: true, formFeeAmount: true, screeningStatus: true, screeningAt: true, screeningFeeAmount: true,
       payments: { select: { status: true, amount: true, type: true, currency: true, isTest: true, provider: true } }
     },

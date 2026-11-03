@@ -19,8 +19,8 @@ router.post("/schedule", requirePermission("applications.review"), asyncHandler(
   const date = new Date(input.date);
   if (date < new Date(Date.now() + 60000)) return res.status(422).json({ message: "Choose a future examination date and time." });
   const result = await prisma.$transaction(async (database) => {
-    const records = await database.application.findMany({ where: { id: { in: input.ids } }, include: { payments: true } });
-    if (records.length !== input.ids.length || records.some((record) => !readyForReview(record) || !["SUBMITTED", "PENDING", "REVIEWED", "INTERVIEW_SCHEDULED"].includes(record.status) || !["NOT_SCHEDULED", "SCHEDULED"].includes(record.screeningStatus))) throw conflict("Only paid, submitted applicants awaiting screening may be scheduled. Refresh the selection.");
+    const records = await database.application.findMany({ where: { id: { in: input.ids } }, include: { payments: true, applicant: { select: { email: true, isActive: true } } } });
+    if (records.length !== input.ids.length || records.some((record) => !record.applicant?.isActive || !readyForReview(record) || !["SUBMITTED", "PENDING", "REVIEWED", "INTERVIEW_SCHEDULED"].includes(record.status) || !["NOT_SCHEDULED", "SCHEDULED"].includes(record.screeningStatus))) throw conflict("Only active applicants with paid, submitted applications awaiting screening may be scheduled. Refresh the selection.");
     if (new Set(records.map((record) => record.isTest)).size > 1) throw conflict("Preview and real applicants must be scheduled separately.");
     const targets = records.filter((record) => record.status !== "INTERVIEW_SCHEDULED" || record.screeningAt?.getTime() !== date.getTime() || record.screeningVenue !== input.venue || (record.screeningInstructions || "") !== input.instructions);
     if (!targets.length) return [];
@@ -29,10 +29,15 @@ router.post("/schedule", requirePermission("applications.review"), asyncHandler(
     const ids = targets.map((record) => record.id);
     await database.application.updateMany({ where: { id: { in: ids }, screeningFeeAmount: null }, data: { screeningFeeAmount: fee.amount } });
     await database.application.updateMany({ where: { id: { in: ids } }, data: { status: "INTERVIEW_SCHEDULED", screeningStatus: "SCHEDULED", screeningAt: date, screeningVenue: input.venue, screeningInstructions: input.instructions } });
-    const events = targets.map((record) => ({ id: crypto.randomUUID(), applicationId: record.id, kind: "SCREENING_SCHEDULE", fromStatus: record.status, toStatus: "INTERVIEW_SCHEDULED", changedBy: req.user.name,
-      note: `Screening scheduled: ${new Intl.DateTimeFormat("en-GB", { timeZone: "Africa/Lagos", dateStyle: "full", timeStyle: "short" }).format(date)}. ${input.venue}. ${input.instructions}`,
-      notificationSubject: "Entrance examination / screening invitation", notificationText: renderAdmissionMessage(policy.screeningMessage, { date: new Intl.DateTimeFormat("en-GB", { timeZone: "Africa/Lagos", dateStyle: "full", timeStyle: "short" }).format(date), venue: input.venue, instructions: input.instructions, programme: record.courseOfInterest }),
-      emailStatus: "PENDING", emailRecipient: record.email }));
+    const dateLabel = `${new Intl.DateTimeFormat("en-GB", { timeZone: "Africa/Lagos", dateStyle: "full", timeStyle: "short" }).format(date)} (WAT)`;
+    const events = targets.map((record) => {
+      const message = renderAdmissionMessage(policy.screeningMessage, { date: dateLabel, venue: input.venue, instructions: input.instructions, programme: record.courseOfInterest });
+      const details = [!policy.screeningMessage.includes("{date}") && `Date and time: ${dateLabel}`, !policy.screeningMessage.includes("{venue}") && `Venue: ${input.venue}`, input.instructions && !policy.screeningMessage.includes("{instructions}") && `Instructions: ${input.instructions}`].filter(Boolean);
+      return { id: crypto.randomUUID(), applicationId: record.id, kind: "SCREENING_SCHEDULE", fromStatus: record.status, toStatus: "INTERVIEW_SCHEDULED", changedBy: req.user.name,
+        note: `Screening scheduled: ${dateLabel}. ${input.venue}. ${input.instructions}`,
+        notificationSubject: "Entrance examination / screening invitation", notificationText: [message, ...details].join("\n"),
+        emailStatus: "PENDING", emailRecipient: record.applicant.email };
+    });
     await database.applicationStatusHistory.createMany({ data: events });
     await database.auditLog.create({ data: { actorId: req.user.id, action: "screening.scheduled", targetType: "application_batch", targetId: crypto.randomUUID() } });
     return events.map((event) => event.id);

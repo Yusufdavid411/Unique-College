@@ -19,7 +19,7 @@ const statusText = {
 };
 
 export default function ApplicantDashboard() {
-  const { application, journey, formAccess, loading, error } = useApplicant();
+  const { application, journey, formAccess, screening, loading, error } = useApplicant();
   if (loading) return <div className="portal-loading">Loading your admission record...</div>;
   if (!application || !journey) return <div className="portal-page"><ErrorToast message={error} /><p>Registration progress could not be loaded. Please refresh the page.</p></div>;
 
@@ -35,18 +35,17 @@ export default function ApplicantDashboard() {
       </header>
 
       <ErrorToast message={error} />
-      {application.statusHistory?.some((event) => event.notificationText) && <section className="student-card"><h2>Admissions notifications</h2><details><summary>View updates from admissions</summary>{application.statusHistory.filter((event) => event.notificationText).slice(0, 20).map((event) => <article key={event.id}><h3>{event.notificationSubject}</h3><time dateTime={event.createdAt}>{new Date(event.createdAt).toLocaleString("en-GB", { timeZone: "Africa/Lagos" })}</time><p>{event.notificationText}</p></article>)}</details></section>}
       {["SUBMITTED", "PENDING", "REVIEWED"].includes(application.status) && <section className="review-status-card" role="status"><span className="eyebrow">Application status</span><h2>Under review</h2><p>Your application has been submitted successfully. Please check back later for the admissions decision.</p></section>}
-      {application.status === "RETURNED" && <section className="review-status-card" role="status"><h2>Corrections required</h2><p>Read the admissions note, update your form or documents, then submit again from Documents.</p></section>}
+      {application.status === "RETURNED" && <section className="review-status-card" role="status"><h2>Corrections required</h2><p>Update your form or any flagged documents, then submit again from Documents.</p></section>}
       <AdmissionOffer />
       <ScreeningProgress />
       {["DRAFT", "RETURNED"].includes(application.status) && <section className="registration-resume student-next-step"><span className="eyebrow">Your next step</span><h2>{application.status === "RETURNED" ? "Continue your corrections" : "Complete your registration"}</h2><p>{!journey.paid ? "Confirm your application payment to unlock the form." : !formComplete ? "Complete and save your application form, then continue to Documents." : !documentsComplete ? "Your form is saved. Upload the remaining required documents." : "Your form and required documents are ready. Open Documents to check them and submit for review."}</p><Link className="button" to={portalPath(journey.path)}>Complete registration<ArrowRight size={18} /></Link></section>}
-      {application.reviewNote && <div className="portal-alert"><strong>Admissions note</strong><p>{application.reviewNote}</p></div>}
+      {["REJECTED", "RETURNED"].includes(application.status) && application.reviewNote && <div className="portal-alert"><strong>{application.status === "REJECTED" ? "Reason for rejection" : "What to correct"}</strong><p>{application.reviewNote}</p></div>}
 
       <section className="portal-progress-card">
         <div><span>Application readiness</span><strong>{progress}%</strong></div>
         <div className="portal-progress"><span style={{ width: `${progress}%` }} /></div>
-        <p>Complete your form and required uploads before final submission.</p>
+        <p>{submitted ? "Your form and supporting documents have been submitted." : "Complete your form and required uploads before final submission."}</p>
       </section>
 
       <section className="portal-card-grid registration-stage-cards" aria-label="Registration stages">
@@ -77,7 +76,7 @@ export default function ApplicantDashboard() {
         </div>
       </section>
 
-      {application.status === "INTERVIEW_SCHEDULED" && application.interviewDate && (
+      {application.status === "INTERVIEW_SCHEDULED" && screening?.status !== "SCHEDULED" && application.interviewDate && (
         <div className="portal-highlight"><Clock3 /><div><strong>Screening scheduled</strong><span>{new Date(application.interviewDate).toLocaleString()}</span></div></div>
       )}
       {application.status === "ADMITTED" && (

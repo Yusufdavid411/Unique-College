@@ -4,6 +4,7 @@ import { NavLink, Outlet, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext.jsx";
 import { ApplicantProvider, useApplicant } from "../context/ApplicantContext.jsx";
 import ApplicantProgress from "./ApplicantProgress.jsx";
+import ApplicantNotifications from "./ApplicantNotifications.jsx";
 import { assetPaths } from "../data/siteData.js";
 import { portalPath } from "../api/portalLinks.js";
 import { useSchool } from "../context/SchoolContext.jsx";
@@ -89,7 +90,7 @@ function ApplicantShell() {
           <header className="applicant-topbar no-print">
             <button ref={menuRef} className="applicant-menu-toggle" type="button" aria-label="Open navigation" aria-expanded={menuOpen} aria-controls="applicant-sidebar" onClick={() => setMenuOpen(true)}><Menu size={23} /></button>
             <div className="applicant-topbar-title"><strong>Pre-admission portal</strong><span>{schoolInfo.shortName}</span></div>
-            <div className="applicant-account"><span className="applicant-account-avatar"><UserRound size={23} /></span><div><strong>{user?.name}</strong><span>Applicant account</span></div></div>
+            <div className="applicant-header-actions"><ApplicantNotifications /><div className="applicant-account"><span className="applicant-account-avatar"><UserRound size={23} /></span><div><strong>{user?.name}</strong><span>Applicant account</span></div></div></div>
           </header>
           <main className="applicant-main">{error && !journey ? <section className="portal-page"><ErrorToast message={error} /><h1>Your progress could not be loaded</h1><p>Refresh your account before continuing. Do not repeat a payment because of a connection problem.</p><button type="button" className="button" disabled={loading} onClick={refresh}>{loading ? "Checking…" : "Refresh registration progress"}</button></section> : <><ApplicantProgress /><Outlet /></>}</main>
         </div>
