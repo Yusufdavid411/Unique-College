@@ -134,10 +134,10 @@ export default function ApplicantApplicationForm() {
             <div className="education-row heading"><span>Subject</span><span>Grade</span><span>Exam body</span><span>Year</span><span /></div>
             {form.educationRecords.map((record, index) => (
               <div className="education-row" key={index}>
-                <input aria-label={`Subject ${index + 1}`} value={record.subject} onChange={(event) => updateEducation(index, "subject", event.target.value)} required />
-                <input aria-label={`Grade ${index + 1}`} value={record.grade} onChange={(event) => updateEducation(index, "grade", event.target.value)} required={index < 5} />
-                <select aria-label={`Exam body ${index + 1}`} value={record.examBody} onChange={(event) => updateEducation(index, "examBody", event.target.value)} required={index < 5}><option value="">Select</option><option>WAEC</option><option>NECO</option><option>GCE</option><option>NABTEB</option><option>Other</option></select>
-                <input aria-label={`Exam year ${index + 1}`} value={record.year} onChange={(event) => updateEducation(index, "year", event.target.value)} inputMode="numeric" required={index < 5} />
+                <label className="education-field"><span aria-hidden="true">Subject</span><input aria-label={`Subject ${index + 1}`} value={record.subject} onChange={(event) => updateEducation(index, "subject", event.target.value)} required /></label>
+                <label className="education-field"><span aria-hidden="true">Grade</span><input aria-label={`Grade ${index + 1}`} value={record.grade} onChange={(event) => updateEducation(index, "grade", event.target.value)} required={index < 5} /></label>
+                <label className="education-field"><span aria-hidden="true">Exam body</span><select aria-label={`Exam body ${index + 1}`} value={record.examBody} onChange={(event) => updateEducation(index, "examBody", event.target.value)} required={index < 5}><option value="">Select</option><option>WAEC</option><option>NECO</option><option>GCE</option><option>NABTEB</option><option>Other</option></select></label>
+                <label className="education-field"><span aria-hidden="true">Year</span><input aria-label={`Exam year ${index + 1}`} value={record.year} onChange={(event) => updateEducation(index, "year", event.target.value)} inputMode="numeric" required={index < 5} /></label>
                 {index >= 5 && <button type="button" onClick={() => setForm((current) => ({ ...current, educationRecords: current.educationRecords.filter((_, itemIndex) => itemIndex !== index) }))} aria-label="Remove subject"><Trash2 size={17} /></button>}
               </div>
             ))}
