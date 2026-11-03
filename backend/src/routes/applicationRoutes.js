@@ -1,5 +1,11 @@
 import { Router } from "express";
 import { z } from "zod";
+import rateLimit from "express-rate-limit";
+import { prisma } from "../config/prisma.js";
+import { asyncHandler } from "../utils/asyncHandler.js";
+import { ok } from "../utils/apiResponse.js";
+import { requestPasswordReset } from "../services/passwordReset.js";
+import { statusEmailConfigured } from "../services/statusEmail.js";
 import { updateClearance } from "../controllers/handoverController.js";
 import {
   deleteApplication,
@@ -20,6 +26,15 @@ const router = Router();
 router.post("/", (req, res) => res.status(410).json({ success: false, message: "Create an applicant account to purchase and complete your application form" }));
 router.get("/", requireAuth, requirePermission("applications.read"), listApplications);
 router.get("/:id", requireAuth, requirePermission("applications.read"), validate(idParamSchema), getApplication);
+router.post("/:id/account/reset-link", requireAuth, requirePermission("applications.read"), requirePermission("users.manage"), rateLimit({ windowMs: 15 * 60000, limit: 10, standardHeaders: "draft-8", legacyHeaders: false }), validate(idParamSchema), asyncHandler(async (req, res) => {
+  res.set("Cache-Control", "no-store");
+  const application = await prisma.application.findUnique({ where: { id: req.params.id }, select: { applicant: { select: { id: true, role: true, isActive: true } } } });
+  const account = application?.applicant;
+  if (!account?.isActive || !["APPLICANT", "STUDENT"].includes(account.role)) return res.status(404).json({ success: false, message: "No active applicant account is linked to this application." });
+  if (!statusEmailConfigured()) return res.status(503).json({ success: false, code: "RESET_EMAIL_NOT_CONFIGURED", message: "Password-reset email is not configured. Set up Resend before sending reset links." });
+  if (!await requestPasswordReset(null, { userId: account.id, actorId: req.user.id })) return res.status(429).json({ success: false, message: "A reset was requested recently. Wait a minute before trying again." });
+  ok(res, null, "Reset email accepted for delivery.");
+}));
 router.delete("/:id/account", requireAuth, requireRole("ADMIN"), validate(idParamSchema.extend({ body: z.object({ confirmation: z.string().trim().email().max(254) }).strict() })), deleteApplicantAccount);
 router.patch("/:id/status", requireAuth, requirePermission("applications.review"), validate(statusSchema), updateApplicationStatus);
 router.patch("/:id/clearance", requireAuth, requirePermission("applications.admit"), validate(idParamSchema), updateClearance);

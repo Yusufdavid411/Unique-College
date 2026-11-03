@@ -1,13 +1,13 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { api } from "../api/client.js";
+import { api, apiErrorMessage } from "../api/client.js";
 import { portalPath } from "../api/portalLinks.js";
 import PasswordInput from "./PasswordInput.jsx";
 import LoadingButton from "./LoadingButton.jsx";
 import Seo from "./Seo.jsx";
 import { useAuth } from "../context/AuthContext.jsx";
 
-export function SendPasswordReset({ email = "" }) {
+export function SendPasswordReset({ applicationId }) {
   const { user } = useAuth();
   const [busy, setBusy] = useState(false);
   const [notice, setNotice] = useState("");
@@ -16,11 +16,15 @@ export function SendPasswordReset({ email = "" }) {
     if (busy) return;
     const address = new FormData(event.currentTarget).get("email");
     setBusy(true); setNotice("");
-    try { const response = await api.post("/auth/send-password-reset", { email: address }); setNotice(response.data.message); }
-    catch {} finally { setBusy(false); }
+    try {
+      const response = applicationId ? await api.post(`/applications/${applicationId}/account/reset-link`, undefined, { notifyOnError: false }) : await api.post("/auth/send-password-reset", { email: address });
+      setNotice(response.data.message);
+    } catch (error) {
+      if (applicationId) setNotice(error.response?.data?.code === "RESET_EMAIL_NOT_CONFIGURED" ? "Reset email is not configured. Set up Resend before sending a reset link." : apiErrorMessage(error));
+    } finally { setBusy(false); }
   }
   if (user?.role !== "ADMIN" && !user?.permissions?.includes("users.manage")) return null;
-  return <form className="form-panel" onSubmit={send}><h2>Send password-reset link</h2><p>Enter the registered email of an applicant, student or staff member. They will choose their own password securely.</p><label>Registered email<input name="email" type="email" defaultValue={email} autoComplete="email" required maxLength={254} /></label><LoadingButton type="submit" loading={busy}>Send reset link</LoadingButton>{notice && <p role="status">{notice}</p>}</form>;
+  return <form className="form-panel" onSubmit={send}>{!applicationId && <><h2>Send password-reset link</h2><p>Enter the registered email of an applicant, student or staff member. They will choose their own password securely.</p><label>Registered email<input name="email" type="email" autoComplete="email" required maxLength={254} /></label></>}<LoadingButton type="submit" loading={busy}>Send reset link</LoadingButton>{notice && <p role="status">{notice}</p>}</form>;
 }
 
 export default function PasswordRecovery({ reset = false, scope = "applicant" }) {

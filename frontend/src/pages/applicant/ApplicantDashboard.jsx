@@ -78,7 +78,7 @@ export default function ApplicantDashboard() {
       </section>
 
       {application.status === "INTERVIEW_SCHEDULED" && application.interviewDate && (
-        <div className="portal-highlight"><Clock3 /><div><strong>Interview scheduled</strong><span>{new Date(application.interviewDate).toLocaleString()}</span></div></div>
+        <div className="portal-highlight"><Clock3 /><div><strong>Screening scheduled</strong><span>{new Date(application.interviewDate).toLocaleString()}</span></div></div>
       )}
       {application.status === "ADMITTED" && (
         <div className="portal-highlight success"><GraduationCap /><div><strong>Congratulations, you are admitted.</strong><span>Student number: {application.studentNumber}</span></div><Link to={portalPath("/applicant/print")}>Open print centre</Link></div>

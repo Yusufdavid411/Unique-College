@@ -16,12 +16,12 @@ export function passwordResetUrl(role, token) {
   return `https://${host}.uniquecollegekwali.com/reset-password#${token}`;
 }
 
-export async function requestPasswordReset(email, { database = prisma, configuration = process.env, request = fetch, actorId = null, now = new Date() } = {}) {
+export async function requestPasswordReset(email, { database = prisma, configuration = process.env, request = fetch, actorId = null, userId, now = new Date() } = {}) {
   if (!statusEmailConfigured(configuration)) throw unavailable();
   const token = crypto.randomBytes(32).toString("hex");
   const tokenHash = digest(token);
   const issued = await database.$transaction(async (transaction) => {
-    const user = await transaction.user.findUnique({ where: { email } });
+    const user = await transaction.user.findUnique({ where: userId ? { id: userId } : { email } });
     if (!user?.isActive) return null;
     await transaction.$queryRaw`SELECT id FROM users WHERE id = ${user.id} FOR UPDATE`;
     const previous = await transaction.passwordReset.findUnique({ where: { userId: user.id } });
@@ -31,7 +31,7 @@ export async function requestPasswordReset(email, { database = prisma, configura
     await transaction.auditLog.create({ data: { actorId: actorId || user.id, action: "user.password_reset_requested", targetType: "user", targetId: user.id } });
     return user;
   }, { maxWait: 10000, timeout: 15000 });
-  if (!issued) return;
+  if (!issued) return false;
   try {
     const response = await request("https://api.resend.com/emails", {
       method: "POST", signal: AbortSignal.timeout(8000),
@@ -39,8 +39,11 @@ export async function requestPasswordReset(email, { database = prisma, configura
       body: JSON.stringify({ from: configuration.RESEND_FROM_EMAIL, to: [issued.email], subject: "Reset your Unique College password", text: `A password reset was requested for your Unique College account.\n\nChoose a new password here:\n${passwordResetUrl(issued.role, token)}\n\nThis link expires in 30 minutes and can only be used once. If you did not request this, ignore this email. Your password has not changed.` })
     });
     if (!response.ok || !(await response.json()).id) throw unavailable();
+    return true;
   } catch {
     await database.passwordReset.deleteMany({ where: { userId: issued.id, tokenHash } });
+    if (userId) throw unavailable();
+    return false;
   }
 }
 
