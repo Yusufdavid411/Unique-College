@@ -2,6 +2,7 @@ import { createContext, useCallback, useContext, useEffect, useRef, useState } f
 import { useLocation } from "react-router-dom";
 import { api } from "../api/client.js";
 import { clearSession, saveSession, scopeForUser, sessionKey, sessionScope, sessionToken } from "../api/session.js";
+import { reportApiError } from "../api/notifications.js";
 
 const AuthContext = createContext(null);
 
@@ -21,7 +22,7 @@ export function AuthProvider({ children }) {
       setSession({ scope, user: null, loading: Boolean(token) });
       if (!token) return;
       try {
-        const response = await api.get("/auth/me", { headers: { Authorization: `Bearer ${token}` } });
+        const response = await api.get("/auth/me", { headers: { Authorization: `Bearer ${token}` }, notifyOnError: false });
         if (!active || current !== version || requestIntent !== intent.current) return;
         const user = response.data.data.user;
         const verifiedScope = scopeForUser(user);
@@ -31,6 +32,7 @@ export function AuthProvider({ children }) {
       } catch (error) {
         if (!active || current !== version || requestIntent !== intent.current) return;
         if ([401, 403].includes(error.response?.status)) clearSession(scope);
+        else reportApiError(error);
         setSession({ scope, user: null, loading: false });
       }
     }

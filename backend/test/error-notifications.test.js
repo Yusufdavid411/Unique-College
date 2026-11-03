@@ -1,9 +1,19 @@
 import test from "node:test";
 import assert from "node:assert/strict";
+import { readFile } from "node:fs/promises";
 import { apiErrorMessage, describeApiError } from "../../frontend/src/api/errorMessages.js";
 import { dismissNotification, getNotifications, notify, reportApiError, reportUnexpectedError } from "../../frontend/src/api/notifications.js";
 
 function clear() { for (const notification of getNotifications()) dismissNotification(notification.id); }
+
+test("expired stored sessions return to login without masquerading as a failed sign-in", async () => {
+  const source = await readFile(new URL("../../frontend/src/context/AuthContext.jsx", import.meta.url), "utf8");
+  assert.match(source, /api\.get\("\/auth\/me", \{ headers:.*notifyOnError: false/);
+  assert.match(source, /if \(\[401, 403\]\.includes\(error.response\?\.status\)\) clearSession\(scope\);\s+else reportApiError\(error\);/);
+  const security = await readFile(new URL("../../frontend/src/components/ChangePassword.jsx", import.meta.url), "utf8");
+  assert.match(security, /Activate staff access/);
+  assert.match(security, /Your temporary password was accepted/);
+});
 
 test("network errors distinguish offline, timeout and unreachable service without inventing a cause", () => {
   assert.match(describeApiError({ code: "ERR_NETWORK" }, false).message, /no internet connection/);
@@ -14,6 +24,12 @@ test("network errors distinguish offline, timeout and unreachable service withou
 
 test("HTTP errors provide useful login, validation, permission and service messages", () => {
   assert.equal(describeApiError({ response: { status: 401 }, config: { url: "/auth/login" } }).title, "Unable to sign in");
+  for (const url of ["/auth/applicant/login", "/auth/student/login", "/auth/staff/login", "https://api.uniquecollegekwali.com/api/auth/staff/login"]) {
+    assert.equal(describeApiError({ response: { status: 401 }, config: { url } }).title, "Unable to sign in");
+    assert.doesNotMatch(describeApiError({ response: { status: 401 }, config: { url } }).message, /session has expired/);
+  }
+  assert.equal(describeApiError({ response: { status: 401 }, config: { url: "/auth/me" } }).title, "Please sign in again");
+  assert.equal(describeApiError({ response: { status: 401 }, config: { url: "/auth/staff/login-history" } }).title, "Please sign in again");
   assert.equal(describeApiError({ response: { status: 401 } }).title, "Please sign in again");
   assert.match(describeApiError({ response: { status: 403, data: { message: "Admission approval permission required" } } }).message, /permission required/);
   assert.match(describeApiError({ response: { status: 422, data: { data: { missing: ["First name", "Date of birth"] } } } }).message, /First name, Date of birth/);

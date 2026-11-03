@@ -5,7 +5,7 @@ export function describeApiError(error, online = globalThis.navigator?.onLine) {
   if (online === false && !status) return { title: "You're offline", message: "Your device has no internet connection. Reconnect, then try again." };
   if (["ECONNABORTED", "ETIMEDOUT"].includes(error?.code) || error?.name === "TimeoutError" || [408, 504].includes(status)) return { title: "Connection timed out", message: payment ? "The payment response is delayed. Do not pay again; check your payment status when the connection improves." : "The request took too long. Check your connection and try again." };
   if (!status) return { title: "Cannot reach the server", message: "We couldn't connect to the school server. Check your internet connection and try again. The service may also be temporarily unavailable." };
-  if (status === 401) return /\/auth\/(?:applicant\/)?login/.test(error?.config?.url || "")
+  if (status === 401) return /\/auth\/(?:applicant\/|student\/|staff\/)?login(?:[/?#]|$)/.test(error?.config?.url || "")
     ? { title: "Unable to sign in", message: "The login details were not accepted. Check your email or username and password, then try again." }
     : { title: "Please sign in again", message: "Your session has expired or is no longer valid. Sign in again to continue." };
   if (status === 429) return { title: "Please wait a moment", message: "Too many requests were made. Wait a little before trying again." };
