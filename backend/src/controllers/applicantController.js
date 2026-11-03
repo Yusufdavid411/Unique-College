@@ -89,7 +89,7 @@ export const registerApplicant = asyncHandler(async (req, res) => {
 
 export const getApplicantDashboard = asyncHandler(async (req, res) => {
   const application = await getApplicantApplication(req.user.id);
-  ok(res, { application, journey: applicantJourney(application), user: toPublicUser(req.user), screening: screeningProgress(application), formAccess: formAccessFor(application), admission: admissionProgressFor(application), paymentGateway: publicPaymentConfiguration(application) });
+  ok(res, { application, journey: applicantJourney(application), user: toPublicUser(req.user), screening: screeningProgress(application), formAccess: formAccessFor(application), admission: admissionProgressFor(application), paymentGateway: publicPaymentConfiguration() });
 });
 
 export const updateApplicantApplication = asyncHandler(async (req, res) => {

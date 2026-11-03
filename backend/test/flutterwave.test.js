@@ -115,7 +115,7 @@ test("test payments cannot use production databases, portals, deployments or liv
   assert.match(paymentConfigurationIssue({ ...config, mode: "live" }), /does not match/);
 });
 
-test("restricted official-portal tests cannot charge or unlock real applicants", async () => {
+test("official-portal test checkout is open to regular applicants without unlocking real records", async () => {
   const productionTest = { ...config, deploymentEnvironment: "production", databaseName: "neondb", returnUrl: "https://apply.uniquecollegekwali.com/payments", restrictedProductionTest: true };
   assert.equal(paymentConfigurationIssue(productionTest), null);
   assert.ok(paymentConfigurationIssue({ ...productionTest, mode: "live", secretKey: "FLWSECK-live-example" }));
@@ -123,17 +123,16 @@ test("restricted official-portal tests cannot charge or unlock real applicants",
   const state = fixture();
   state.application.isTest = false;
   const service = flutterwaveService(state.database, state.fetcher, productionTest);
-  await assert.rejects(service.start("owner"), /designated test account/);
-  assert.equal(state.requests.length, 0);
-  state.application.isTest = true;
+  assert.equal(publicPaymentConfiguration(productionTest).ready, true);
   const checkout = await service.start("owner");
   await service.verify(checkout.reference, "owner");
   assert.equal(state.application.payments[0].isTest, true);
-  assert.equal(formAccessFor(state.application).unlocked, true);
-  assert.equal(formAccessFor({ ...state.application, isTest: false }).unlocked, false);
+  assert.equal(formAccessFor(state.application).unlocked, false);
+  assert.equal(formAccessFor({ ...state.application, isTest: true }).unlocked, true);
   const liveService = flutterwaveService(state.database, state.fetcher, { ...productionTest, restrictedProductionTest: false, mode: "live", secretKey: "FLWSECK-live-example" });
-  await assert.rejects(liveService.start("owner"), /cannot make live payments/);
   await assert.rejects(liveService.verify(checkout.reference, "owner"), /different payment mode/);
+  await liveService.start("owner");
+  assert.equal(state.application.payments.at(-1).isTest, false);
 });
 
 test("sandbox checkout hostname observed from Flutterwave is accepted only in test mode", () => {

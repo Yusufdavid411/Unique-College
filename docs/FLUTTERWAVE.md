@@ -1,5 +1,16 @@
 # Flutterwave application form payments
 
+## Current checkout policy
+
+The official portal temporarily allows any applicant with an eligible unpaid fee
+to open Flutterwave test checkout. Production remains in test-only mode using
+`FLUTTERWAVE_RESTRICTED_PRODUCTION_TEST=true`, which rejects live keys and live
+mode. No frontend layout or copy changes are required. Use only test payment
+details. Test transactions stay marked as test and do not satisfy fees on regular
+applications or issue real admission letters. Use a designated test application
+to exercise the full admission workflow. Existing verified real payments are
+preserved and are not charged again.
+
 ## Updated instruction — 29 October 2026
 
 The user authorised test mode on the official applicant portal and requested the complete
@@ -9,8 +20,8 @@ paused. Never enable unrestricted test checkout for real applicant accounts.
 
 FLUTTERWAVE_RESTRICTED_PRODUCTION_TEST=true allows test credentials on the production API
 only with FLUTTERWAVE_MODE=test, database neondb, and the exact official return URL.
-Only operator-created Application.isTest accounts can start or verify test payments.
-Payments persist isTest and must match both the configured gateway mode and the application.
+Historically, only operator-created Application.isTest accounts could start or verify test payments.
+Payments persist isTest and must match the configured gateway mode; application fee access still requires matching application and payment types (test or real).
 Test payments cannot unlock real applicants. Existing real receipts retain their proper
 format regardless of the globally configured gateway mode.
 

@@ -35,9 +35,8 @@ export function paymentConfigurationIssue(config) {
   return null;
 }
 
-export function publicPaymentConfiguration(application) {
-  const config = paymentConfiguration();
-  return { provider: config.enabled ? "FLUTTERWAVE" : "MANUAL", ready: config.enabled && !paymentConfigurationIssue(config) && (!config.restrictedProductionTest || application?.isTest === true), mode: config.mode };
+export function publicPaymentConfiguration(config = paymentConfiguration()) {
+  return { provider: config.enabled ? "FLUTTERWAVE" : "MANUAL", ready: config.enabled && !paymentConfigurationIssue(config), mode: config.mode };
 }
 
 function failure(message, statusCode = 409) {
@@ -99,13 +98,12 @@ export function flutterwaveService(database, fetcher = fetch, config = paymentCo
       reserved = await database.$transaction(async (transaction) => {
         const application = await transaction.application.findUnique({ where: { applicantId }, include: { payments: true } });
         if (!application) throw failure("Applicant record not found", 404);
-        if (config.restrictedProductionTest && !application.isTest) throw failure("Test checkout is available only to the school's designated test account. Real payments are unavailable during testing.", 403);
         if (config.mode === "live" && application.isTest) throw failure("Test accounts cannot make live payments.", 403);
         const amount = type === "APPLICATION_FEE" ? application.formFeeAmount : type === "SCREENING_FEE" ? application.screeningFeeAmount : application.acceptanceFeeAmount;
         if (type === "SCREENING_FEE" && (application.status !== "INTERVIEW_SCHEDULED" || !readyForReview(application) || application.screeningStatus !== "SCHEDULED" || screeningProgress(application).paid)) throw failure("Screening payment is available only for an active unpaid screening invitation.");
         if (type === "ACCEPTANCE_FEE" && !admissionProgressFor(application).canPay) throw failure("Accept an active admission offer before paying its acceptance fee, or check your existing payment.");
         if (amount == null || new Prisma.Decimal(amount).lte(0)) throw failure("No payment is required for this purpose.");
-        if (application.payments.some((payment) => payment.type === type && payment.status === "VERIFIED")) throw failure("This fee is already verified. Do not pay again.");
+        if (application.payments.some((payment) => payment.type === type && payment.status === "VERIFIED" && (!payment.isTest || config.mode === "test"))) throw failure("This fee is already verified. Do not pay again.");
         let payment = application.payments.find((item) => item.status === "PENDING");
         if (payment && payment.provider !== "FLUTTERWAVE") throw failure("An existing receipt is awaiting review. Resolve or withdraw it before paying online.");
         if (payment && payment.type !== type) throw failure("Another payment is awaiting confirmation. Check its status before paying a different fee.");
@@ -141,7 +139,7 @@ export function flutterwaveService(database, fetcher = fetch, config = paymentCo
   }
 
   async function preparePaidAdmissionLetter(payment) {
-    if (payment.type !== "ACCEPTANCE_FEE") return "NOT_REQUIRED";
+    if (payment.type !== "ACCEPTANCE_FEE" || (payment.isTest && !payment.application.isTest)) return "NOT_REQUIRED";
     try {
       const result = await releaseAdmissionLetter(database, payment.applicationId, { id: "system:flutterwave", name: "Automatic payment confirmation" });
       await attemptStatusEmail(result.eventId);
@@ -154,7 +152,7 @@ export function flutterwaveService(database, fetcher = fetch, config = paymentCo
   async function reconcile(transaction, actorId) {
     const payment = await database.payment.findFirst({ where: { reference: transaction.tx_ref, provider: "FLUTTERWAVE" }, include: { application: { select: { applicantId: true, isTest: true } } } });
     if (!payment || (actorId && payment.application.applicantId !== actorId)) throw failure("Payment not found", 404);
-    if (Boolean(payment.isTest) !== (config.mode === "test") || (config.restrictedProductionTest && !payment.application.isTest)) throw failure("This transaction cannot be applied to this application's payment mode.", 403);
+    if (Boolean(payment.isTest) !== (config.mode === "test")) throw failure("This transaction cannot be applied to this payment mode.", 403);
     assertVerifiedTransaction(payment, transaction);
     if (transaction.status !== "successful") return { paymentId: payment.id, status: payment.status, message: "Payment has not been confirmed. Resume checkout or check again shortly." };
     const transactionId = String(transaction.id);
@@ -178,7 +176,6 @@ export function flutterwaveService(database, fetcher = fetch, config = paymentCo
     const payment = await database.payment.findFirst({ where: { reference, provider: "FLUTTERWAVE", application: { applicantId } }, include: { application: { select: { isTest: true } } } });
     if (!payment) throw failure("Payment not found", 404);
     if (Boolean(payment.isTest) !== (config.mode === "test")) throw failure("This payment belongs to a different payment mode.", 403);
-    if (config.restrictedProductionTest && !payment.application.isTest) throw failure("Test verification is restricted to designated test accounts.", 403);
     if (payment.status === "VERIFIED") return { paymentId: payment.id, status: "VERIFIED", letterStatus: await preparePaidAdmissionLetter(payment) };
     const transaction = await request(`/transactions/verify_by_reference?tx_ref=${encodeURIComponent(payment.reference)}`);
     assertVerifiedTransaction(payment, transaction);
