@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { X } from "lucide-react";
+import { Check, X } from "lucide-react";
 import { api, apiErrorMessage } from "../../api/client.js";
 import PrivateFileButton from "../../components/PrivateFileButton.jsx";
 import ApplicationRecord from "../../components/ApplicationRecord.jsx";
@@ -161,7 +161,7 @@ export default function AdminApplications() {
             {ready && <form key={`${selectedApplication.id}-${selectedApplication.status}`} className="application-review-form" onSubmit={updateApplicationStatus}>
               <label>Update status<select name="status" defaultValue={selectedApplication.status} onChange={(event) => setStatusChoice(event.target.value)} disabled={saving}>{(selectedApplication.allowedStatuses || [selectedApplication.status]).map((status) => <option key={status} value={status}>{readableStatus(status)}</option>)}</select></label>
               {statusChoice === "REJECTED" && <label>Reason for rejection<textarea name="reviewNote" rows="3" maxLength={2000} required defaultValue={selectedApplication.status === "REJECTED" ? selectedApplication.reviewNote || "" : ""} placeholder="Type the exact issue and what needs to be corrected so the applicant knows what to change." disabled={saving} /></label>}
-              <button className="button" type="submit" disabled={saving}>{saving ? "Saving…" : "Update application status"}</button>
+              <button className="button primary application-status-submit" type="submit" disabled={saving}><Check size={18} aria-hidden="true" />{saving ? "Saving…" : "Update application status"}</button>
             </form>}
           </section>
           {user?.role === "ADMIN" && selectedApplication.applicant?.role === "APPLICANT" && selectedApplication.status !== "ADMITTED" && <details className="review-disclosure" key={selectedApplication.id}><summary>Delete applicant account</summary>

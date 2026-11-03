@@ -4341,6 +4341,13 @@ th {
 }
 
 .applicant-form-card label,
+.application-review-form .application-status-submit {
+  justify-self: start;
+  width: fit-content;
+  max-width: 100%;
+  white-space: normal;
+}
+
 .application-review-form label {
   display: grid;
   gap: 7px;

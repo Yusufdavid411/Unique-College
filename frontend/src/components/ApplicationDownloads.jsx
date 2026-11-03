@@ -11,8 +11,7 @@ export default function ApplicationDownloads({ application }) {
       {!payments.length && <p>No verified payment receipts are available yet.</p>}
       {payments.map((payment) => <div className="record-download-payment" key={payment.id}>
         <strong>{payment.type.replaceAll("_", " ")} · NGN {Number(payment.amount).toLocaleString()}</strong>
-        {payment.status === "VERIFIED" ? <PrivateFileButton endpoint={`/records/applications/${application.id}/payments/${payment.id}/receipt`} filename={`${name}-${payment.id}-receipt.pdf`}>Download payment receipt (PDF)</PrivateFileButton> : <span>{payment.status === "REJECTED" ? "Receipt not approved" : "Awaiting payment verification"}</span>}
-        {payment.proofPath && <PrivateFileButton path={payment.proofPath}>Download uploaded payment evidence</PrivateFileButton>}
+        <PrivateFileButton endpoint={`/records/applications/${application.id}/payments/${payment.id}/receipt`} filename={`${name}-${payment.id}-receipt.pdf`}>Download payment receipt (PDF)</PrivateFileButton>
       </div>)}
     </div>
   </section>;
