@@ -4905,10 +4905,12 @@ th {
 .applicant-notifications > summary::-webkit-details-marker { display: none; }
 .applicant-notification-panel { position: absolute; z-index: 10; top: calc(100% + .5rem); right: 0; width: min(350px, calc(100vw - 5rem)); max-height: min(60dvh, 440px); overflow: auto; overflow-wrap: anywhere; padding: 1rem; background: #fff; color: var(--ink); border: 1px solid var(--line); border-radius: 12px; box-shadow: var(--shadow); }
 .applicant-notification-panel h2 { font-size: 1.2rem; margin: 0 0 .5rem; }
-.applicant-notification-panel article { border-top: 1px solid var(--line); padding-top: .65rem; }
+.applicant-notification-panel article { padding: .8rem; border: 1px solid var(--line); border-radius: 8px; background: #f6f9fc; }
+.applicant-notification-panel article + article { margin-top: .65rem; }
 .applicant-notification-panel h3 { font-size: 1rem; margin: 0; }
 .applicant-notification-panel time { font-size: .8rem; }
 .applicant-notification-panel p { white-space: pre-line; }
+.applicant-notification-panel article p { margin: .4rem 0 0; }
 .private-preview-dialog header { display: flex; align-items: center; justify-content: space-between; gap: 1rem; margin-bottom: 1rem; }
 .private-preview-dialog h2 { margin: 0; overflow-wrap: anywhere; }
 .private-preview-dialog img { display: block; max-width: 100%; max-height: 70dvh; object-fit: contain; margin: auto; }

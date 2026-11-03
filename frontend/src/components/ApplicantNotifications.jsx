@@ -1,10 +1,33 @@
 import { Bell } from "lucide-react";
-import { useEffect, useRef } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useApplicant } from "../context/ApplicantContext.jsx";
 
 export default function ApplicantNotifications() {
   const { application } = useApplicant();
+  return <NotificationPanel key={application?.id || "loading"} application={application} />;
+}
+
+function NotificationPanel({ application }) {
   const panel = useRef(null);
+  const storageKey = application?.id ? `unique_college_notifications_read:${application.id}` : null;
+  const [open, setOpen] = useState(false);
+  const [readIds, setReadIds] = useState(() => {
+    if (!storageKey) return [];
+    try {
+      const saved = JSON.parse(localStorage.getItem(storageKey));
+      return Array.isArray(saved) ? saved : [];
+    } catch { return []; }
+  });
+  const events = useMemo(() => (application?.statusHistory || []).filter((event) => event.notificationText).slice(0, 20), [application?.statusHistory]);
+  const unreadCount = events.filter((event) => !readIds.includes(event.id)).length;
+  useEffect(() => {
+    if (!open || !unreadCount) return;
+    const seen = events.map((event) => event.id);
+    setReadIds(seen);
+    if (storageKey) {
+      try { localStorage.setItem(storageKey, JSON.stringify(seen)); } catch {}
+    }
+  }, [open, unreadCount, events, storageKey]);
   useEffect(() => {
     function dismissOutside(event) {
       if (panel.current?.open && !panel.current.contains(event.target)) panel.current.open = false;
@@ -21,9 +44,8 @@ export default function ApplicantNotifications() {
       document.removeEventListener("keydown", dismissOnEscape);
     };
   }, []);
-  const events = (application?.statusHistory || []).filter((event) => event.notificationText).slice(0, 20);
-  return <details ref={panel} className="applicant-notifications">
-    <summary aria-label={`Admissions notifications (${events.length} recent)`}><Bell size={21} aria-hidden="true" />{events.length > 0 && <span aria-hidden="true">{events.length}</span>}</summary>
+  return <details ref={panel} className="applicant-notifications" onToggle={(event) => setOpen(event.currentTarget.open)}>
+    <summary aria-label={unreadCount ? `Admissions notifications (${unreadCount} unread)` : "Admissions notifications"}><Bell size={21} aria-hidden="true" />{unreadCount > 0 && <span aria-hidden="true">{unreadCount}</span>}</summary>
     <section className="applicant-notification-panel" aria-label="Admissions notifications">
       <h2>Notifications</h2>
       {events.length ? events.map((event) => <article key={event.id}>
