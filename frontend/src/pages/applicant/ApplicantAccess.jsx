@@ -95,6 +95,7 @@ export default function ApplicantAccess() {
                 {isRegister ? "Create applicant account" : "Sign in to portal"}<ArrowRight size={18} />
               </LoadingButton>
             </form>
+            {!isRegister && <Link to={portalPath("/applicant/forgot-password")}>Forgot password?</Link>}
             <p className="access-switch">{isRegister ? "Already started?" : "New applicant?"} <Link to={portalPath(isRegister ? "/applicant/login" : "/applicant/register")}>{isRegister ? "Sign in" : "Create an account"}</Link></p>
             </>}
           </div>

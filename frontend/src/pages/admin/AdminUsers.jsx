@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { api, apiErrorMessage } from "../../api/client.js";
+import { SendPasswordReset } from "../../components/PasswordRecovery.jsx";
 
 export default function AdminUsers() {
   const [result, setResult] = useState({ users: [], total: 0 });
@@ -37,6 +38,7 @@ export default function AdminUsers() {
         {result.users.map((user) => <article className="admin-list-item" key={user.id}><div><strong>{user.name}</strong><span>{user.email}</span><small>{user.role} · {user.isActive ? "Active" : "Inactive"}</small></div>{user.role === "STAFF" && <button type="button" disabled={busy} onClick={() => toggle(user)}>{user.isActive ? "Deactivate" : "Activate"}</button>}</article>)}
         <nav className="portal-form-actions" aria-label="Staff account pages"><button type="button" disabled={busy || page === 1} onClick={() => setPage((value) => value - 1)}>Previous</button><span>Page {page}</span><button type="button" disabled={busy || page * 25 >= result.total} onClick={() => setPage((value) => value + 1)}>Next</button></nav>
       </section>
+      <SendPasswordReset />
     </div>
   </div>;
 }

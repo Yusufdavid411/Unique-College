@@ -96,9 +96,21 @@ model User {
   application Application?
   studentProfile StudentProfile?
   portalHandoffs PortalHandoff[]
+  passwordReset PasswordReset?
   roleAssignments UserRoleAssignment[]
 
   @@map("users")
+}
+
+model PasswordReset {
+  userId         String   @id
+  tokenHash      String   @unique @db.VarChar(64)
+  sessionVersion Int
+  expiresAt      DateTime
+  createdAt      DateTime @default(now())
+  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("password_resets")
 }
 
 model AuditLog {

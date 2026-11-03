@@ -19,6 +19,7 @@ import ApplicantDocuments from "./pages/applicant/ApplicantDocuments.jsx";
 import ApplicantPayments from "./pages/applicant/ApplicantPayments.jsx";
 import ApplicantPrintCentre from "./pages/applicant/ApplicantPrintCentre.jsx";
 import AdminLogin from "./pages/admin/AdminLogin.jsx";
+import PasswordRecovery from "./components/PasswordRecovery.jsx";
 import AdminDashboard from "./pages/admin/AdminDashboard.jsx";
 import AdminApplications from "./pages/admin/AdminApplications.jsx";
 import AdminNews from "./pages/admin/AdminNews.jsx";
@@ -61,6 +62,8 @@ export default function App() {
   if (destination) return <div className="loading-screen" role="status">Opening your secure portal…</div>;
   return (
     <Suspense fallback={<div className="loading-screen" role="status">Loading your portal…</div>}><Routes>
+      {["admin", "applicant", "student"].filter((name) => !scope || scope === name).map((name) => <Route key={`${name}-forgot`} path={portalPath(`/${name}/forgot-password`)} element={<PasswordRecovery key={`${name}-forgot`} scope={name} />} />)}
+      {["admin", "applicant", "student"].filter((name) => !scope || scope === name).map((name) => <Route key={`${name}-reset`} path={portalPath(`/${name}/reset-password`)} element={<PasswordRecovery key={`${name}-reset`} reset scope={name} />} />)}
       {!scope && <Route element={<PublicLayout />}>
         <Route index element={<Home />} />
         <Route path="about" element={<About />} />

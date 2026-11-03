@@ -5,11 +5,14 @@ import PrivateFileButton from "../../components/PrivateFileButton.jsx";
 import ApplicationRecord from "../../components/ApplicationRecord.jsx";
 import ApplicationDownloads from "../../components/ApplicationDownloads.jsx";
 import ScreeningReview from "../../components/ScreeningReview.jsx";
+import { SendPasswordReset } from "../../components/PasswordRecovery.jsx";
+import { useAuth } from "../../context/AuthContext.jsx";
 
 const readableStatus = (value) => ({ SUBMITTED: "New submission", PENDING: "Under review", REVIEWED: "Under review", RETURNED: "Corrections required", ACCEPTED: "Accepted", ADMITTED: "Admitted", DRAFT: "Not submitted" }[value] || value?.replaceAll("_", " ").toLowerCase().replace(/\b\w/g, (letter) => letter.toUpperCase()));
 const formatDate = (value) => value ? new Date(value).toLocaleDateString() : "Not submitted";
 
 export default function AdminApplications() {
+  const { user } = useAuth();
   const [applications, setApplications] = useState([]);
   const [selectedApplication, setSelectedApplication] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -147,6 +150,7 @@ export default function AdminApplications() {
             <details className="review-disclosure"><summary>View submitted application</summary><ApplicationRecord application={selectedApplication} /></details>
             <details className="review-disclosure"><summary>Review supporting documents</summary><div className="review-items">{selectedApplication.documents?.length ? selectedApplication.documents.map((document) => <div key={document.id} className="review-item"><PrivateFileButton path={document.path}>{readableStatus(document.type)}</PrivateFileButton><label>Document status<select disabled={saving} value={document.reviewStatus} onChange={(event) => updateDocument(document.id, event.target.value)}><option value="PENDING">Pending</option><option value="VERIFIED">Verified</option><option value="REJECTED">Corrections required</option></select></label></div>) : <p>No supporting documents supplied.</p>}</div></details>
           </>}
+          {(user?.role === "ADMIN" || user?.permissions?.includes("users.manage")) && <details className="review-disclosure"><summary>Account recovery</summary><SendPasswordReset key={selectedApplication.id} email={selectedApplication.email} /></details>}
           {(ready || selectedApplication.payments?.some((payment) => payment.status === "VERIFIED")) && <details className="review-disclosure"><summary>Downloads and payment receipts</summary><ApplicationDownloads application={selectedApplication} /></details>}
           {(ready || notification) && <details className="review-disclosure"><summary>Status history and email notifications</summary>
             <p>{notification?.emailStatus === "SENT" ? "Latest notification accepted by the email provider." : selectedApplication.emailConfigured ? "Notifications are queued or awaiting retry." : "Email sending is not configured. Status updates are still visible in the applicant portal."}</p>
