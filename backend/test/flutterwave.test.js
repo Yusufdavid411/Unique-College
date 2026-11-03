@@ -115,7 +115,7 @@ test("test payments cannot use production databases, portals, deployments or liv
   assert.match(paymentConfigurationIssue({ ...config, mode: "live" }), /does not match/);
 });
 
-test("official-portal test checkout is open to regular applicants without unlocking real records", async () => {
+test("official-portal test checkout unlocks the form only during simulation, not official admission", async () => {
   const productionTest = { ...config, deploymentEnvironment: "production", databaseName: "neondb", returnUrl: "https://apply.uniquecollegekwali.com/payments", restrictedProductionTest: true };
   assert.equal(paymentConfigurationIssue(productionTest), null);
   assert.ok(paymentConfigurationIssue({ ...productionTest, mode: "live", secretKey: "FLWSECK-live-example" }));
@@ -128,6 +128,20 @@ test("official-portal test checkout is open to regular applicants without unlock
   await service.verify(checkout.reference, "owner");
   assert.equal(state.application.payments[0].isTest, true);
   assert.equal(formAccessFor(state.application).unlocked, false);
+  const flags = { PAYMENT_PROVIDER: "flutterwave", FLUTTERWAVE_MODE: "test", FLUTTERWAVE_RESTRICTED_PRODUCTION_TEST: "true" };
+  const previous = Object.fromEntries(Object.keys(flags).map((key) => [key, process.env[key]]));
+  try {
+    Object.assign(process.env, flags);
+    assert.equal(formAccessFor(state.application).unlocked, true);
+    assert.equal(formAccessFor(state.application, { official: true }).unlocked, false);
+    process.env.FLUTTERWAVE_MODE = "live";
+    assert.equal(formAccessFor(state.application).unlocked, false);
+  } finally {
+    for (const [key, value] of Object.entries(previous)) {
+      if (value === undefined) delete process.env[key];
+      else process.env[key] = value;
+    }
+  }
   assert.equal(formAccessFor({ ...state.application, isTest: true }).unlocked, true);
   const liveService = flutterwaveService(state.database, state.fetcher, { ...productionTest, restrictedProductionTest: false, mode: "live", secretKey: "FLWSECK-live-example" });
   await assert.rejects(liveService.verify(checkout.reference, "owner"), /different payment mode/);

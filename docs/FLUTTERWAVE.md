@@ -6,8 +6,9 @@ The official portal temporarily allows any applicant with an eligible unpaid fee
 to open Flutterwave test checkout. Production remains in test-only mode using
 `FLUTTERWAVE_RESTRICTED_PRODUCTION_TEST=true`, which rejects live keys and live
 mode. No frontend layout or copy changes are required. Use only test payment
-details. Test transactions stay marked as test and do not satisfy fees on regular
-applications or issue real admission letters. Use a designated test application
+details. Verified test application fees temporarily unlock form access on regular
+applications while this mode is enabled. They never qualify those applications
+for official offers or admission. Use a designated test application
 to exercise the full admission workflow. Existing verified real payments are
 preserved and are not charged again.
 

@@ -56,7 +56,7 @@ export const listApplications = asyncHandler(async (req, res) => {
     select: {
       id: true, isTest: true, applicationNumber: true, fullName: true, email: true, status: true,
       submittedAt: true, createdAt: true, courseOfInterest: true, formFeeAmount: true, screeningStatus: true, screeningAt: true, screeningFeeAmount: true,
-      payments: { select: { status: true, amount: true, type: true, currency: true, isTest: true } }
+      payments: { select: { status: true, amount: true, type: true, currency: true, isTest: true, provider: true } }
     },
     orderBy: { createdAt: "desc" }
   });
@@ -99,7 +99,10 @@ export const updateApplicationStatus = asyncHandler(async (req, res) => {
   if (req.body.status === "ADMITTED" && current.status !== "ADMITTED" && admissionFailure(current)) return res.status(409).json({ success: false, message: admissionFailure(current) });
   if (current.status === "ACCEPTED" && !["ACCEPTED", "ADMITTED"].includes(req.body.status) && current.payments.some((payment) => payment.type === "ACCEPTANCE_FEE" && ["PENDING", "VERIFIED"].includes(payment.status))) return res.status(409).json({ success: false, message: "An acceptance payment is recorded. Resolve it with admissions before withdrawing this offer." });
   if (req.body.status === "RETURNED" && !req.body.reviewNote?.trim()) return res.status(422).json({ success: false, message: "Explain the corrections required before returning this application." });
-  if (["ACCEPTED", "ADMITTED"].includes(req.body.status) && current.status !== req.body.status && (!current.applicant || !current.declarationAccepted || !formAccessFor(current).unlocked || !hasVerifiedAdmissionDocuments(current.documents))) {
+  if (["ACCEPTED", "ADMITTED"].includes(req.body.status) && current.status !== req.body.status && !formAccessFor(current, { official: true }).unlocked) {
+    return res.status(409).json({ success: false, message: "A simulated application fee does not qualify this application for an official offer or admission." });
+  }
+  if (["ACCEPTED", "ADMITTED"].includes(req.body.status) && current.status !== req.body.status && (!current.applicant || !current.declarationAccepted || !hasVerifiedAdmissionDocuments(current.documents))) {
     return res.status(422).json({ success: false, message: "Admission requires an applicant account, verified form payment, declaration, and verified supporting documents" });
   }
 
@@ -122,6 +125,7 @@ export const updateApplicationStatus = asyncHandler(async (req, res) => {
   const application = await auditedMutation(prisma, { actorId: req.user.id, action: "application.status:" + req.body.status, targetType: "application", targetId: current.id }, async (transaction) => {
     const latest = await transaction.application.findUnique({ where: { id: current.id }, include: { applicant: true, documents: { where: { supersededAt: null } }, payments: true, schoolForms: true } });
     if (!latest || latest.status !== current.status || !readyForReview(latest)) throw Object.assign(new Error("This application changed. Refresh before saving."), { statusCode: 409 });
+    if (["ACCEPTED", "ADMITTED"].includes(req.body.status) && latest.status !== req.body.status && !formAccessFor(latest, { official: true }).unlocked) throw Object.assign(new Error("A simulated application fee does not qualify this application for an official offer or admission."), { statusCode: 409 });
     if (latest.status === "ACCEPTED" && !["ACCEPTED", "ADMITTED"].includes(req.body.status) && latest.payments.some((payment) => payment.type === "ACCEPTANCE_FEE" && ["PENDING", "VERIFIED"].includes(payment.status))) throw Object.assign(new Error("Resolve the recorded acceptance payment before withdrawing this offer."), { statusCode: 409 });
     if (req.body.status === "ADMITTED" && current.status !== "ADMITTED") {
       const issue = admissionFailure(latest);
