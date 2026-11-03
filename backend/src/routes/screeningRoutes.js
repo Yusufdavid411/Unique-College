@@ -26,6 +26,8 @@ router.post("/schedule", requirePermission("applications.review"), asyncHandler(
     const records = await database.application.findMany({ where: { id: { in: input.ids } }, include: { payments: true, applicant: { select: { email: true, isActive: true } }, statusHistory: { where: { kind: "SCREENING_SCHEDULE" }, orderBy: { createdAt: "desc" }, take: 1, select: { notificationText: true } } } });
     if (records.length !== input.ids.length || records.some((record) => !record.applicant?.isActive || !readyForReview(record) || !["SUBMITTED", "PENDING", "REVIEWED", "INTERVIEW_SCHEDULED"].includes(record.status) || !["NOT_SCHEDULED", "SCHEDULED"].includes(record.screeningStatus))) throw conflict("Only active applicants with paid, submitted applications awaiting screening may be scheduled. Refresh the selection.");
     if (new Set(records.map((record) => record.isTest)).size > 1) throw conflict("Preview and real applicants must be scheduled separately.");
+    const fee = await screeningPolicy(database);
+    if (records.some((record) => !screeningProgress(record, fee.amount).paid)) throw conflict("Only applicants with a verified screening fee can be scheduled.");
     const policy = await documentsPolicy(database);
     const template = input.message || policy.screeningMessage;
     const dateLabel = `${new Intl.DateTimeFormat("en-GB", { timeZone: "Africa/Lagos", dateStyle: "full", timeStyle: "short" }).format(date)} (WAT)`;
@@ -35,7 +37,6 @@ router.post("/schedule", requirePermission("applications.review"), asyncHandler(
     };
     const targets = records.filter((record) => record.status !== "INTERVIEW_SCHEDULED" || record.screeningAt?.getTime() !== date.getTime() || record.screeningVenue !== input.venue || (record.screeningInstructions || "") !== input.instructions || (input.message && record.statusHistory[0]?.notificationText !== invitationFor(record)));
     if (!targets.length) return [];
-    const fee = await screeningPolicy(database);
     const ids = targets.map((record) => record.id);
     await database.application.updateMany({ where: { id: { in: ids }, screeningFeeAmount: null }, data: { screeningFeeAmount: fee.amount } });
     await database.application.updateMany({ where: { id: { in: ids } }, data: { status: "INTERVIEW_SCHEDULED", screeningStatus: "SCHEDULED", screeningAt: date, screeningVenue: input.venue, screeningInstructions: input.instructions } });

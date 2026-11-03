@@ -1,8 +1,7 @@
 import crypto from "node:crypto";
 import { Prisma } from "@prisma/client";
 import { admissionProgressFor } from "./acceptance.js";
-import { screeningProgress } from "./admissionDocuments.js";
-import { readyForReview } from "./applicationReview.js";
+import { screeningPolicy, screeningProgress } from "./admissionDocuments.js";
 import { releaseAdmissionLetter } from "./admissionLetters.js";
 import { attemptStatusEmail } from "./statusEmail.js";
 
@@ -99,8 +98,13 @@ export function flutterwaveService(database, fetcher = fetch, config = paymentCo
         const application = await transaction.application.findUnique({ where: { applicantId }, include: { payments: true } });
         if (!application) throw failure("Applicant record not found", 404);
         if (config.mode === "live" && application.isTest) throw failure("Test accounts cannot make live payments.", 403);
-        const amount = type === "APPLICATION_FEE" ? application.formFeeAmount : type === "SCREENING_FEE" ? application.screeningFeeAmount : application.acceptanceFeeAmount;
-        if (type === "SCREENING_FEE" && (application.status !== "INTERVIEW_SCHEDULED" || !readyForReview(application) || application.screeningStatus !== "SCHEDULED" || screeningProgress(application).paid)) throw failure("Screening payment is available only for an active unpaid screening invitation.");
+        let amount = type === "APPLICATION_FEE" ? application.formFeeAmount : type === "SCREENING_FEE" ? application.screeningFeeAmount : application.acceptanceFeeAmount;
+        if (type === "SCREENING_FEE") {
+          amount ??= (await screeningPolicy(transaction)).amount;
+          const screening = screeningProgress(application, amount);
+          if (!screening.eligible || screening.paid) throw failure("Screening payment is available only for an eligible application with an unpaid screening fee.");
+          if (application.screeningFeeAmount == null) await transaction.application.update({ where: { id: application.id }, data: { screeningFeeAmount: amount } });
+        }
         if (type === "ACCEPTANCE_FEE" && !admissionProgressFor(application).canPay) throw failure("Accept an active admission offer before paying its acceptance fee, or check your existing payment.");
         if (amount == null || new Prisma.Decimal(amount).lte(0)) throw failure("No payment is required for this purpose.");
         if (application.payments.some((payment) => payment.type === type && payment.status === "VERIFIED" && (!payment.isTest || config.mode === "test"))) throw failure("This fee is already verified. Do not pay again.");

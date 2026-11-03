@@ -12,7 +12,7 @@ import { auditedMutation } from "../services/audit.js";
 import { publicPaymentConfiguration } from "../services/flutterwave.js";
 import { attemptStatusEmail } from "../services/statusEmail.js";
 import { admissionProgressFor } from "../services/acceptance.js";
-import { screeningProgress } from "../services/admissionDocuments.js";
+import { screeningPolicy, screeningProgress } from "../services/admissionDocuments.js";
 import { applicantJourney, applicationFormMissing, applicationDocumentsMissing } from "../services/applicantJourney.js";
 import { replaceApplicationDocument } from "../services/applicationDocuments.js";
 
@@ -89,7 +89,7 @@ export const registerApplicant = asyncHandler(async (req, res) => {
 
 export const getApplicantDashboard = asyncHandler(async (req, res) => {
   const application = await getApplicantApplication(req.user.id);
-  ok(res, { application, journey: applicantJourney(application), user: toPublicUser(req.user), screening: screeningProgress(application), formAccess: formAccessFor(application), admission: admissionProgressFor(application), paymentGateway: publicPaymentConfiguration() });
+  ok(res, { application, journey: applicantJourney(application), user: toPublicUser(req.user), screening: screeningProgress(application, application.screeningFeeAmount == null ? (await screeningPolicy(prisma)).amount : undefined), formAccess: formAccessFor(application), admission: admissionProgressFor(application), paymentGateway: publicPaymentConfiguration() });
 });
 
 export const updateApplicantApplication = asyncHandler(async (req, res) => {

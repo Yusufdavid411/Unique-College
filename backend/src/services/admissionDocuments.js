@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { Prisma } from "@prisma/client";
+import { readyForReview } from "./applicationReview.js";
 
 export const documentsPolicyKey = "admissions_documents_policy";
 export const screeningPolicyKey = "screening_policy";
@@ -11,7 +12,7 @@ export const documentsPolicySchema = z.object({
   screeningMessage: z.string().trim().min(10).max(1500), passedMessage: z.string().trim().min(10).max(1500), failedMessage: z.string().trim().min(10).max(1500), offerMessage: z.string().trim().min(10).max(1500)
 }).strict();
 export const defaultDocumentsPolicy = { feeScheduleApproved: false, session: "", duration: "", effectiveDate: "", registrationOpen: "", registrationDeadline: "", resultDeadline: "", lecturesStart: "",
-  screeningMessage: "Congratulations! You have progressed to the entrance examination and screening stage. Please arrive early so you have time to check in before the exam starts. Check your applicant portal for any screening fee or other next steps.",
+  screeningMessage: "Congratulations! You are scheduled for the entrance examination and screening. Please arrive early so you have time to check in before the exam starts.",
   passedMessage: "You have passed the entrance examination/screening. The admissions office will confirm your admission decision in your portal.",
   failedMessage: "Your entrance examination/screening result is available. Please sign in and contact admissions if you need guidance.",
   offerMessage: "An admission offer is ready for {programme}. Sign in to accept the offer and pay your quoted acceptance fee. Your admission letter becomes available after payment verification and the registrar's release."
@@ -27,8 +28,13 @@ export async function screeningPolicy(database) {
 export function feeVerified(application, type, amount) {
   return amount != null && (new Prisma.Decimal(amount).equals(0) || application.payments.some((payment) => payment.type === type && payment.status === "VERIFIED" && payment.currency === "NGN" && Boolean(payment.isTest) === Boolean(application.isTest) && new Prisma.Decimal(payment.amount).equals(amount)));
 }
-export function screeningProgress(application) {
-  return { status: application.screeningStatus || "NOT_SCHEDULED", amount: application.screeningFeeAmount == null ? null : String(application.screeningFeeAmount), paid: feeVerified(application, "SCREENING_FEE", application.screeningFeeAmount), date: application.screeningAt || null, venue: application.screeningVenue || null, instructions: application.screeningInstructions || null };
+export function screeningProgress(application, defaultAmount) {
+  const status = application.screeningStatus || "NOT_SCHEDULED";
+  const eligible = readyForReview(application) && ["SUBMITTED", "PENDING", "REVIEWED", "INTERVIEW_SCHEDULED"].includes(application.status) && ["NOT_SCHEDULED", "SCHEDULED"].includes(status);
+  const amount = application.screeningFeeAmount ?? defaultAmount;
+  const simulation = process.env.PAYMENT_PROVIDER === "flutterwave" && process.env.FLUTTERWAVE_MODE === "test" && process.env.FLUTTERWAVE_RESTRICTED_PRODUCTION_TEST === "true";
+  const paid = feeVerified(application, "SCREENING_FEE", amount) || (simulation && !application.isTest && feeVerified({ ...application, isTest: true, payments: (application.payments || []).filter((payment) => payment.provider === "FLUTTERWAVE") }, "SCREENING_FEE", amount));
+  return { status, eligible, amount: amount == null ? null : String(amount), paid, date: application.screeningAt || null, venue: application.screeningVenue || null, instructions: application.screeningInstructions || null };
 }
 export function screened(application) { return ["PASSED", "EXEMPT"].includes(application.screeningStatus); }
 export function renderAdmissionMessage(template, values) {

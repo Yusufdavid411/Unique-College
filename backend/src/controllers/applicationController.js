@@ -11,7 +11,7 @@ import { readyForReview } from "../services/applicationReview.js";
 import { attemptStatusEmail, statusEmailConfigured } from "../services/statusEmail.js";
 import { acceptancePolicy, admissionProgressFor, admissionFailure } from "../services/acceptance.js";
 import { studentProfileData } from "../services/studentRecords.js";
-import { screened, documentsPolicy, renderAdmissionMessage } from "../services/admissionDocuments.js";
+import { screened, documentsPolicy, renderAdmissionMessage, screeningPolicy, screeningProgress, feeVerified } from "../services/admissionDocuments.js";
 
 const applicationDetails = {
   applicant: { select: { id: true, name: true, email: true, role: true, portalUsername: true, officialEmail: true } },
@@ -62,7 +62,8 @@ export const listApplications = asyncHandler(async (req, res) => {
     orderBy: { createdAt: "desc" }
   });
 
-  ok(res, applications.map((application) => ({ ...application, courseOfInterest: readyForReview(application) ? application.courseOfInterest : null, reviewReady: readyForReview(application) })));
+  const screeningFee = (await screeningPolicy(prisma)).amount;
+  ok(res, applications.map((application) => ({ ...application, courseOfInterest: readyForReview(application) ? application.courseOfInterest : null, reviewReady: readyForReview(application), screeningPaid: screeningProgress(application, screeningFee).paid })));
 });
 
 function reviewResponse(application) {
@@ -127,6 +128,7 @@ export const updateApplicationStatus = asyncHandler(async (req, res) => {
   const application = await auditedMutation(prisma, { actorId: req.user.id, action: "application.status:" + req.body.status, targetType: "application", targetId: current.id }, async (transaction) => {
     const latest = await transaction.application.findUnique({ where: { id: current.id }, include: { applicant: true, documents: { where: { supersededAt: null } }, payments: true, schoolForms: true } });
     if (!latest || latest.status !== current.status || !readyForReview(latest)) throw Object.assign(new Error("This application changed. Refresh before saving."), { statusCode: 409 });
+    if (["ACCEPTED", "ADMITTED"].includes(req.body.status) && latest.status !== req.body.status && latest.screeningStatus === "PASSED" && !feeVerified(latest, "SCREENING_FEE", latest.screeningFeeAmount)) throw Object.assign(new Error("A verified official screening fee is required before issuing an offer or admission."), { statusCode: 409 });
     if (["ACCEPTED", "ADMITTED"].includes(req.body.status) && latest.status !== req.body.status && !formAccessFor(latest, { official: true }).unlocked) throw Object.assign(new Error("A simulated application fee does not qualify this application for an official offer or admission."), { statusCode: 409 });
     if (latest.status === "ACCEPTED" && !["ACCEPTED", "ADMITTED"].includes(req.body.status) && latest.payments.some((payment) => payment.type === "ACCEPTANCE_FEE" && ["PENDING", "VERIFIED"].includes(payment.status))) throw Object.assign(new Error("Resolve the recorded acceptance payment before withdrawing this offer."), { statusCode: 409 });
     if (req.body.status === "ADMITTED" && current.status !== "ADMITTED") {

@@ -1,10 +1,28 @@
 import { Bell } from "lucide-react";
+import { useEffect, useRef } from "react";
 import { useApplicant } from "../context/ApplicantContext.jsx";
 
 export default function ApplicantNotifications() {
   const { application } = useApplicant();
+  const panel = useRef(null);
+  useEffect(() => {
+    function dismissOutside(event) {
+      if (panel.current?.open && !panel.current.contains(event.target)) panel.current.open = false;
+    }
+    function dismissOnEscape(event) {
+      if (event.key !== "Escape" || !panel.current?.open) return;
+      panel.current.open = false;
+      panel.current.querySelector("summary")?.focus();
+    }
+    document.addEventListener("pointerdown", dismissOutside);
+    document.addEventListener("keydown", dismissOnEscape);
+    return () => {
+      document.removeEventListener("pointerdown", dismissOutside);
+      document.removeEventListener("keydown", dismissOnEscape);
+    };
+  }, []);
   const events = (application?.statusHistory || []).filter((event) => event.notificationText).slice(0, 20);
-  return <details className="applicant-notifications">
+  return <details ref={panel} className="applicant-notifications">
     <summary aria-label={`Admissions notifications (${events.length} recent)`}><Bell size={21} aria-hidden="true" />{events.length > 0 && <span aria-hidden="true">{events.length}</span>}</summary>
     <section className="applicant-notification-panel" aria-label="Admissions notifications">
       <h2>Notifications</h2>
