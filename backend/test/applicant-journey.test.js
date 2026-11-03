@@ -54,7 +54,11 @@ test("final submission lives on Documents while form saves and continues without
   const root = new URL("../../frontend/src/", import.meta.url);
   const form = await readFile(new URL("pages/applicant/ApplicantApplicationForm.jsx", root), "utf8");
   assert.doesNotMatch(form, /api\.post\("\/applicant\/application\/submit"/);
-  assert.match(form, /Save & continue to Documents/);
+  assert.match(form, /Next: Documents/);
+  assert.match(form, /noValidate onSubmit=\{continueToDocuments\}/);
+  assert.match(form, /className="document-page-actions"/);
+  assert.match(form, /api\.patch\("\/applicant\/application", form\)[\s\S]*saved\.journey\.formComplete/);
+  assert.doesNotMatch(form, /onClick=\{save\}|reportValidity\(/);
   assert.match(form, /saved\.journey\.formComplete/);
   const documents = await readFile(new URL("pages/applicant/ApplicantDocuments.jsx", root), "utf8");
   assert.match(documents, /api\.post\("\/applicant\/application\/submit"/);

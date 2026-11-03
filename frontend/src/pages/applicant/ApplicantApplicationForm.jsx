@@ -1,4 +1,4 @@
-import { ArrowLeft, ArrowRight, Plus, Save, Trash2 } from "lucide-react";
+import { ArrowLeft, ArrowRight, Plus, Trash2 } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { useEffect, useRef, useState } from "react";
 import { api, apiErrorMessage } from "../../api/client.js";
@@ -64,29 +64,9 @@ export default function ApplicantApplicationForm() {
   const updateEducation = (index, field, value) => setForm((current) => ({ ...current, educationRecords: current.educationRecords.map((record, recordIndex) => recordIndex === index ? { ...record, [field]: value } : record) }));
   const updateWork = (index, field, value) => setForm((current) => ({ ...current, workExperience: current.workExperience.map((record, recordIndex) => recordIndex === index ? { ...record, [field]: value } : record) }));
 
-  async function save() {
-    if (operationInProgress.current) return;
-    operationInProgress.current = true;
-    setBusy("save");
-    setNotice({ type: "", message: "" });
-    try {
-      await api.patch("/applicant/application", form);
-      await refresh();
-      setNotice({ type: "success", message: "Your application draft has been saved." });
-    } catch (error) {
-      setNotice({ type: "error", message: apiErrorMessage(error, "The application could not be saved.") });
-    } finally {
-      setBusy("");
-      operationInProgress.current = false;
-    }
-  }
-
   async function continueToDocuments(event) {
-    if (operationInProgress.current || !event.currentTarget.form.reportValidity()) return;
-    if (!form.declarationAccepted) {
-      setNotice({ type: "error", message: "Please accept the declaration before continuing to Documents." });
-      return;
-    }
+    event.preventDefault();
+    if (!editable || operationInProgress.current) return;
     operationInProgress.current = true;
     setBusy("continue");
     setNotice({ type: "", message: "" });
@@ -95,7 +75,7 @@ export default function ApplicantApplicationForm() {
       const saved = await refresh();
       if (!saved?.journey) throw new Error("Your draft was saved, but progress could not be checked. Refresh before continuing.");
       if (!saved.journey.formComplete) {
-        setNotice({ type: "error", message: `Complete these form entries before continuing: ${saved.journey.formMissing.join(", ")}.` });
+        setNotice({ type: "error", message: `Draft saved. Complete these entries before continuing: ${saved.journey.formMissing.join(", ")}.` });
         return;
       }
       navigate(portalPath("/applicant/documents"));
@@ -113,7 +93,7 @@ export default function ApplicantApplicationForm() {
       {!editable && <div className="portal-alert"><strong>Form locked during review</strong><p>The admissions team will return it if changes are required.</p></div>}
       {notice.type === "error" ? <ErrorToast message={notice.message} incident={notice} /> : notice.message && <p className={`form-status ${notice.type}`}>{notice.message}</p>}
 
-      <form className="portal-form" onSubmit={(event) => event.preventDefault()}>
+      <form className="portal-form" noValidate onSubmit={continueToDocuments}>
         <fieldset disabled={!editable || Boolean(busy)}>
           <legend><span>A</span>Personal data</legend>
           <div className="portal-form-grid three"><label>Surname<input name="surname" value={form.surname} onChange={update} required /></label><label>First name<input name="firstName" value={form.firstName} onChange={update} required /></label><label>Middle name (optional)<input name="middleName" value={form.middleName} onChange={update} /></label></div>
@@ -161,7 +141,10 @@ export default function ApplicantApplicationForm() {
           <label className="declaration-check"><input name="declarationAccepted" type="checkbox" checked={form.declarationAccepted} onChange={update} /><span>I declare that the information supplied is correct to the best of my knowledge. I understand that false information may lead to the withdrawal of admission.</span></label>
         </fieldset>
 
-        <div className="portal-form-actions"><Link className="button secondary" to={portalPath("/applicant/payments")}><ArrowLeft size={18} />Previous: Payment</Link>{editable ? <><LoadingButton type="button" className="button secondary" loading={busy === "save"} disabled={Boolean(busy)} loadingText="Saving..." onClick={save}><Save size={18} />Save draft</LoadingButton><LoadingButton type="button" loading={busy === "continue"} disabled={Boolean(busy)} loadingText="Saving and checking…" onClick={continueToDocuments}>Save & continue to Documents<ArrowRight size={18} /></LoadingButton></> : <Link className="button" to={portalPath("/applicant/documents")}>View documents<ArrowRight size={18} /></Link>}</div>
+        <div className="document-page-actions">
+          <Link className="button secondary" to={portalPath("/applicant/payments")}><ArrowLeft size={18} />Previous: Payment</Link>
+          {editable ? <LoadingButton type="submit" loading={Boolean(busy)} disabled={Boolean(busy)} loadingText="Saving draft…">Next: Documents<ArrowRight size={18} /></LoadingButton> : <Link className="button" to={portalPath("/applicant/documents")}>View documents<ArrowRight size={18} /></Link>}
+        </div>
       </form>
     </div>
   );

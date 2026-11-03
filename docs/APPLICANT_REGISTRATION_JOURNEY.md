@@ -16,7 +16,7 @@ The authenticated applicant dashboard API returns `journey`, calculated by `back
 ## Navigation and final submission
 
 - Payment has Previous: Dashboard and a Next: Application form control gated by confirmed payment.
-- Application form has Previous: Payment, Save draft and **Save & continue to Documents**. Continue saves the draft, checks refreshed server progress, then navigates; it never submits for review.
+- Application form places **Previous: Payment** and **Next: Documents** at opposite edges, like the Documents page. Next saves the draft even if required entries are missing, then uses refreshed server progress to decide whether to continue. It never submits for review.
 - Documents has Previous: Application form, clear missing-document guidance, optional on-screen review of saved details and the sole **Submit for review** control. Uploads finish before submission; double-click/concurrent upload/submit attempts are guarded.
 - Previous and Submit for review sit in a separate, non-sticky page action row below the review card. Before submission, a saved file is labelled **Uploaded**; after submission it is **Awaiting review** until the school verifies it. A rejected credential is labelled **Replace required** with its review note.
 - Documents is disabled until payment and required form completion. The API enforces form completion before accepting an upload, before file parsing/storage; final submission independently rechecks requirements. Qualified applicants can return to the saved form and documents before submission.
