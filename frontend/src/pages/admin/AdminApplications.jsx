@@ -112,6 +112,26 @@ export default function AdminApplications() {
   }
 
   const visibleApplications = applications.filter((application) => filter === "all" || (filter === "submitted" ? application.reviewReady : !application.reviewReady));
+  async function deleteApplicantAccount(event) {
+    event.preventDefault();
+    if (saving || !selectedApplication?.applicant) return;
+    const confirmation = String(new FormData(event.currentTarget).get("confirmation") || "").trim();
+    if (confirmation.toLowerCase() !== selectedApplication.applicant.email.toLowerCase()) {
+      setFeedback("Enter the exact account email to confirm deletion.");
+      return;
+    }
+    if (!window.confirm("Permanently delete this applicant login? The applicant will lose access to this application. Application and payment records will be retained.")) return;
+    setSaving(true);
+    try {
+      const { data } = await api.delete(`/applications/${selectedApplication.id}/account`, { data: { confirmation } });
+      setSelectedApplication(null);
+      setFeedback(data.message);
+      await loadApplications();
+    } catch (error) {
+      setFeedback(apiErrorMessage(error));
+    } finally { setSaving(false); }
+  }
+
   const ready = selectedApplication?.reviewReady;
   const notification = selectedApplication?.statusHistory?.find((event) => event.emailStatus !== "NOT_REQUIRED" && event.emailRecipient);
 
@@ -140,6 +160,13 @@ export default function AdminApplications() {
               <button className="button" type="submit" disabled={saving}>{saving ? "Saving…" : "Update application status"}</button>
             </form>}
           </section>
+          {user?.role === "ADMIN" && selectedApplication.applicant?.role === "APPLICANT" && selectedApplication.status !== "ADMITTED" && <details className="review-disclosure" key={selectedApplication.id}><summary>Delete applicant account</summary>
+            <form className="application-review-form" onSubmit={deleteApplicantAccount}>
+              <p>This permanently removes the login and releases <strong>{selectedApplication.applicant.email}</strong> for a new registration. The old application, documents and payments stay on file and will not transfer to the new account.</p>
+              <label>Type the account email to confirm<input name="confirmation" type="email" maxLength={254} required autoComplete="off" disabled={saving} /></label>
+              <button className="button secondary" type="submit" disabled={saving}>Permanently delete account</button>
+            </form>
+          </details>}
           {selectedApplication.admission?.offered && <details className="review-disclosure"><summary>Offer, acceptance fee and clearance</summary>
             <dl className="admission-summary"><div><dt>Applicant response</dt><dd>{selectedApplication.admission.response.toLowerCase()}</dd></div><div><dt>Quoted acceptance fee</dt><dd>{selectedApplication.admission.amount == null ? "Not quoted" : `NGN ${Number(selectedApplication.admission.amount).toLocaleString("en-NG")}`}</dd></div><div><dt>Payment</dt><dd>{selectedApplication.admission.paid ? "Confirmed" : "Awaiting payment"}</dd></div><div><dt>Clearance</dt><dd>{selectedApplication.admission.clearanceStatus.toLowerCase().replaceAll("_", " ")}</dd></div></dl>
             {selectedApplication.status === "ACCEPTED" && <form className="application-review-form" key={`${selectedApplication.id}-${selectedApplication.clearanceStatus}`} onSubmit={saveClearance}><label>Clearance decision<select name="status" defaultValue={selectedApplication.clearanceStatus || "PENDING"} disabled={saving}><option value="PENDING">Pending clearance</option><option value="CORRECTIONS_REQUIRED">Corrections required</option><option value="CLEARED">Cleared for final admission</option></select></label><label>Clearance note<textarea name="note" rows={3} maxLength={2000} defaultValue={selectedApplication.clearanceNote || ""} disabled={saving} /></label><p>Clearance requires the applicant's acceptance, confirmed acceptance fee and verified required documents. Once cleared, choose Admitted in Update status.</p><button className="button" type="submit" disabled={saving}>{saving ? "Saving…" : "Save clearance"}</button></form>}

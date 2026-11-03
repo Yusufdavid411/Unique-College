@@ -68,7 +68,7 @@ function reviewResponse(application) {
   const reviewReady = readyForReview(application);
   const paymentConfirmed = formAccessFor(application).unlocked;
   if (!reviewReady) return {
-    id: application.id, isTest: application.isTest, fullName: application.fullName, applicationNumber: application.applicationNumber,
+    id: application.id, isTest: application.isTest, fullName: application.fullName, applicationNumber: application.applicationNumber, applicant: application.applicant,
     status: application.status, submittedAt: application.submittedAt, paymentConfirmed, reviewReady,
     reviewNote: application.reviewNote, statusHistory: application.statusHistory, emailConfigured: statusEmailConfigured(),
     payments: application.payments.filter((payment) => payment.status === "VERIFIED"), allowedStatuses: []
@@ -226,6 +226,27 @@ export const reviewApplicationPayment = asyncHandler(async (req, res) => {
     return transaction.payment.findUnique({ where: { id: payment.id } });
   }, { isolationLevel: "Serializable", timeout: 15000 });
   ok(res, updated, "Payment review updated");
+});
+
+export const deleteApplicantAccount = asyncHandler(async (req, res) => {
+  await auditedMutation(prisma, { actorId: req.user.id, action: "applicant.account_deleted", targetType: "application", targetId: req.params.id }, async (transaction) => {
+    const application = await transaction.application.findUnique({
+      where: { id: req.params.id },
+      select: { status: true, applicant: { select: { id: true, email: true, role: true, studentProfile: { select: { id: true } } } } }
+    });
+    if (!application?.applicant) throw Object.assign(new Error("No applicant account is linked to this application."), { statusCode: 404 });
+    const applicant = application.applicant;
+    if (application.status === "ADMITTED" || applicant.role !== "APPLICANT" || applicant.studentProfile) {
+      throw Object.assign(new Error("Admitted student and non-applicant accounts cannot be deleted here."), { statusCode: 409 });
+    }
+    if (req.body.confirmation.toLowerCase() !== applicant.email.toLowerCase()) {
+      throw Object.assign(new Error("Enter the exact account email to confirm deletion."), { statusCode: 422 });
+    }
+    const deleted = await transaction.user.deleteMany({ where: { id: applicant.id, role: "APPLICANT", email: applicant.email } });
+    if (!deleted.count) throw Object.assign(new Error("The account changed. Refresh before trying again."), { statusCode: 409 });
+    return deleted;
+  }, { isolationLevel: "Serializable", timeout: 15000 });
+  ok(res, null, "Applicant account deleted. The email can be used to register again. The application and payment records were retained.");
 });
 
 export const deleteApplication = asyncHandler(async (req, res) => {

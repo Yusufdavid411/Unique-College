@@ -15,6 +15,7 @@ test("saved applicant resumes at the first incomplete stage and submits only aft
   const marker = crypto.randomUUID();
   let user;
   let application;
+  let admin;
   const uploaded = [];
   const server = app.listen(0, "127.0.0.1");
   await new Promise((resolve) => server.once("listening", resolve));
@@ -85,10 +86,26 @@ test("saved applicant resumes at the first incomplete stage and submits only aft
     assert.equal(submitted.submitted, true);
     assert.equal(submitted.canSubmit, false);
     assert.equal((await call("/application/submit", "POST")).status, 409);
+    admin = await prisma.user.create({ data: { email: `${marker}@admin.invalid`, name: "Fixture admin", role: "ADMIN", passwordHash: "fixture-no-login" } });
+    const removeAccount = (actor, confirmation) => fetch(`http://127.0.0.1:${server.address().port}/api/applications/${application.id}/account`, {
+      method: "DELETE", headers: { "Content-Type": "application/json", Authorization: `Bearer ${jwt.sign({ sub: actor.id, version: 0 }, env.jwtSecret)}` }, body: JSON.stringify({ confirmation })
+    });
+    assert.equal((await removeAccount(user, user.email)).status, 403);
+    assert.equal((await removeAccount(admin, "wrong@example.invalid")).status, 422);
+    assert.equal((await removeAccount(admin, user.email)).status, 200);
+    assert.equal((await call("/dashboard")).status, 401);
+    assert.equal(await prisma.user.findUnique({ where: { email: user.email } }), null);
+    assert.equal((await prisma.application.findUnique({ where: { id: application.id } })).applicantId, null);
+    assert.equal(await prisma.payment.count({ where: { applicationId: application.id } }), 1);
+    assert.equal(await prisma.auditLog.count({ where: { actorId: admin.id, action: "applicant.account_deleted", targetId: application.id } }), 1);
   } finally {
     try {
       if (application) await prisma.application.delete({ where: { id: application.id } });
-      if (user) await prisma.user.delete({ where: { id: user.id } });
+      if (user) await prisma.user.deleteMany({ where: { id: user.id } });
+      if (admin) {
+        await prisma.auditLog.deleteMany({ where: { actorId: admin.id } });
+        await prisma.user.delete({ where: { id: admin.id } });
+      }
       for (const path of uploaded) { const local = resolveUploadPath(uploadRoot, path); if (local) await fs.unlink(local).catch(() => {}); }
     } finally { server.closeAllConnections(); await new Promise((resolve) => server.close(resolve)); await prisma.$disconnect(); }
   }
