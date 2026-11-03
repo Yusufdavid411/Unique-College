@@ -1,7 +1,6 @@
 import { ArrowRight, CheckCircle2, Circle, Clock3, CreditCard, FileCheck2, FileText, GraduationCap } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useApplicant } from "../../context/ApplicantContext.jsx";
-import FormPurchaseRequired from "../../components/FormPurchaseRequired.jsx";
 import { portalPath } from "../../api/portalLinks.js";
 import { ErrorToast } from "../../components/ToastNotifications.jsx";
 import AdmissionOffer from "../../components/AdmissionOffer.jsx";
@@ -20,15 +19,11 @@ const statusText = {
 };
 
 export default function ApplicantDashboard() {
-  const { application, formAccess, paymentGateway, loading, error } = useApplicant();
+  const { application, journey, formAccess, loading, error } = useApplicant();
   if (loading) return <div className="portal-loading">Loading your admission record...</div>;
-  if (!application) return <div className="portal-error">{error || "Applicant record not found."}</div>;
+  if (!application || !journey) return <div className="portal-page"><ErrorToast message={error} /><p>Registration progress could not be loaded. Please refresh the page.</p></div>;
 
-  const documents = application.documents || [];
-  const verifiedPayments = (application.payments || []).filter((payment) => payment.status === "VERIFIED");
-  const formComplete = Boolean(application.declarationAccepted && application.courseOfInterest && application.educationRecords?.length >= 5);
-  const documentsComplete = ["PASSPORT", "BIRTH_CERTIFICATE", "NATIONAL_ID", "EDUCATIONAL_RESULT"].every((type) => documents.some((item) => item.type === type));
-  const submitted = !["DRAFT", "RETURNED"].includes(application.status);
+  const { formComplete, documentsComplete, submitted } = journey;
   const progressItems = [formAccess.unlocked, formComplete, documentsComplete, submitted];
   const progress = Math.round((progressItems.filter(Boolean).length / progressItems.length) * 100);
 
@@ -42,10 +37,10 @@ export default function ApplicantDashboard() {
       <ErrorToast message={error} />
       {application.statusHistory?.some((event) => event.notificationText) && <section className="student-card"><h2>Admissions notifications</h2><details><summary>View updates from admissions</summary>{application.statusHistory.filter((event) => event.notificationText).slice(0, 20).map((event) => <article key={event.id}><h3>{event.notificationSubject}</h3><time dateTime={event.createdAt}>{new Date(event.createdAt).toLocaleString("en-GB", { timeZone: "Africa/Lagos" })}</time><p>{event.notificationText}</p></article>)}</details></section>}
       {["SUBMITTED", "PENDING", "REVIEWED"].includes(application.status) && <section className="review-status-card" role="status"><span className="eyebrow">Application status</span><h2>Under review</h2><p>Your application has been submitted successfully. Please check back later for the admissions decision.</p></section>}
-      {application.status === "RETURNED" && <section className="review-status-card" role="status"><h2>Corrections required</h2><p>Read the admissions note, update your form or documents, then submit again for review.</p><Link className="button" to={portalPath("/applicant/application")}>Correct application</Link></section>}
+      {application.status === "RETURNED" && <section className="review-status-card" role="status"><h2>Corrections required</h2><p>Read the admissions note, update your form or documents, then submit again from Documents.</p></section>}
       <AdmissionOffer />
       <ScreeningProgress />
-      {!formAccess.unlocked && <FormPurchaseRequired amount={formAccess.amount} />}
+      {["DRAFT", "RETURNED"].includes(application.status) && <section className="registration-resume student-next-step"><span className="eyebrow">Your next step</span><h2>{application.status === "RETURNED" ? "Continue your corrections" : "Complete your registration"}</h2><p>{!journey.paid ? "Confirm your application payment to unlock the form." : !formComplete ? "Complete and save your application form, then continue to Documents." : !documentsComplete ? "Your form is saved. Upload the remaining required documents." : "Your form and required documents are ready. Open Documents to check them and submit for review."}</p><Link className="button" to={portalPath(journey.path)}>Complete registration<ArrowRight size={18} /></Link></section>}
       {application.reviewNote && <div className="portal-alert"><strong>Admissions note</strong><p>{application.reviewNote}</p></div>}
 
       <section className="portal-progress-card">
@@ -54,10 +49,16 @@ export default function ApplicantDashboard() {
         <p>Complete your form and required uploads before final submission.</p>
       </section>
 
-      <section className="portal-card-grid">
-        <article><span className="portal-card-icon"><FileText /></span><div><h2>Application form</h2><p>{formComplete ? "Your required form information is complete." : "Complete personal, education, sponsor, and declaration details."}</p></div>{formAccess.unlocked ? <Link to={portalPath("/applicant/application")}>Open form <ArrowRight size={16} /></Link> : <button type="button" className="portal-add-button" disabled>Locked until payment is verified</button>}</article>
-        <article><span className="portal-card-icon"><FileCheck2 /></span><div><h2>Documents</h2><p>{documents.length} uploaded document{documents.length === 1 ? "" : "s"}. {documentsComplete ? "Required files are present." : "More required files are needed."}</p></div>{formAccess.unlocked ? <Link to={portalPath("/applicant/documents")}>Manage files <ArrowRight size={16} /></Link> : <button type="button" className="portal-add-button" disabled>Locked until payment is verified</button>}</article>
-        <article><span className="portal-card-icon"><CreditCard /></span><div><h2>Payments</h2><p>{verifiedPayments.length} verified payment{verifiedPayments.length === 1 ? "" : "s"}. {paymentGateway.provider === "FLUTTERWAVE" ? "Pay securely online and track automatic confirmation." : "Upload payment evidence for bursary review."}</p></div><Link to={portalPath("/applicant/payments")}>View payments <ArrowRight size={16} /></Link></article>
+      <section className="portal-card-grid registration-stage-cards" aria-label="Registration stages">
+        {journey.steps.filter((step) => step.id !== "review").map((step) => {
+          const Icon = step.id === "payment" ? CreditCard : step.id === "application" ? FileText : FileCheck2;
+          const current = !submitted && journey.current === step.id;
+          return <article className={current ? "is-current" : step.complete ? "is-complete" : ""} key={step.id} aria-current={current ? "step" : undefined}>
+            <span className="portal-card-icon"><Icon /></span>
+            <div><span className="registration-stage-status">{step.complete ? "Completed" : current ? "Current stage" : step.locked ? "Not available yet" : "Available"}</span><h2>{step.title}</h2><p>{step.id === "payment" ? step.complete ? "Application payment confirmed. Your receipt is available separately." : "Pay your quoted application fee securely." : step.id === "application" ? step.complete ? "Required form details are saved." : "Complete your personal, education and guardian information." : step.complete ? "Required documents uploaded. Final submission is made here." : "Upload the required credentials after completing your form."}</p></div>
+            {step.locked ? <button type="button" className="portal-add-button" disabled>Complete the previous stage first</button> : <Link to={portalPath(step.path)}>{submitted ? "View stage" : step.complete ? "View completed stage" : "Continue"}<ArrowRight size={16} /></Link>}
+          </article>;
+        })}
       </section>
 
       <section className="portal-timeline-card">

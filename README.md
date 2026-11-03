@@ -88,6 +88,8 @@ See [Screening and school documents](docs/SCREENING_AND_SCHOOL_DOCUMENTS.md) for
 
 See [Live activation checklist](docs/ACTIVATION_CHECKLIST.md) for the admin setup dashboard, secure email/payment configuration and daily notification retries. Official dates and programme durations remain administrator-controlled.
 
+See [Applicant registration journey](docs/APPLICANT_REGISTRATION_JOURNEY.md) for resumable progress, completed-stage cards and final submission from Documents.
+
 Files are stored on the local server under:
 
 - `backend/uploads/applications`

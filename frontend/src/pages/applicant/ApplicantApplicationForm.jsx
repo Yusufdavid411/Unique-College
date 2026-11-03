@@ -1,4 +1,5 @@
-import { Plus, Save, Send, Trash2 } from "lucide-react";
+import { ArrowLeft, ArrowRight, Plus, Save, Trash2 } from "lucide-react";
+import { Link, useNavigate } from "react-router-dom";
 import { useEffect, useRef, useState } from "react";
 import { api, apiErrorMessage } from "../../api/client.js";
 import LoadingButton from "../../components/LoadingButton.jsx";
@@ -6,6 +7,7 @@ import { ErrorToast } from "../../components/ToastNotifications.jsx";
 import FormPurchaseRequired from "../../components/FormPurchaseRequired.jsx";
 import { useApplicant } from "../../context/ApplicantContext.jsx";
 import { programs } from "../../data/siteData.js";
+import { portalPath } from "../../api/portalLinks.js";
 
 const baseSubjects = ["English Language", "Mathematics", "Chemistry", "Physics", "Biology/Health Science"];
 
@@ -42,6 +44,7 @@ function toForm(application) {
 }
 
 export default function ApplicantApplicationForm() {
+  const navigate = useNavigate();
   const { application, formAccess, loading, refresh } = useApplicant();
   const [form, setForm] = useState(() => toForm(null));
   const [busy, setBusy] = useState("");
@@ -78,23 +81,26 @@ export default function ApplicantApplicationForm() {
     }
   }
 
-  async function submit(event) {
+  async function continueToDocuments(event) {
     if (operationInProgress.current || !event.currentTarget.form.reportValidity()) return;
     if (!form.declarationAccepted) {
-      setNotice({ type: "error", message: "Please accept the declaration before submitting your application." });
+      setNotice({ type: "error", message: "Please accept the declaration before continuing to Documents." });
       return;
     }
     operationInProgress.current = true;
-    setBusy("submit");
+    setBusy("continue");
     setNotice({ type: "", message: "" });
     try {
       await api.patch("/applicant/application", form);
-      await api.post("/applicant/application/submit");
-      await refresh();
-      setNotice({ type: "success", message: "Your application is under review. Please check back later for a decision." });
+      const saved = await refresh();
+      if (!saved?.journey) throw new Error("Your draft was saved, but progress could not be checked. Refresh before continuing.");
+      if (!saved.journey.formComplete) {
+        setNotice({ type: "error", message: `Complete these form entries before continuing: ${saved.journey.formMissing.join(", ")}.` });
+        return;
+      }
+      navigate(portalPath("/applicant/documents"));
     } catch (error) {
-      const missing = error.response?.data?.data?.missing;
-      setNotice({ type: "error", message: missing?.length ? `Complete these items first: ${missing.join(", ")}.` : apiErrorMessage(error, "The application could not be submitted.") });
+      setNotice({ type: "error", message: apiErrorMessage(error, "Your draft could not be saved and checked. Please refresh before continuing.") });
     } finally {
       setBusy("");
       operationInProgress.current = false;
@@ -103,12 +109,12 @@ export default function ApplicantApplicationForm() {
 
   return (
     <div className="portal-page">
-      <header className="portal-page-header"><div><span className="eyebrow">Official admission form</span><h1>Application form</h1><p>Your draft saves to your account. Submit only after confirming every entry.</p></div><span className="application-number">{application.applicationNumber}</span></header>
+      <header className="portal-page-header"><div><span className="eyebrow">Official admission form</span><h1>Application form</h1><p>Save your details, then continue to Documents. Final submission happens after your required uploads.</p></div><span className="application-number">{application.applicationNumber}</span></header>
       {!editable && <div className="portal-alert"><strong>Form locked during review</strong><p>The admissions team will return it if changes are required.</p></div>}
       {notice.type === "error" ? <ErrorToast message={notice.message} incident={notice} /> : notice.message && <p className={`form-status ${notice.type}`}>{notice.message}</p>}
 
       <form className="portal-form" onSubmit={(event) => event.preventDefault()}>
-        <fieldset disabled={!editable}>
+        <fieldset disabled={!editable || Boolean(busy)}>
           <legend><span>A</span>Personal data</legend>
           <div className="portal-form-grid three"><label>Surname<input name="surname" value={form.surname} onChange={update} required /></label><label>First name<input name="firstName" value={form.firstName} onChange={update} required /></label><label>Middle name (optional)<input name="middleName" value={form.middleName} onChange={update} /></label></div>
           <div className="portal-form-grid three"><label>Date of birth<input name="dateOfBirth" type="date" value={form.dateOfBirth} onChange={update} required /></label><label>Sex<select name="gender" value={form.gender} onChange={update}><option value="MALE">Male</option><option value="FEMALE">Female</option><option value="OTHER">Other</option></select></label><label>Marital status<select name="maritalStatus" value={form.maritalStatus} onChange={update}><option value="SINGLE">Single</option><option value="MARRIED">Married</option><option value="OTHER">Other</option></select></label></div>
@@ -116,12 +122,12 @@ export default function ApplicantApplicationForm() {
           <div className="portal-form-grid"><label>Postal address<textarea name="postalAddress" value={form.postalAddress} onChange={update} rows="3" required /></label><label>Permanent home address<textarea name="permanentAddress" value={form.permanentAddress} onChange={update} rows="3" required /></label></div>
         </fieldset>
 
-        <fieldset disabled={!editable}>
+        <fieldset disabled={!editable || Boolean(busy)}>
           <legend><span>B</span>Parent or guardian</legend>
           <div className="portal-form-grid"><label>Full name<input name="guardianName" value={form.guardianName} onChange={update} required /></label><label>Relationship<input name="guardianRelationship" value={form.guardianRelationship} onChange={update} required /></label><label>Phone number<input name="guardianPhone" value={form.guardianPhone} onChange={update} required /></label><label>Address<textarea name="guardianAddress" value={form.guardianAddress} onChange={update} rows="2" required /></label></div>
         </fieldset>
 
-        <fieldset disabled={!editable}>
+        <fieldset disabled={!editable || Boolean(busy)}>
           <legend><span>C</span>Programme and education</legend>
           <div className="portal-form-grid"><label>Course of interest<select name="courseOfInterest" value={form.courseOfInterest} onChange={update}>{programs.map((program) => <option key={program.title}>{program.title}</option>)}</select></label><label>Previous qualification<input name="previousQualification" value={form.previousQualification} onChange={update} placeholder="WAEC, NECO, NABTEB, diploma, or other" /></label></div>
           <div className="education-table">
@@ -139,23 +145,23 @@ export default function ApplicantApplicationForm() {
           {form.educationRecords.length < 9 && <button className="portal-add-button" type="button" onClick={() => setForm((current) => ({ ...current, educationRecords: [...current.educationRecords, { subject: "", grade: "", examBody: "", year: "" }] }))}><Plus size={17} />Add another subject</button>}
         </fieldset>
 
-        <fieldset disabled={!editable}>
+        <fieldset disabled={!editable || Boolean(busy)}>
           <legend><span>D</span>Sponsorship</legend>
           <div className="portal-form-grid three"><label>Sponsor's name<input name="sponsorName" value={form.sponsorName} onChange={update} /></label><label>Sponsor's phone<input name="sponsorPhone" value={form.sponsorPhone} onChange={update} /></label><label>Sponsor's address<input name="sponsorAddress" value={form.sponsorAddress} onChange={update} /></label></div>
         </fieldset>
 
-        <fieldset disabled={!editable}>
+        <fieldset disabled={!editable || Boolean(busy)}>
           <legend><span>E</span>Working experience</legend>
           {form.workExperience.map((record, index) => <div className="portal-form-grid work-row" key={index}><label>Organisation<input value={record.organization} onChange={(event) => updateWork(index, "organization", event.target.value)} /></label><label>Date or period<input value={record.date} onChange={(event) => updateWork(index, "date", event.target.value)} /></label><label>Reason for leaving<input value={record.reasonForLeaving} onChange={(event) => updateWork(index, "reasonForLeaving", event.target.value)} /></label><button type="button" onClick={() => setForm((current) => ({ ...current, workExperience: current.workExperience.filter((_, itemIndex) => itemIndex !== index) }))}><Trash2 size={17} /></button></div>)}
           {form.workExperience.length < 4 && <button className="portal-add-button" type="button" onClick={() => setForm((current) => ({ ...current, workExperience: [...current.workExperience, { organization: "", date: "", reasonForLeaving: "" }] }))}><Plus size={17} />Add work experience</button>}
         </fieldset>
 
-        <fieldset disabled={!editable}>
+        <fieldset disabled={!editable || Boolean(busy)}>
           <legend><span>F</span>Declaration</legend>
           <label className="declaration-check"><input name="declarationAccepted" type="checkbox" checked={form.declarationAccepted} onChange={update} /><span>I declare that the information supplied is correct to the best of my knowledge. I understand that false information may lead to the withdrawal of admission.</span></label>
         </fieldset>
 
-        {editable && <div className="portal-form-actions"><LoadingButton type="button" className="button secondary" loading={busy === "save"} disabled={Boolean(busy)} loadingText="Saving..." onClick={save}><Save size={18} />Save draft</LoadingButton><LoadingButton type="button" loading={busy === "submit"} disabled={Boolean(busy)} loadingText="Submitting..." onClick={submit}><Send size={18} />Submit for review</LoadingButton></div>}
+        <div className="portal-form-actions"><Link className="button secondary" to={portalPath("/applicant/payments")}><ArrowLeft size={18} />Previous: Payment</Link>{editable ? <><LoadingButton type="button" className="button secondary" loading={busy === "save"} disabled={Boolean(busy)} loadingText="Saving..." onClick={save}><Save size={18} />Save draft</LoadingButton><LoadingButton type="button" loading={busy === "continue"} disabled={Boolean(busy)} loadingText="Saving and checking…" onClick={continueToDocuments}>Save & continue to Documents<ArrowRight size={18} /></LoadingButton></> : <Link className="button" to={portalPath("/applicant/documents")}>View documents<ArrowRight size={18} /></Link>}</div>
       </form>
     </div>
   );

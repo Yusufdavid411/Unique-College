@@ -7,6 +7,7 @@ import ApplicantProgress from "./ApplicantProgress.jsx";
 import { assetPaths } from "../data/siteData.js";
 import { portalPath } from "../api/portalLinks.js";
 import { useSchool } from "../context/SchoolContext.jsx";
+import { ErrorToast } from "./ToastNotifications.jsx";
 
 const links = [
   ["Dashboard", "/applicant", LayoutDashboard],
@@ -20,7 +21,7 @@ const links = [
 function ApplicantShell() {
   const { schoolInfo } = useSchool();
   const { logout, user } = useAuth();
-  const { formAccess, loading } = useApplicant();
+  const { formAccess, journey, loading, error, refresh } = useApplicant();
   const [menuOpen, setMenuOpen] = useState(false);
   const [mobile, setMobile] = useState(() => window.matchMedia("(max-width: 820px)").matches);
   const sidebarRef = useRef(null);
@@ -75,11 +76,11 @@ function ApplicantShell() {
           <div><strong id="applicant-sidebar-title">Applicant Portal</strong><span>{schoolInfo.shortName}</span></div>
           <button ref={closeRef} className="applicant-drawer-close" type="button" aria-label="Close navigation" onClick={() => setMenuOpen(false)}><X size={21} /></button>
         </div>
-        <p className="applicant-nav-label">Applicant steps</p>
+        <p className="applicant-nav-label">My admission</p>
         <nav id="applicant-navigation" aria-label="Applicant navigation">
           {links.map(([label, path, Icon]) => {
-            const locked = ["/applicant/application", "/applicant/documents", "/applicant/print"].includes(path) && (loading || !formAccess.unlocked);
-            return locked ? <button type="button" disabled key={path} title="Available after payment verification"><Icon size={19} />{label}</button> : <NavLink to={portalPath(path)} end={path === "/applicant"} key={path} onClick={() => setMenuOpen(false)}><Icon size={19} />{label}</NavLink>;
+            const locked = ["/applicant/application", "/applicant/documents", "/applicant/print"].includes(path) && (loading || !formAccess.unlocked) || path === "/applicant/documents" && (!journey || journey.steps.find((step) => step.id === "documents")?.locked);
+            return locked ? <button type="button" disabled key={path} title={formAccess.unlocked ? "Complete and save your application form first" : "Available after payment verification"}><Icon size={19} />{label}</button> : <NavLink to={portalPath(path)} end={path === "/applicant"} key={path} onClick={() => setMenuOpen(false)}><Icon size={19} />{label}</NavLink>;
           })}
         </nav>
         <button className="applicant-signout" type="button" aria-label="Sign out" onClick={signOut}><LogOut size={20} /><span>Logout</span></button>
@@ -90,7 +91,7 @@ function ApplicantShell() {
             <div className="applicant-topbar-title"><strong>Pre-admission portal</strong><span>{schoolInfo.shortName}</span></div>
             <div className="applicant-account"><span className="applicant-account-avatar"><UserRound size={23} /></span><div><strong>{user?.name}</strong><span>Applicant account</span></div></div>
           </header>
-          <main className="applicant-main"><ApplicantProgress /><Outlet /></main>
+          <main className="applicant-main">{error && !journey ? <section className="portal-page"><ErrorToast message={error} /><h1>Your progress could not be loaded</h1><p>Refresh your account before continuing. Do not repeat a payment because of a connection problem.</p><button type="button" className="button" disabled={loading} onClick={refresh}>{loading ? "Checking…" : "Refresh registration progress"}</button></section> : <><ApplicantProgress /><Outlet /></>}</main>
         </div>
       </div>
   );

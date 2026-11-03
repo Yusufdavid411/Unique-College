@@ -4870,3 +4870,12 @@ th {
 .readiness-item > div { padding: 0 1rem 1rem; overflow-wrap: anywhere; }
 .readiness-caption { font-size: .85rem; color: #506176; line-height: 1.7; }
 @media (max-width: 480px) { .readiness-item summary { flex-wrap: wrap; } .readiness-item summary small { width: 100%; text-align: left; padding-left: 1.9rem; } }
+.registration-stage-cards article.is-current { border: 2px solid var(--blue-700); }
+.registration-stage-cards article.is-complete .portal-card-icon { background: #e9f8ef; color: #17623f; }
+.registration-stage-status { display: inline-block; font-weight: 700; font-size: .8rem; color: var(--muted); margin-bottom: .4rem; }
+.registration-stage-cards .is-current .registration-stage-status { color: var(--blue-700); }
+.registration-stage-cards .is-complete .registration-stage-status { color: #17623f; }
+.registration-resume { margin-bottom: 1.5rem; }
+.registration-resume .button, .portal-form-actions .button { white-space: normal; text-align: center; }
+.document-upload-grid + .student-card { margin-top: 1.5rem; min-width: 0; }
+.document-upload-grid + .student-card details { overflow-x: auto; }

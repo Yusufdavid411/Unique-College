@@ -7,16 +7,15 @@ import { fileMetadata } from "../services/uploadService.js";
 import { loginApplicant, toPublicUser } from "../services/authService.js";
 import { formAccessFor } from "../services/formAccess.js";
 import { Prisma } from "@prisma/client";
-import { requiredAdmissionDocuments } from "../services/admissionWorkflow.js";
 import { createPendingPayment, pendingReceiptMessage } from "../services/paymentSubmission.js";
 import { auditedMutation } from "../services/audit.js";
 import { publicPaymentConfiguration } from "../services/flutterwave.js";
 import { attemptStatusEmail } from "../services/statusEmail.js";
 import { admissionProgressFor } from "../services/acceptance.js";
 import { screeningProgress } from "../services/admissionDocuments.js";
+import { applicantJourney, applicationFormMissing, applicationDocumentsMissing } from "../services/applicantJourney.js";
 
 const editableStatuses = ["DRAFT", "RETURNED"];
-const requiredDocumentTypes = requiredAdmissionDocuments;
 const documentsEditable = (application) => editableStatuses.includes(application.status) || (application.status === "ACCEPTED" && application.clearanceStatus === "CORRECTIONS_REQUIRED");
 
 function applicationNumber() {
@@ -89,7 +88,7 @@ export const registerApplicant = asyncHandler(async (req, res) => {
 
 export const getApplicantDashboard = asyncHandler(async (req, res) => {
   const application = await getApplicantApplication(req.user.id);
-  ok(res, { application, user: toPublicUser(req.user), screening: screeningProgress(application), formAccess: formAccessFor(application), admission: admissionProgressFor(application), paymentGateway: publicPaymentConfiguration(application) });
+  ok(res, { application, journey: applicantJourney(application), user: toPublicUser(req.user), screening: screeningProgress(application), formAccess: formAccessFor(application), admission: admissionProgressFor(application), paymentGateway: publicPaymentConfiguration(application) });
 });
 
 export const updateApplicantApplication = asyncHandler(async (req, res) => {
@@ -129,37 +128,7 @@ export const submitApplicantApplication = asyncHandler(async (req, res) => {
     return res.status(409).json({ success: false, message: "This application has already been submitted" });
   }
 
-  const requiredFields = [
-    ["surname", "Surname"],
-    ["firstName", "First name"],
-    ["gender", "Sex"],
-    ["dateOfBirth", "Date of birth"],
-    ["lga", "LGA"],
-    ["state", "State"],
-    ["nationality", "Nationality"],
-    ["maritalStatus", "Marital status"],
-    ["postalAddress", "Postal address"],
-    ["permanentAddress", "Permanent home address"],
-    ["guardianName", "Parent or guardian name"],
-    ["guardianAddress", "Parent or guardian address"],
-    ["guardianRelationship", "Guardian relationship"],
-    ["guardianPhone", "Parent or guardian phone"],
-    ["courseOfInterest", "Course of interest"]
-  ];
-  const missing = requiredFields.filter(([key]) => !application[key]).map(([, label]) => label);
-  const completeEducationRecords = Array.isArray(application.educationRecords)
-    ? application.educationRecords.filter((record) => record.subject && record.grade && record.examBody && record.year)
-    : [];
-  if (completeEducationRecords.length < 5) {
-    missing.push("At least five O-Level subject results");
-  }
-  if (!application.declarationAccepted) missing.push("Applicant declaration");
-
-  const uploadedTypes = new Set(application.documents.map((document) => document.type));
-  requiredDocumentTypes.forEach((type) => {
-    if (!uploadedTypes.has(type)) missing.push(type.replaceAll("_", " ").toLowerCase());
-  });
-
+  const missing = [...applicationFormMissing(application), ...applicationDocumentsMissing(application)];
   if (missing.length) {
     return res.status(422).json({ success: false, message: "Complete all required application steps", data: { missing } });
   }
@@ -188,12 +157,20 @@ export const submitApplicantApplication = asyncHandler(async (req, res) => {
   ok(res, updated.application, "Your application is under review. Please check back later for a decision.");
 });
 
+export const requireCompletedApplicationForm = asyncHandler(async (req, res, next) => {
+  const application = await getApplicantApplication(req.user.id);
+  if (editableStatuses.includes(application.status) && applicationFormMissing(application).length) return res.status(409).json({ success: false, message: "Complete and save your application form before uploading supporting documents." });
+  next();
+});
+
 export const uploadApplicantDocument = asyncHandler(async (req, res) => {
   if (!req.file) return res.status(400).json({ success: false, message: "Please choose a document to upload" });
   const application = await getApplicantApplication(req.user.id);
   if (!documentsEditable(application)) {
     return res.status(409).json({ success: false, message: "Documents cannot be changed during review" });
   }
+
+  if (editableStatuses.includes(application.status) && applicationFormMissing(application).length) return res.status(409).json({ success: false, message: "Complete and save your application form before uploading supporting documents." });
 
   const metadata = fileMetadata(req.file, "documents");
   const document = await prisma.$transaction(async (transaction) => {

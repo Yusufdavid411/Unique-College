@@ -8,6 +8,7 @@ import {
   updateApplicantApplication,
   uploadApplicantDocument,
   requireNoPendingReceipt,
+  requireCompletedApplicationForm,
   withdrawApplicantPayment
 } from "../controllers/applicantController.js";
 import { requireAuth, requireRole } from "../middleware/auth.js";
@@ -32,7 +33,7 @@ router.get("/dashboard", getApplicantDashboard);
 router.post("/offer-response", respondToOffer);
 router.patch("/application", requireFormAccess, validate(applicantApplicationSchema), updateApplicantApplication);
 router.post("/application/submit", requireFormAccess, submitApplicantApplication);
-router.post("/documents", requireFormAccess, upload.single("file"), validate(applicantDocumentSchema), uploadApplicantDocument);
+router.post("/documents", requireFormAccess, requireCompletedApplicationForm, upload.single("file"), validate(applicantDocumentSchema), uploadApplicantDocument);
 router.delete("/documents/:documentId", deleteApplicantDocument);
 router.post("/payments", requireNoPendingReceipt, upload.single("proof"), validate(applicantPaymentSchema), recordApplicantPayment);
 router.delete("/payments/:paymentId", withdrawApplicantPayment);

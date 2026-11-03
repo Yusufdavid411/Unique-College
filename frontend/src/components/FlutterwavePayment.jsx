@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { CheckCircle2, CreditCard } from "lucide-react";
 import { api, apiErrorMessage } from "../api/client.js";
 import { portalPath } from "../api/portalLinks.js";
@@ -85,6 +85,7 @@ export default function FlutterwavePayment() {
 
   return <div className="portal-page">
     <header className="portal-page-header"><div><span className="eyebrow">Secure online payment</span><h1>Payments</h1><p>Pay through Flutterwave. Confirmation and separate receipts are automatic.</p></div></header>
+    <Link className="button secondary" to={portalPath("/applicant")}>Previous: Dashboard</Link>
     {feeCard("APPLICATION_FEE", "Application form fee", formAccess.amount, formAccess.unlocked, true)}
     {screening?.status === "SCHEDULED" && feeCard("SCREENING_FEE", "Screening / entrance-exam fee", screening.amount, screening.paid, true)}
     {admission?.offered && feeCard("ACCEPTANCE_FEE", "Acceptance fee", admission.amount, admission.paid, admission.canPay)}

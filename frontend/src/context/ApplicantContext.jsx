@@ -8,6 +8,7 @@ export function ApplicantProvider({ children }) {
   const [formAccess, setFormAccess] = useState({ unlocked: false, amount: null });
   const [admission, setAdmission] = useState(null);
   const [screening, setScreening] = useState(null);
+  const [journey, setJourney] = useState(null);
   const [paymentGateway, setPaymentGateway] = useState({ provider: "MANUAL", ready: false });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -18,12 +19,15 @@ export function ApplicantProvider({ children }) {
     try {
       const response = await api.get("/applicant/dashboard");
       setApplication(response.data.data.application);
+      setJourney(response.data.data.journey || null);
       setFormAccess(response.data.data.formAccess || { unlocked: false, amount: null });
       setAdmission(response.data.data.admission || null);
       setScreening(response.data.data.screening || null);
       setPaymentGateway(response.data.data.paymentGateway || { provider: "MANUAL", ready: false });
+      return response.data.data;
     } catch (requestError) {
       setFormAccess({ unlocked: false, amount: null });
+      setJourney(null);
       setError(apiErrorMessage(requestError, "Applicant information could not be loaded."));
     } finally {
       setLoading(false);
@@ -32,7 +36,7 @@ export function ApplicantProvider({ children }) {
 
   useEffect(() => { refresh(); }, [refresh]);
 
-  const value = useMemo(() => ({ application, formAccess, admission, screening, paymentGateway, loading, error, refresh, setApplication }), [application, formAccess, admission, screening, paymentGateway, loading, error, refresh]);
+  const value = useMemo(() => ({ application, journey, formAccess, admission, screening, paymentGateway, loading, error, refresh, setApplication }), [application, journey, formAccess, admission, screening, paymentGateway, loading, error, refresh]);
   return <ApplicantContext.Provider value={value}>{children}</ApplicantContext.Provider>;
 }
 

@@ -1,11 +1,14 @@
-import { CheckCircle2, FileText, UploadCloud, XCircle } from "lucide-react";
-import { useState } from "react";
+import { ArrowLeft, CheckCircle2, FileText, Send, UploadCloud, XCircle } from "lucide-react";
+import { useRef, useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
 import { api, apiErrorMessage, MAX_UPLOAD_BYTES } from "../../api/client.js";
 import LoadingButton from "../../components/LoadingButton.jsx";
 import { ErrorToast } from "../../components/ToastNotifications.jsx";
 import PrivateFileButton from "../../components/PrivateFileButton.jsx";
 import FormPurchaseRequired from "../../components/FormPurchaseRequired.jsx";
 import { useApplicant } from "../../context/ApplicantContext.jsx";
+import { portalPath } from "../../api/portalLinks.js";
+import ApplicationRecord from "../../components/ApplicationRecord.jsx";
 
 const documentTypes = [
   ["PASSPORT", "Recent passport photograph", "JPG, PNG or WEBP"],
@@ -16,18 +19,22 @@ const documentTypes = [
 ];
 
 export default function ApplicantDocuments() {
-  const { application, formAccess, loading, refresh } = useApplicant();
+  const { application, journey, formAccess, loading, refresh } = useApplicant();
+  const navigate = useNavigate();
+  const operation = useRef(false);
   const [busy, setBusy] = useState("");
   const [notice, setNotice] = useState({ type: "", message: "" });
   if (loading) return <div className="portal-loading">Loading documents...</div>;
   if (!application) return <div className="portal-error">Applicant record could not be loaded.</div>;
   if (!formAccess.unlocked) return <FormPurchaseRequired amount={formAccess.amount} />;
+  if (!journey || journey.steps.find((step) => step.id === "documents")?.locked) return <section className="portal-page"><h1>Complete your application form first</h1><p>Save all required form details and your declaration before continuing to supporting documents.</p><Link className="button" to={portalPath("/applicant/application")}>Continue application form</Link></section>;
 
   const editable = ["DRAFT", "RETURNED"].includes(application.status) || (application.status === "ACCEPTED" && application.clearanceStatus === "CORRECTIONS_REQUIRED");
 
   async function upload(type, label, file) {
-    if (!file) return;
+    if (!file || operation.current) return;
     if (file.size > MAX_UPLOAD_BYTES) return setNotice({ type: "error", message: "Choose a document of 4 MB or less." });
+    operation.current = true;
     setBusy(type);
     setNotice({ type: "", message: "" });
     const data = new FormData();
@@ -42,6 +49,26 @@ export default function ApplicantDocuments() {
       setNotice({ type: "error", message: apiErrorMessage(error, "The document could not be uploaded.") });
     } finally {
       setBusy("");
+      operation.current = false;
+    }
+  }
+
+  async function submitForReview() {
+    if (operation.current || !journey.canSubmit) return;
+    if (!window.confirm("Submit your saved application and supporting documents for admissions review? They will be locked while the school reviews them.")) return;
+    operation.current = true;
+    setBusy("submit");
+    setNotice({ type: "", message: "" });
+    try {
+      await api.post("/applicant/application/submit");
+      const saved = await refresh();
+      if (saved) navigate(portalPath("/applicant"));
+    } catch (error) {
+      const missing = error.response?.data?.data?.missing;
+      setNotice({ type: "error", message: missing?.length ? `Complete these items first: ${missing.join(", ")}.` : apiErrorMessage(error, "Your application could not be submitted. Refresh its status before trying again.") });
+    } finally {
+      setBusy("");
+      operation.current = false;
     }
   }
 
@@ -63,11 +90,13 @@ export default function ApplicantDocuments() {
                   <span className={`review-pill ${document.reviewStatus.toLowerCase()}`}>{document.reviewStatus === "VERIFIED" ? <CheckCircle2 /> : document.reviewStatus === "REJECTED" ? <XCircle /> : null}{document.reviewStatus}</span>
                 </div>
               ))}
-              {editable && <label className="document-dropzone"><UploadCloud /><span>{busy === type ? "Uploading..." : uploaded.length ? "Upload another file" : "Choose file to upload"}</span><input type="file" accept="application/pdf,image/png,image/jpeg,image/webp" disabled={busy === type} onChange={(event) => upload(type, label, event.target.files?.[0])} /></label>}
+              {editable && <label className="document-dropzone"><UploadCloud /><span>{busy === type ? "Uploading..." : uploaded.length ? "Upload another file" : "Choose file to upload"}</span><input type="file" accept="application/pdf,image/png,image/jpeg,image/webp" disabled={Boolean(busy)} onChange={(event) => upload(type, label, event.target.files?.[0])} /></label>}
             </article>
           );
         })}
       </section>
+      {["DRAFT", "RETURNED"].includes(application.status) && <section className="student-card"><h2>Submit your application for review</h2>{journey.documentsMissing.length ? <><p>Upload or replace these required documents before submitting:</p><ul>{journey.documentsMissing.map((label) => <li key={label}>{label}</li>)}</ul></> : <p>All required uploads are present. Check your saved details and documents before submitting.</p>}<details><summary>Review saved application details</summary><ApplicationRecord application={application} /></details><div className="portal-form-actions"><Link className="button secondary" to={portalPath("/applicant/application")}><ArrowLeft size={18} />Previous: Application form</Link><LoadingButton type="button" disabled={Boolean(busy) || !journey.canSubmit} loading={busy === "submit"} loadingText="Submitting…" onClick={submitForReview}><Send size={18} />Submit for review</LoadingButton></div></section>}
+      {!["DRAFT", "RETURNED"].includes(application.status) && <div className="portal-form-actions"><Link className="button secondary" to={portalPath("/applicant/application")}><ArrowLeft size={18} />Previous: Application form</Link><Link className="button" to={portalPath("/applicant")}>View application status</Link></div>}
     </div>
   );
 }
