@@ -13,8 +13,8 @@ export function ApplicantProvider({ children }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
-  const refresh = useCallback(async () => {
-    setLoading(true);
+  const refresh = useCallback(async ({ background = false } = {}) => {
+    if (!background) setLoading(true);
     setError("");
     try {
       const response = await api.get("/applicant/dashboard");
@@ -26,11 +26,12 @@ export function ApplicantProvider({ children }) {
       setPaymentGateway(response.data.data.paymentGateway || { provider: "MANUAL", ready: false });
       return response.data.data;
     } catch (requestError) {
+      if (background) return;
       setFormAccess({ unlocked: false, amount: null });
       setJourney(null);
       setError(apiErrorMessage(requestError, "Applicant information could not be loaded."));
     } finally {
-      setLoading(false);
+      if (!background) setLoading(false);
     }
   }, []);
 

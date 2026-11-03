@@ -47,6 +47,7 @@ test("document screen has one current file, clear upload labels and separate non
   assert.doesNotMatch(source, /Upload another file|uploaded\.map/);
   assert.match(source, /Replace file/);
   assert.match(source, /Awaiting review/);
+  assert.match(source, /await refresh\(\{ background: true \}\)/);
   assert.match(source, /"Uploaded"/);
   assert.match(source, /<PrivateFilePreview path=\{document\.path\}/);
   const preview = await readFile(new URL("../../frontend/src/components/PrivateFilePreview.jsx", import.meta.url), "utf8");

@@ -45,7 +45,11 @@ export default function ApplicantDocuments() {
     data.append("file", file);
     try {
       await api.post("/applicant/documents", data);
-      await refresh();
+      const updated = await refresh({ background: true });
+      if (!updated) {
+        setNotice({ type: "error", message: "Your file was saved, but the document list could not refresh. Reload the page to see the new file; you do not need to upload it again." });
+        return;
+      }
       setNotice({ type: "success", message: `${label} ${replacing ? "replaced" : "uploaded"} successfully.` });
     } catch (error) {
       setNotice({ type: "error", message: apiErrorMessage(error, "The document could not be uploaded.") });
