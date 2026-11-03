@@ -48,6 +48,13 @@ test("document screen has one current file, clear upload labels and separate non
   assert.match(source, /Replace file/);
   assert.match(source, /Awaiting review/);
   assert.match(source, /"Uploaded"/);
+  assert.match(source, /<PrivateFilePreview path=\{document\.path\}/);
+  const preview = await readFile(new URL("../../frontend/src/components/PrivateFilePreview.jsx", import.meta.url), "utf8");
+  assert.match(preview, /api\.get\("\/files"/);
+  assert.match(preview, /<img src=\{preview\.url\}/);
+  assert.match(preview, /<iframe src=\{preview\.url/);
+  assert.match(preview, /URL\.revokeObjectURL/);
+  assert.doesNotMatch(preview, /\.download\s*=|\.click\(/);
   assert.match(source, /<\/details><\/section>}\s*\{\["DRAFT", "RETURNED"\].*className="document-page-actions"/);
   const migration = await readFile(new URL("../prisma/migrations/202611030014_current_application_documents/migration.sql", import.meta.url), "utf8");
   assert.match(migration, /CREATE UNIQUE INDEX/);

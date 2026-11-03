@@ -4,7 +4,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { api, apiErrorMessage, MAX_UPLOAD_BYTES } from "../../api/client.js";
 import LoadingButton from "../../components/LoadingButton.jsx";
 import { ErrorToast } from "../../components/ToastNotifications.jsx";
-import PrivateFileButton from "../../components/PrivateFileButton.jsx";
+import PrivateFilePreview from "../../components/PrivateFilePreview.jsx";
 import FormPurchaseRequired from "../../components/FormPurchaseRequired.jsx";
 import { useApplicant } from "../../context/ApplicantContext.jsx";
 import { portalPath } from "../../api/portalLinks.js";
@@ -88,7 +88,7 @@ export default function ApplicantDocuments() {
               <div className="document-upload-heading"><span><FileText /></span><div><h2>{label}{required && <sup>Required</sup>}</h2><p>{help}</p></div></div>
               {document && (
                 <div className="uploaded-document" key={document.id}>
-                  <PrivateFileButton path={document.path}>{document.label}</PrivateFileButton>
+                  <PrivateFilePreview path={document.path} label={document.label} />
                   <span className={`review-pill ${document.reviewStatus.toLowerCase()}`}>{document.reviewStatus === "VERIFIED" ? <CheckCircle2 /> : document.reviewStatus === "REJECTED" ? <XCircle /> : null}{document.reviewStatus === "VERIFIED" ? "Verified" : document.reviewStatus === "REJECTED" ? "Replace required" : journey.submitted ? "Awaiting review" : "Uploaded"}</span>
                 </div>
               )}
