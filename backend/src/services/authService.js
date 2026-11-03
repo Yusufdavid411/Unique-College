@@ -2,7 +2,7 @@ import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import { env } from "../config/env.js";
 import { prisma } from "../config/prisma.js";
-import { permissionsFor } from "./permissions.js";
+import { permissionsFor, roleInclude } from "./permissions.js";
 
 function publicUser(user) {
   return {
@@ -13,7 +13,8 @@ function publicUser(user) {
     portalUsername: user.portalUsername,
     officialEmail: user.officialEmail,
     mustChangePassword: user.mustChangePassword,
-    permissions: permissionsFor(user)
+    permissions: permissionsFor(user),
+    assignedRoles: (user.roleAssignments || []).map((assignment) => assignment.role.name)
   };
 }
 
@@ -80,4 +81,12 @@ export async function loginApplicant(identifier, password) {
 
 export function toPublicUser(user) {
   return publicUser(user);
+}
+
+export async function loginStaff(email, password) {
+  const user = await prisma.user.findUnique({ where: { email: email.trim().toLowerCase() }, include: roleInclude });
+  if (!user?.isActive || user.role !== "STAFF" || !(await bcrypt.compare(password, user.passwordHash))) {
+    throw Object.assign(new Error("Invalid staff email or password"), { statusCode: 401 });
+  }
+  return signInResult(user);
 }

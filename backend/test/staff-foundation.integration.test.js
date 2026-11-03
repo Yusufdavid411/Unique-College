@@ -1,0 +1,108 @@
+import test from "node:test";
+import assert from "node:assert/strict";
+import crypto from "node:crypto";
+import bcrypt from "bcryptjs";
+import jwt from "jsonwebtoken";
+import { prisma } from "../src/config/prisma.js";
+import { app } from "../src/app.js";
+import { env } from "../src/config/env.js";
+
+test("admin creates staff, assigns roles and scopes adviser/student access with immediate revocation", { skip: !process.env.INTEGRATION_DATABASE_URL, timeout: 240000 }, async () => {
+  assert.match(new URL(process.env.DATABASE_URL).pathname, /test/i);
+  const marker = crypto.randomUUID();
+  const users = [];
+  const applications = [];
+  let department, programme, session, level, accessRole;
+  const server = app.listen(0, "127.0.0.1");
+  await new Promise((resolve) => server.once("listening", resolve));
+  const base = `http://127.0.0.1:${server.address().port}/api`;
+  const signed = (user) => jwt.sign({ sub: user.id, version: user.sessionVersion || 0 }, env.jwtSecret);
+  const call = (path, method = "GET", body, token) => fetch(base + path, { method, headers: { ...(body ? { "Content-Type": "application/json" } : {}), ...(token ? { Authorization: `Bearer ${token}` } : {}) }, ...(body ? { body: JSON.stringify(body) } : {}) });
+  async function createUser(role, suffix) {
+    const user = await prisma.user.create({ data: { role, name: `Fixture ${suffix}`, email: `${marker}-${suffix}@staff.invalid`, passwordHash: await bcrypt.hash("FixturePassword2027", 4) } });
+    users.push(user); return user;
+  }
+  async function student(suffix) {
+    const user = await createUser("STUDENT", suffix);
+    const application = await prisma.application.create({ data: { applicantId: user.id, fullName: user.name, email: user.email, phoneNumber: "08000000000", status: "ADMITTED", studentNumber: marker + suffix } });
+    applications.push(application);
+    const profile = await prisma.studentProfile.create({ data: { userId: user.id, applicationId: application.id } });
+    const enrolment = await prisma.studentEnrolment.create({ data: { studentId: profile.id, sessionId: session.id, programmeId: programme.id, levelId: level.id, assignedBy: users[0].id } });
+    return { user, enrolment };
+  }
+  try {
+    const admin = await createUser("ADMIN", "admin");
+    const adminToken = signed(admin);
+    const other = await createUser("STAFF", "other-staff");
+    assert.equal((await call("/staff/me")).status, 401);
+    assert.equal((await call("/staff/me", "GET", null, adminToken)).status, 403);
+    const created = await call("/users", "POST", { name: "Created staff fixture", email: `${marker}-created@staff.invalid` }, adminToken);
+    assert.equal(created.status, 200);
+    const credentials = (await created.json()).data;
+    const staff = await prisma.user.findUnique({ where: { id: credentials.user.id } }); users.push(staff);
+    let response = await call("/auth/staff/login", "POST", { email: staff.email, password: credentials.temporaryPassword });
+    assert.equal(response.status, 200);
+    const initial = (await response.json()).data;
+    assert.equal(initial.user.mustChangePassword, true);
+    assert.equal((await call("/staff/me", "GET", null, initial.token)).status, 403);
+    assert.equal((await call("/auth/password", "POST", { currentPassword: credentials.temporaryPassword, password: "NewStaffPassword2027" }, initial.token)).status, 200);
+    assert.equal((await call("/staff/me", "GET", null, initial.token)).status, 401);
+    response = await call("/auth/staff/login", "POST", { email: staff.email, password: "NewStaffPassword2027" });
+    const token = (await response.json()).data.token;
+    assert.equal((await call("/staff/students", "GET", null, token)).status, 403);
+    accessRole = await prisma.accessRole.create({ data: { name: marker, permissions: ["advisees.read"] } });
+    assert.equal((await call(`/roles/${accessRole.id}/users/${staff.id}`, "PUT", {}, adminToken)).status, 200);
+    assert.equal((await call(`/roles/${accessRole.id}/users/${other.id}`, "PUT", {}, adminToken)).status, 200);
+    department = await prisma.academicDepartment.create({ data: { code: marker, name: "Fixture department" } });
+    programme = await prisma.academicProgramme.create({ data: { code: marker, name: "Fixture programme", departmentId: department.id } });
+    session = await prisma.academicSession.create({ data: { name: marker, startsAt: new Date("2026-01-01"), endsAt: new Date("2027-12-31") } });
+    level = await prisma.academicLevel.create({ data: { code: marker, name: "Fixture level" } });
+    const owner = await student("one");
+    const second = await student("two");
+    assert.equal((await call("/staff-assignments", "POST", { staffId: staff.id, enrolmentId: owner.enrolment.id }, token)).status, 403);
+    response = await call("/staff-assignments", "POST", { staffId: staff.id, enrolmentId: owner.enrolment.id }, adminToken);
+    assert.equal(response.status, 200);
+    const assigned = (await response.json()).data;
+    response = await call("/staff/students", "GET", null, token);
+    assert.equal(response.status, 200);
+    const records = (await response.json()).data;
+    assert.equal((await call("/staff-assignments/options", "GET", null, adminToken)).status, 200);
+    assert.equal((await call("/staff-assignments", "GET", null, adminToken)).status, 200);
+    assert.equal(records.total, 1);
+    assert.equal(records.students[0].enrolment.student.user.email, owner.user.email);
+    assert.equal(records.students[0].enrolment.student.application.payments, undefined);
+    assert.equal(records.students[0].enrolment.student.user.passwordHash, undefined);
+    assert.equal((await call(`/staff/students/${assigned.id}`, "GET", null, signed(other))).status, 404);
+    assert.equal((await call("/students", "GET", null, token)).status, 403);
+    assert.equal((await call("/student/me", "GET", null, token)).status, 403);
+    assert.equal((await call("/staff/me", "GET", null, signed(owner.user))).status, 403);
+    const advisers = (await (await call("/student/advisers", "GET", null, signed(owner.user))).json()).data;
+    assert.equal(advisers.length, 1); assert.equal(advisers[0].staff.email, staff.email);
+    assert.equal((await (await call("/student/advisers", "GET", null, signed(second.user))).json()).data.length, 0);
+    await call(`/roles/${accessRole.id}/users/${staff.id}`, "DELETE", null, adminToken);
+    assert.equal((await call("/staff/students", "GET", null, token)).status, 403);
+    await call(`/roles/${accessRole.id}/users/${staff.id}`, "PUT", {}, adminToken);
+    await prisma.academicSession.update({ where: { id: session.id }, data: { isActive: false } });
+    assert.equal((await (await call("/staff/students", "GET", null, token)).json()).data.total, 0);
+    await prisma.academicSession.update({ where: { id: session.id }, data: { isActive: true } });
+    assert.equal((await call(`/staff-assignments/${assigned.id}`, "DELETE", null, adminToken)).status, 200);
+    assert.equal((await call(`/staff/students/${assigned.id}`, "GET", null, token)).status, 404);
+    assert.equal((await (await call("/student/advisers", "GET", null, signed(owner.user))).json()).data.length, 0);
+    assert.equal((await call(`/users/${staff.id}`, "PATCH", { isActive: false }, adminToken)).status, 200);
+    assert.equal((await call("/staff/me", "GET", null, token)).status, 401);
+    assert.equal((await call("/auth/staff/login", "POST", { email: staff.email, password: "NewStaffPassword2027" })).status, 401);
+  } finally {
+    const ids = users.map((user) => user.id);
+    await prisma.staffStudentAssignment.deleteMany({ where: { staffId: { in: ids } } });
+    await prisma.studentEnrolment.deleteMany({ where: { assignedBy: users[0]?.id || "absent" } });
+    await prisma.studentProfile.deleteMany({ where: { userId: { in: ids } } });
+    await prisma.application.deleteMany({ where: { id: { in: applications.map((application) => application.id) } } });
+    await prisma.userRoleAssignment.deleteMany({ where: { userId: { in: ids } } });
+    if (accessRole) await prisma.accessRole.delete({ where: { id: accessRole.id } });
+    for (const [model, record] of [["academicProgramme", programme], ["academicDepartment", department], ["academicSession", session], ["academicLevel", level]]) if (record) await prisma[model].delete({ where: { id: record.id } });
+    await prisma.auditLog.deleteMany({ where: { actorId: { in: ids } } });
+    await prisma.user.deleteMany({ where: { id: { in: ids } } });
+    await new Promise((resolve) => server.close(resolve));
+    await prisma.$disconnect();
+  }
+});

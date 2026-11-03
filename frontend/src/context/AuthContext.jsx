@@ -70,6 +70,13 @@ export function AuthProvider({ children }) {
     setSession({ scope: "student", user: response.data.data.user, loading: false });
   }
 
+  async function staffLogin(email, password) {
+    intent.current++;
+    const response = await api.post("/auth/staff/login", { email, password });
+    saveSession("staff", response.data.data.token);
+    setSession({ scope: "staff", user: response.data.data.user, loading: false });
+  }
+
   const completeStudentHandoff = useCallback(async (code) => {
     intent.current++;
     const response = await api.post("/auth/student/handoff/redeem", { code }, { withCredentials: true });
@@ -83,7 +90,7 @@ export function AuthProvider({ children }) {
     setSession({ scope, user: null, loading: false });
   }
 
-  const value = { user: session.scope === scope ? session.user : null, loading: session.scope !== scope || session.loading, login, applicantLogin, studentLogin, completeStudentHandoff, registerApplicant, logout };
+  const value = { user: session.scope === scope ? session.user : null, loading: session.scope !== scope || session.loading, login, applicantLogin, studentLogin, staffLogin, completeStudentHandoff, registerApplicant, logout };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }

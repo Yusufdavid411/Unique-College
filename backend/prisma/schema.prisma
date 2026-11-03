@@ -97,6 +97,7 @@ model User {
   studentProfile StudentProfile?
   portalHandoffs PortalHandoff[]
   passwordReset PasswordReset?
+  staffAssignments StaffStudentAssignment[]
   roleAssignments UserRoleAssignment[]
 
   @@map("users")
@@ -456,11 +457,28 @@ model StudentEnrolment {
   programme AcademicProgramme @relation(fields: [programmeId], references: [id], onDelete: Restrict)
   session AcademicSession @relation(fields: [sessionId], references: [id], onDelete: Restrict)
   level AcademicLevel @relation(fields: [levelId], references: [id], onDelete: Restrict)
+  staffAssignments StaffStudentAssignment[]
   @@unique([studentId, sessionId])
   @@index([programmeId])
   @@index([sessionId])
   @@index([levelId])
   @@map("student_enrolments")
+}
+
+model StaffStudentAssignment {
+  id          String @id @default(uuid())
+  staffId     String
+  enrolmentId String
+  assignedBy  String
+  isActive    Boolean @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  staff       User @relation(fields: [staffId], references: [id], onDelete: Restrict)
+  enrolment   StudentEnrolment @relation(fields: [enrolmentId], references: [id], onDelete: Restrict)
+
+  @@unique([staffId, enrolmentId])
+  @@index([staffId, isActive])
+  @@map("staff_student_assignments")
 }
 
 model StudentAnnouncement {

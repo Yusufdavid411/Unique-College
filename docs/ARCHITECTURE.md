@@ -141,3 +141,13 @@ IDs, storage checksum, archive date, actor, and restoration state.
    and notifications.
 
 No later-stage module should be built merely because the schema anticipates it.
+
+## Staff foundation — 3 November 2026
+
+At the school's explicit request, the separate staff sign-in, responsive workspace,
+admin-created accounts, configurable role assignments and session-scoped adviser
+relationships are implemented. See [STAFF_PORTAL.md](STAFF_PORTAL.md) for research,
+setup and boundaries. Lecturer course rosters, staff operations, attendance,
+results and finance workflows are not complete. No later stage is declared
+complete by this foundation. All portals continue sharing one Express API and
+PostgreSQL database, with server-side permission and record-scope checks.

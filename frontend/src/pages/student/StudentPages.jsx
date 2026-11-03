@@ -8,6 +8,7 @@ import { notify } from "../../api/notifications.js";
 import { ErrorToast } from "../../components/ToastNotifications.jsx";
 import ApplicationDownloads from "../../components/ApplicationDownloads.jsx";
 import PrivateFileButton from "../../components/PrivateFileButton.jsx";
+import StudentAdvisers from "../../components/StudentAdvisers.jsx";
 
 export const dateLabel = (value) => value ? new Date(value).toLocaleDateString("en-NG", { day: "numeric", month: "short", year: "numeric" }) : "Not recorded";
 export function StudentHeader({ label, title, children }) { return <header className="student-page-heading"><span className="eyebrow">{label}</span><h1>{title}</h1>{children && <p>{children}</p>}</header>; }
@@ -21,6 +22,7 @@ export function StudentDashboard() {
     <section className="student-next-step"><span className="eyebrow">Your next step</span><h2>{!latest ? "Academic assignment is pending" : latest.status !== "CONFIRMED" ? "Confirm your academic details" : "Your academic details are confirmed"}</h2><p>{!latest ? "The registry will assign your official programme, session and level. Your admission programme is retained below; no academic assignment has been invented." : `${latest.programme.name} · ${latest.session.name} · ${latest.level.name}`}</p><Link className="button" to={portalPath("/student/academic")}>View academic record <ArrowRight size={16} /></Link></section>
     <div className="student-quick-grid">{[["My profile", "Keep your contact and next-of-kin information current.", "/student/profile", UserRound], ["Documents & receipts", "Access your accepted form and separate admission receipts.", "/student/records", FolderOpen], ["Academic record", "Review the programme and session assigned by the registry.", "/student/academic", GraduationCap]].map(([title, text, path, Icon]) => <Link className="student-card" to={portalPath(path)} key={path}><Icon size={23} /><h2>{title}</h2><p>{text}</p><span>Open <ArrowRight size={15} /></span></Link>)}</div>
     <StudentAnnouncements compact />
+    <StudentAdvisers />
     <details className="student-card student-future"><summary>Other academic services</summary><p>Course registration, attendance, results/GPA, teaching timetables, school-fee billing and transcript requests are not enabled yet. They will appear when the school's academic policies and services are configured.</p></details>
   </>;
 }

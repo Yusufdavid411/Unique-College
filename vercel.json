@@ -5,6 +5,24 @@
   "framework": "vite",
   "redirects": [
     {
+      "source": "/staff/login",
+      "has": [{ "type": "host", "value": "staff.uniquecollegekwali.com" }],
+      "destination": "/",
+      "permanent": false
+    },
+    {
+      "source": "/staff/:path*",
+      "has": [{ "type": "host", "value": "staff.uniquecollegekwali.com" }],
+      "destination": "/:path*",
+      "permanent": false
+    },
+    {
+      "source": "/staff/:path*",
+      "has": [{ "type": "host", "value": "www.uniquecollegekwali.com" }],
+      "destination": "https://staff.uniquecollegekwali.com/:path*",
+      "permanent": false
+    },
+    {
       "source": "/student/login",
       "has": [{ "type": "host", "value": "www.uniquecollegekwali.com" }],
       "destination": "https://portal.uniquecollegekwali.com/",

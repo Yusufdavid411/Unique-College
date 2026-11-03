@@ -1,5 +1,6 @@
 import { Router } from "express";
 import rateLimit from "express-rate-limit";
+import { loginStaff } from "../services/authService.js";
 import { z } from "zod";
 import { asyncHandler } from "../utils/asyncHandler.js";
 import { ok } from "../utils/apiResponse.js";
@@ -12,6 +13,11 @@ import { validate } from "../middleware/validate.js";
 import { applicantLoginSchema, loginSchema } from "../validators/schemas.js";
 
 const router = Router();
+router.post("/staff/login", rateLimit({ windowMs: 15 * 60000, limit: 20, standardHeaders: "draft-8", legacyHeaders: false, message: { success: false, message: "Too many sign-in attempts. Try again later." } }), asyncHandler(async (req, res) => {
+  const body = z.object({ email: z.string().trim().email().max(254), password: z.string().min(1).max(128) }).strict().parse(req.body);
+  res.set("Cache-Control", "no-store");
+  ok(res, await loginStaff(body.email, body.password));
+}));
 const resetLimiter = rateLimit({ windowMs: 15 * 60000, limit: 10, standardHeaders: "draft-8", legacyHeaders: false, message: { success: false, message: "Too many reset attempts. Please try again in 15 minutes." } });
 router.use(["/forgot-password", "/reset-password", "/send-password-reset"], (req, res, next) => { res.set("Cache-Control", "no-store"); next(); }, resetLimiter);
 router.post("/forgot-password", validate(z.object({ body: resetRequestSchema })), asyncHandler(async (req, res) => {

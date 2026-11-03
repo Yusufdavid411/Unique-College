@@ -12,7 +12,7 @@ const digest = (token) => crypto.createHash("sha256").update(token).digest("hex"
 const unavailable = () => Object.assign(new Error("Password-reset email is temporarily unavailable. Please contact the school."), { statusCode: 503 });
 
 export function passwordResetUrl(role, token) {
-  const host = role === "STUDENT" ? "portal" : ["ADMIN", "STAFF"].includes(role) ? "admin" : "apply";
+  const host = role === "STUDENT" ? "portal" : role === "STAFF" ? "staff" : role === "ADMIN" ? "admin" : "apply";
   return `https://${host}.uniquecollegekwali.com/reset-password#${token}`;
 }
 

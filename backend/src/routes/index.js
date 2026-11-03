@@ -1,4 +1,6 @@
 import { Router } from "express";
+import staffRoutes from "./staffRoutes.js";
+import staffAssignmentRoutes from "./staffAssignmentRoutes.js";
 import { prisma } from "../config/prisma.js";
 import applicationRoutes from "./applicationRoutes.js";
 import applicantRoutes from "./applicantRoutes.js";
@@ -40,6 +42,8 @@ router.get("/health/db", async (req, res, next) => {
 });
 
 router.use("/auth", authRoutes);
+router.use("/staff", staffRoutes);
+router.use("/staff-assignments", staffAssignmentRoutes);
 router.use("/applications", applicationRoutes);
 router.use("/applicant", applicantRoutes);
 router.use("/contacts", contactRoutes);

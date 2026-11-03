@@ -10,6 +10,7 @@ import { ok } from "../utils/apiResponse.js";
 
 const safeSelection = { id: true, name: true, email: true, role: true, isActive: true, createdAt: true };
 const router = Router();
+router.use((req, res, next) => { res.set("Cache-Control", "no-store"); next(); });
 router.use(requireAuth, requirePermission("users.manage"));
 router.get("/", asyncHandler(async (req, res) => {
   const { page, search } = z.object({ page: z.coerce.number().int().min(1).max(10000).default(1), search: z.string().trim().max(100).default("") }).parse(req.query);

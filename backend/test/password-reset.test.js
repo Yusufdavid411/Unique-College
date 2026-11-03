@@ -78,4 +78,5 @@ test("password policy and portal origins cannot be overridden by request input",
   assert.equal(resetPasswordSchema.safeParse("StrongPassword2027").success, true);
   assert.equal(passwordResetUrl("ADMIN", "token"), "https://admin.uniquecollegekwali.com/reset-password#token");
   assert.equal(passwordResetUrl("STUDENT", "token"), "https://portal.uniquecollegekwali.com/reset-password#token");
+  assert.equal(passwordResetUrl("STAFF", "token"), "https://staff.uniquecollegekwali.com/reset-password#token");
 });

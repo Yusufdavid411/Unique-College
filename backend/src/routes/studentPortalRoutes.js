@@ -16,6 +16,10 @@ router.use(asyncHandler(async (req, res, next) => {
   next();
 }));
 router.get("/me", asyncHandler(async (req, res) => ok(res, await studentRecord(prisma, { userId: req.user.id }))));
+router.get("/advisers", asyncHandler(async (req, res) => {
+  const records = await prisma.staffStudentAssignment.findMany({ where: { isActive: true, enrolment: { studentId: req.studentId, session: { isActive: true } }, staff: { role: "STAFF", isActive: true, roleAssignments: { some: { role: { permissions: { has: "advisees.read" } } } } } }, select: { id: true, staff: { select: { name: true, email: true } }, enrolment: { select: { session: { select: { name: true } }, programme: { select: { name: true } } } } }, take: 100, orderBy: { id: "asc" } });
+  ok(res, records);
+}));
 router.patch("/profile", asyncHandler(async (req, res) => {
   const text = (maximum) => z.string().trim().max(maximum);
   const data = z.object({ version: z.string().datetime(), phoneNumber: z.string().trim().min(7).max(30).regex(/^[+\d\s()-]+$/), address: text(500), guardianName: text(150), guardianRelationship: text(100), guardianPhone: z.string().trim().max(30).refine((value) => !value || /^[+\d\s()-]{7,30}$/.test(value), "Enter a valid contact number"), guardianAddress: text(500) }).strict().parse(req.body);

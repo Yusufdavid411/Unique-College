@@ -1,8 +1,11 @@
 import { useEffect, useState } from "react";
 import { api, apiErrorMessage } from "../../api/client.js";
 import { SendPasswordReset } from "../../components/PasswordRecovery.jsx";
+import StaffAssignments from "../../components/StaffAssignments.jsx";
+import { useAuth } from "../../context/AuthContext.jsx";
 
 export default function AdminUsers() {
+  const { user } = useAuth();
   const [result, setResult] = useState({ users: [], total: 0 });
   const [page, setPage] = useState(1);
   const [notice, setNotice] = useState("");
@@ -31,6 +34,7 @@ export default function AdminUsers() {
   return <div className="admin-page">
     <header className="admin-header"><span className="eyebrow">People</span><h1>Staff accounts</h1><p>Create staff accounts, then assign responsibilities under Roles.</p></header>
     {notice && <p role="status" className="admin-feedback">{notice}</p>}
+    <p><a href="https://staff.uniquecollegekwali.com/" target="_blank" rel="noopener noreferrer">Open staff portal</a> · Staff use the registered email and temporary password issued here.</p>
     <div className="staff-accounts">
       <form className="form-panel" onSubmit={create}><h2>Create staff account</h2><div className="staff-account-fields"><label>Full name<input name="name" minLength={2} maxLength={150} required autoComplete="name" /></label><label>Email<input name="email" type="email" required autoComplete="email" /></label></div><button type="submit" className="button" disabled={busy}>{busy ? "Creating…" : "Create staff account"}</button></form>
       {credentials && <section className="admission-credentials"><strong>Share these credentials securely</strong><span>{credentials.email}</span><code>{credentials.password}</code><p>This temporary password is shown only now and must be changed at first sign-in.</p><button type="button" onClick={() => setCredentials(null)}>Hide credentials</button></section>}
@@ -39,6 +43,7 @@ export default function AdminUsers() {
         <nav className="portal-form-actions" aria-label="Staff account pages"><button type="button" disabled={busy || page === 1} onClick={() => setPage((value) => value - 1)}>Previous</button><span>Page {page}</span><button type="button" disabled={busy || page * 25 >= result.total} onClick={() => setPage((value) => value + 1)}>Next</button></nav>
       </section>
       <SendPasswordReset />
+      {(user?.role === "ADMIN" || user?.permissions?.includes("staff.assignments.manage")) && <StaffAssignments />}
     </div>
   </div>;
 }

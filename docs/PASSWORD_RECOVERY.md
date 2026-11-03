@@ -1,6 +1,6 @@
 # Password recovery
 
-All three implemented login portals offer **Forgot password?**. Enter the registered account email, then use the emailed link to choose a new password. Student usernames and application numbers are not email addresses; use the original registered email for recovery.
+Admin, applicant, student and staff login portals offer **Forgot password?**. Enter the registered account email, then use the emailed link to choose a new password. Student usernames and application numbers are not email addresses; use the original registered email for recovery.
 
 Administration → Staff accounts → **Send password-reset link** also accepts an applicant, student or staff email. Only accounts with `users.manage` can send links. Administrators never view or choose the user's new password. There is no password export or readable password list.
 
@@ -10,7 +10,7 @@ Apply migration `202611030015_password_resets`, generate Prisma Client, and depl
 
 Without Resend configuration, recovery returns a clear service-unavailable notification, not a false success. With configuration, the public response is deliberately generic for registered, missing, inactive or throttled accounts. Provider failures invalidate the undelivered token; request again later. Provider acceptance does not guarantee inbox delivery: check spam and Resend delivery logs, without sharing reset links.
 
-Links use the account's canonical portal: `admin.uniquecollegekwali.com/reset-password`, `apply.uniquecollegekwali.com/reset-password`, or `portal.uniquecollegekwali.com/reset-password`. Raw tokens travel in the email URL fragment, are removed from browser history on opening, and are submitted only in a POST body. Do not reload the reset page; request another email if needed.
+Links use the account's canonical portal: `admin.uniquecollegekwali.com/reset-password`, `apply.uniquecollegekwali.com/reset-password`, `staff.uniquecollegekwali.com/reset-password`, or `portal.uniquecollegekwali.com/reset-password`. Raw tokens travel in the email URL fragment, are removed from browser history on opening, and are submitted only in a POST body. Do not reload the reset page; request another email if needed.
 
 ## Security
 

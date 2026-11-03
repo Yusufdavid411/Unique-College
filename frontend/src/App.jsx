@@ -38,6 +38,12 @@ import { RecoveryScreen } from "./components/AppErrorBoundary.jsx";
 import { canonicalPortalHref, portalPath, portalScope, retiredPaymentSandbox } from "./api/portalLinks.js";
 
 const StudentLayout = lazy(() => import("./components/StudentLayout.jsx"));
+const StaffLogin = lazy(() => import("./pages/staff/StaffLogin.jsx"));
+const StaffLayout = lazy(() => import("./pages/staff/StaffPortal.jsx"));
+const staffPage = (name) => lazy(() => import("./pages/staff/StaffPortal.jsx").then((module) => ({ default: module[name] })));
+const StaffDashboard = staffPage("StaffDashboard");
+const StaffProfile = staffPage("StaffProfile");
+const StaffStudents = staffPage("StaffStudents");
 const StudentLogin = lazy(() => import("./pages/student/StudentLogin.jsx"));
 const studentPage = (name) => lazy(() => import("./pages/student/StudentPages.jsx").then((module) => ({ default: module[name] })));
 const StudentDashboard = studentPage("StudentDashboard");
@@ -62,8 +68,8 @@ export default function App() {
   if (destination) return <div className="loading-screen" role="status">Opening your secure portal…</div>;
   return (
     <Suspense fallback={<div className="loading-screen" role="status">Loading your portal…</div>}><Routes>
-      {["admin", "applicant", "student"].filter((name) => !scope || scope === name).map((name) => <Route key={`${name}-forgot`} path={portalPath(`/${name}/forgot-password`)} element={<PasswordRecovery key={`${name}-forgot`} scope={name} />} />)}
-      {["admin", "applicant", "student"].filter((name) => !scope || scope === name).map((name) => <Route key={`${name}-reset`} path={portalPath(`/${name}/reset-password`)} element={<PasswordRecovery key={`${name}-reset`} reset scope={name} />} />)}
+      {["admin", "applicant", "student", "staff"].filter((name) => !scope || scope === name).map((name) => <Route key={`${name}-forgot`} path={portalPath(`/${name}/forgot-password`)} element={<PasswordRecovery key={`${name}-forgot`} scope={name} />} />)}
+      {["admin", "applicant", "student", "staff"].filter((name) => !scope || scope === name).map((name) => <Route key={`${name}-reset`} path={portalPath(`/${name}/reset-password`)} element={<PasswordRecovery key={`${name}-reset`} reset scope={name} />} />)}
       {!scope && <Route element={<PublicLayout />}>
         <Route index element={<Home />} />
         <Route path="about" element={<About />} />
@@ -106,6 +112,15 @@ export default function App() {
           <Route path="school-forms/:kind" element={<SchoolFormEditor />} />
           <Route path="announcements" element={<StudentAnnouncements />} />
           <Route path="announcements/:id" element={<StudentAnnouncement />} />
+          <Route path="security" element={<ChangePassword embedded />} />
+        </Route>
+      </>}
+      {(!scope || scope === "staff") && <>
+        {scope !== "staff" && <Route path="/staff/login" element={<StaffLogin />} />}
+        <Route path={portalPath("/staff")} element={<ProtectedRoute roles={["STAFF"]} redirectTo="/staff/login" entry={scope === "staff" ? <StaffLogin /> : null}><StaffLayout /></ProtectedRoute>}>
+          <Route index element={<StaffDashboard />} />
+          <Route path="students" element={<StaffStudents />} />
+          <Route path="profile" element={<StaffProfile />} />
           <Route path="security" element={<ChangePassword embedded />} />
         </Route>
       </>}
