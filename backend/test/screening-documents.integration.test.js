@@ -7,6 +7,7 @@ import { prisma } from "../src/config/prisma.js";
 import { env } from "../src/config/env.js";
 import { defaultDocumentsPolicy } from "../src/services/admissionDocuments.js";
 import { flutterwaveService } from "../src/services/flutterwave.js";
+import { statusEmailContent } from "../src/services/statusEmail.js";
 
 test("PostgreSQL screening, automatic letter and completed-form downloads", { skip: !process.env.INTEGRATION_DATABASE_URL, timeout: 240000 }, async () => {
   assert.match(new URL(process.env.DATABASE_URL).pathname, /test/i);
@@ -24,13 +25,17 @@ test("PostgreSQL screening, automatic letter and completed-form downloads", { sk
     const admin = await prisma.user.create({ data: { name: "Fixture registrar", email: `${marker}-admin@fixture.invalid`, passwordHash: "no-login", role: "ADMIN" } }); ids.push(admin.id);
     const applicant = await prisma.user.create({ data: { name: "Sample Applicant", email: `${marker}@fixture.invalid`, passwordHash: "no-login", role: "APPLICANT" } }); ids.push(applicant.id);
     application = await prisma.application.create({ data: { applicantId: applicant.id, fullName: "Sample Applicant", firstName: "Sample", surname: "Applicant", applicationNumber: `UCHK-${marker.slice(0, 8)}`, email: applicant.email, phoneNumber: "08000000000", courseOfInterest: "Community Health", status: "SUBMITTED", submittedAt: new Date(), declarationAccepted: true, formFeeAmount: 0, documents: { create: ["PASSPORT", "BIRTH_CERTIFICATE", "NATIONAL_ID", "EDUCATIONAL_RESULT"].map((type) => ({ type, label: "Fixture only", path: "/uploads/applications/fixture.pdf", fileType: "application/pdf", fileSize: 100, reviewStatus: "VERIFIED" })) } } });
-    const schedule = { ids: [application.id], date: new Date(Date.now() + 86400000).toISOString(), venue: "Fixture exam hall" };
+    const schedule = { ids: [application.id], date: new Date(Date.now() + 86400000).toISOString(), venue: "Fixture exam hall", message: "Please arrive early for check-in." };
     await prisma.application.update({ where: { id: application.id }, data: { email: "form-contact@fixture.invalid" } });
     assert.equal((await call("/screening/schedule", "POST", schedule, admin)).status, 200);
     const invitation = await prisma.applicationStatusHistory.findFirst({ where: { applicationId: application.id, kind: "SCREENING_SCHEDULE" } });
     assert.equal(invitation.emailRecipient, applicant.email);
     assert.match(invitation.notificationText, /WAT/);
     assert.match(invitation.notificationText, /Fixture exam hall/);
+    assert.match(invitation.notificationText, /Dear Sample Applicant/);
+    assert.match(invitation.notificationText, /Please arrive early for check-in/);
+    assert.match(invitation.notificationText, /Admissions Office/);
+    assert.ok(statusEmailContent(invitation).text.includes(invitation.notificationText));
     await prisma.application.update({ where: { id: application.id }, data: { email: applicant.email } });
     assert.equal((await (await call("/screening/schedule", "POST", schedule, admin)).json()).data.scheduled, 0);
     const outcome = { outcome: "PASSED", score: 75 };

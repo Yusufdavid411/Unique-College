@@ -11,7 +11,7 @@ export const documentsPolicySchema = z.object({
   screeningMessage: z.string().trim().min(10).max(1500), passedMessage: z.string().trim().min(10).max(1500), failedMessage: z.string().trim().min(10).max(1500), offerMessage: z.string().trim().min(10).max(1500)
 }).strict();
 export const defaultDocumentsPolicy = { feeScheduleApproved: false, session: "", duration: "", effectiveDate: "", registrationOpen: "", registrationDeadline: "", resultDeadline: "", lecturesStart: "",
-  screeningMessage: "Your entrance examination/screening is scheduled for {date} at {venue}. {instructions} Pay your quoted screening fee in the portal before attending.",
+  screeningMessage: "Congratulations! You have progressed to the entrance examination and screening stage. Please arrive early so you have time to check in before the exam starts. Check your applicant portal for any screening fee or other next steps.",
   passedMessage: "You have passed the entrance examination/screening. The admissions office will confirm your admission decision in your portal.",
   failedMessage: "Your entrance examination/screening result is available. Please sign in and contact admissions if you need guidance.",
   offerMessage: "An admission offer is ready for {programme}. Sign in to accept the offer and pay your quoted acceptance fee. Your admission letter becomes available after payment verification and the registrar's release."
