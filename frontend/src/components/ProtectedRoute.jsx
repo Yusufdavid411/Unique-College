@@ -13,5 +13,5 @@ export default function ProtectedRoute({ children, roles = [], redirectTo = "/ad
     return <Navigate to={portalPath(redirectTo)} replace />;
   }
 
-  return user.mustChangePassword && !(transferStudent && user.role === "STUDENT") ? <ChangePassword /> : children;
+  return user.mustChangePassword && user.role !== "STAFF" && !(transferStudent && user.role === "STUDENT") ? <ChangePassword /> : children;
 }

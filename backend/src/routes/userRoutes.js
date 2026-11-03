@@ -22,7 +22,7 @@ router.post("/", asyncHandler(async (req, res) => {
   const data = z.object({ name: z.string().trim().min(2).max(150), email: z.string().trim().email().transform((value) => value.toLowerCase()) }).parse(req.body);
   const temporaryPassword = "Uc!" + crypto.randomBytes(16).toString("base64url") + "7";
   const passwordHash = await bcrypt.hash(temporaryPassword, 12);
-  const user = await auditedMutation(prisma, { actorId: req.user.id, action: "staff.created", targetType: "user" }, (transaction) => transaction.user.create({ data: { ...data, passwordHash, role: "STAFF", mustChangePassword: true }, select: safeSelection }));
+  const user = await auditedMutation(prisma, { actorId: req.user.id, action: "staff.created", targetType: "user" }, (transaction) => transaction.user.create({ data: { ...data, passwordHash, role: "STAFF", mustChangePassword: false }, select: safeSelection }));
   ok(res, { user, temporaryPassword }, "Staff account created. Share credentials securely.");
 }));
 router.patch("/:id", asyncHandler(async (req, res) => {

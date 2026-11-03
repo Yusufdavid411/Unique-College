@@ -11,8 +11,8 @@ test("expired stored sessions return to login without masquerading as a failed s
   assert.match(source, /api\.get\("\/auth\/me", \{ headers:.*notifyOnError: false/);
   assert.match(source, /if \(\[401, 403\]\.includes\(error.response\?\.status\)\) clearSession\(scope\);\s+else reportApiError\(error\);/);
   const security = await readFile(new URL("../../frontend/src/components/ChangePassword.jsx", import.meta.url), "utf8");
-  assert.match(security, /Activate staff access/);
-  assert.match(security, /Your temporary password was accepted/);
+  assert.doesNotMatch(security, /Activate staff access/);
+  assert.match(security, /Activate student access/);
 });
 
 test("network errors distinguish offline, timeout and unreachable service without inventing a cause", () => {

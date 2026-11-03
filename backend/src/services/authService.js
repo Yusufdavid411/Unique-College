@@ -12,7 +12,7 @@ function publicUser(user) {
     role: user.role,
     portalUsername: user.portalUsername,
     officialEmail: user.officialEmail,
-    mustChangePassword: user.mustChangePassword,
+    mustChangePassword: user.mustChangePassword && user.role !== "STAFF",
     permissions: permissionsFor(user),
     assignedRoles: (user.roleAssignments || []).map((assignment) => assignment.role.name)
   };

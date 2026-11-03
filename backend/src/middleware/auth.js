@@ -20,7 +20,7 @@ export async function requireAuth(req, res, next) {
     }
 
     req.user = user;
-    if (user.mustChangePassword && !((req.baseUrl === "/api/auth" && ["/me", "/password"].includes(req.path)) || (req.baseUrl === "/api/auth/student" && req.path === "/handoff"))) {
+    if (user.mustChangePassword && user.role !== "STAFF" && !((req.baseUrl === "/api/auth" && ["/me", "/password"].includes(req.path)) || (req.baseUrl === "/api/auth/student" && req.path === "/handoff"))) {
       return res.status(403).json({ success: false, code: "PASSWORD_CHANGE_REQUIRED", message: "Change your temporary password before continuing" });
     }
     next();

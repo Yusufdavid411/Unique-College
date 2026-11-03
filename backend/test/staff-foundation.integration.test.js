@@ -43,8 +43,11 @@ test("admin creates staff, assigns roles and scopes adviser/student access with 
     let response = await call("/auth/staff/login", "POST", { email: staff.email, password: credentials.temporaryPassword });
     assert.equal(response.status, 200);
     const initial = (await response.json()).data;
-    assert.equal(initial.user.mustChangePassword, true);
-    assert.equal((await call("/staff/me", "GET", null, initial.token)).status, 403);
+    assert.equal(initial.user.mustChangePassword, false);
+    assert.equal((await call("/staff/me", "GET", null, initial.token)).status, 200);
+    await prisma.user.update({ where: { id: staff.id }, data: { mustChangePassword: true } });
+    assert.equal((await call("/staff/me", "GET", null, initial.token)).status, 200);
+    assert.equal((await (await call("/auth/me", "GET", null, initial.token)).json()).data.user.mustChangePassword, false);
     assert.equal((await call("/auth/password", "POST", { currentPassword: credentials.temporaryPassword, password: "NewStaffPassword2027" }, initial.token)).status, 200);
     assert.equal((await call("/staff/me", "GET", null, initial.token)).status, 401);
     response = await call("/auth/staff/login", "POST", { email: staff.email, password: "NewStaffPassword2027" });
@@ -58,6 +61,9 @@ test("admin creates staff, assigns roles and scopes adviser/student access with 
     session = await prisma.academicSession.create({ data: { name: marker, startsAt: new Date("2026-01-01"), endsAt: new Date("2027-12-31") } });
     level = await prisma.academicLevel.create({ data: { code: marker, name: "Fixture level" } });
     const owner = await student("one");
+    await prisma.user.update({ where: { id: owner.user.id }, data: { mustChangePassword: true } });
+    assert.equal((await call("/student/me", "GET", null, signed(owner.user))).status, 403);
+    await prisma.user.update({ where: { id: owner.user.id }, data: { mustChangePassword: false } });
     const second = await student("two");
     assert.equal((await call("/staff-assignments", "POST", { staffId: staff.id, enrolmentId: owner.enrolment.id }, token)).status, 403);
     response = await call("/staff-assignments", "POST", { staffId: staff.id, enrolmentId: owner.enrolment.id }, adminToken);

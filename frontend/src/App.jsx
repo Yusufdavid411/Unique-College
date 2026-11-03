@@ -44,6 +44,7 @@ const staffPage = (name) => lazy(() => import("./pages/staff/StaffPortal.jsx").t
 const StaffDashboard = staffPage("StaffDashboard");
 const StaffProfile = staffPage("StaffProfile");
 const StaffStudents = staffPage("StaffStudents");
+const StaffSettings = staffPage("StaffSettings");
 const StudentLogin = lazy(() => import("./pages/student/StudentLogin.jsx"));
 const studentPage = (name) => lazy(() => import("./pages/student/StudentPages.jsx").then((module) => ({ default: module[name] })));
 const StudentDashboard = studentPage("StudentDashboard");
@@ -121,7 +122,8 @@ export default function App() {
           <Route index element={<StaffDashboard />} />
           <Route path="students" element={<StaffStudents />} />
           <Route path="profile" element={<StaffProfile />} />
-          <Route path="security" element={<ChangePassword embedded />} />
+          <Route path="settings" element={<StaffSettings />} />
+          <Route path="security" element={<Navigate to={portalPath("/staff/settings")} replace />} />
         </Route>
       </>}
       {(!scope || scope === "admin") && <>

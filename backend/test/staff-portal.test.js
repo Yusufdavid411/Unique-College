@@ -4,6 +4,17 @@ import { assignedStudentScope, staffEnrolmentSelection } from "../src/services/s
 import { permissionsFor, hasPermission } from "../src/services/permissions.js";
 import { portalScope, portalPath, canonicalPortalHref } from "../../frontend/src/api/portalLinks.js";
 import { scopeForUser, sessionScope } from "../../frontend/src/api/session.js";
+import { toPublicUser } from "../src/services/authService.js";
+import { readFile } from "node:fs/promises";
+
+test("staff password changes are optional in Settings while student activation remains mandatory", async () => {
+  for (const role of ["STAFF", "STUDENT", "ADMIN"]) assert.equal(toPublicUser({ role, isActive: true, mustChangePassword: true }).mustChangePassword, role !== "STAFF");
+  const guard = await readFile(new URL("../../frontend/src/components/ProtectedRoute.jsx", import.meta.url), "utf8");
+  assert.match(guard, /user.mustChangePassword && user.role !== "STAFF"/);
+  const pages = await readFile(new URL("../../frontend/src/pages/staff/StaffPortal.jsx", import.meta.url), "utf8");
+  assert.match(pages, /\["Settings", "\/staff\/settings", Settings\]/);
+  assert.match(pages, /<ChangePassword embedded \/>/);
+});
 
 test("staff records always bind the requesting staff identity and active membership", () => {
   const scope = assignedStudentScope("staff-one");

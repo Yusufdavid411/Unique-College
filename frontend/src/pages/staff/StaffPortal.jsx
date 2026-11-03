@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link, Outlet } from "react-router-dom";
-import { LayoutDashboard, Users, ShieldCheck, UserRound } from "lucide-react";
+import { LayoutDashboard, Users, Settings, UserRound } from "lucide-react";
+import ChangePassword from "../../components/ChangePassword.jsx";
 import PortalShell from "../../components/PortalShell.jsx";
 import { useAuth } from "../../context/AuthContext.jsx";
 import { api } from "../../api/client.js";
@@ -8,7 +9,7 @@ import { portalPath } from "../../api/portalLinks.js";
 
 export default function StaffLayout() {
   const { user } = useAuth();
-  const links = [["Dashboard", "/staff", LayoutDashboard], ...(user.permissions.includes("advisees.read") ? [["My students", "/staff/students", Users]] : []), ["Profile & access", "/staff/profile", UserRound], ["Account security", "/staff/security", ShieldCheck]];
+  const links = [["Dashboard", "/staff", LayoutDashboard], ...(user.permissions.includes("advisees.read") ? [["My students", "/staff/students", Users]] : []), ["Profile & access", "/staff/profile", UserRound], ["Settings", "/staff/settings", Settings]];
   return <PortalShell title="Staff portal" accountScope="staff" links={links}><Outlet /></PortalShell>;
 }
 
@@ -19,6 +20,10 @@ export function StaffDashboard() {
   const [revision, setRevision] = useState(0);
   useEffect(() => { const controller = new AbortController(); setFailed(false); api.get("/staff/me", { signal: controller.signal }).then((response) => setRecord(response.data.data)).catch((error) => { if (error.code !== "ERR_CANCELED") setFailed(true); }); return () => controller.abort(); }, [revision]);
   return <><header className="admin-header"><span className="eyebrow">Staff workspace</span><h1>Welcome, {user.name}</h1><p>{user.assignedRoles?.join(" · ") || "Your administrator has not assigned a role yet."}</p></header><section className="student-card"><h2>Your responsibilities</h2>{!record ? <p role="status">{failed ? "Your workspace could not be loaded." : "Loading your workspace…"}</p> : user.permissions.includes("advisees.read") ? <><p><strong>{record.studentCount}</strong> active student-session {record.studentCount === 1 ? "assignment" : "assignments"}</p><Link className="button primary" to={portalPath("/staff/students")}>View my students</Link><p>Only students assigned to you by the school are available here.</p></> : <p>Your account is active. Your administrator controls your roles and access. No student records have been shared with you.</p>}{failed && <button className="button" onClick={() => setRevision((value) => value + 1)}>Try again</button>}</section><details className="student-card"><summary>What comes next?</summary><p>Course teaching assignments, attendance, results and timetables will be connected as those modules are implemented. Adviser assignments here are not course registrations.</p></details></>;
+}
+
+export function StaffSettings() {
+  return <><header className="admin-header"><span className="eyebrow">My account</span><h1>Settings</h1><p>You can change your password here whenever you choose.</p></header><ChangePassword embedded /></>;
 }
 
 export function StaffProfile() {

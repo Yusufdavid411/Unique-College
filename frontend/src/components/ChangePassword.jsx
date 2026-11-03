@@ -9,7 +9,6 @@ import { passwordValidationMessage } from "../api/passwordPolicy.js";
 export default function ChangePassword({ embedded = false }) {
   const { logout, user } = useAuth();
   const activating = user?.role === "STUDENT" && user.mustChangePassword;
-  const activatingStaff = user?.role === "STAFF" && user.mustChangePassword;
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
   async function submit(event) {
@@ -34,7 +33,7 @@ export default function ChangePassword({ embedded = false }) {
   const Heading = embedded ? "h2" : "h1";
   return <Container className={embedded ? "settings-security" : "section"}>
     <form className="form-panel" onSubmit={submit}>
-      <Heading>{activating ? "Activate student access" : activatingStaff ? "Activate staff access" : "Account security"}</Heading><p>{activating ? "Enter your existing applicant password and choose a new password to activate student access. Then sign in again." : activatingStaff ? "Your temporary password was accepted. Enter it below and choose your own password before opening the staff dashboard. Then sign in again." : "After changing your password, sign in again with the new password."}</p>
+      <Heading>{activating ? "Activate student access" : "Account security"}</Heading><p>{activating ? "Enter your existing applicant password and choose a new password to activate student access. Then sign in again." : "After changing your password, sign in again with the new password."}</p>
       <label>Current password<PasswordInput label="current password" name="currentPassword" autoComplete="current-password" required /></label>
       <label>New password<PasswordInput label="new password" name="password" autoComplete="new-password" minLength={12} maxLength={72} required /></label>
       <p>Use at least 12 characters including uppercase, lowercase, and a number.</p>
