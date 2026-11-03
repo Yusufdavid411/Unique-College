@@ -1,4 +1,5 @@
 import { prisma } from "../config/prisma.js";
+import { applicationStatusMessage } from "./admissionWorkflow.js";
 
 export function statusEmailConfigured(configuration = process.env) {
   return Boolean(configuration.RESEND_API_KEY && configuration.RESEND_FROM_EMAIL);
@@ -9,12 +10,14 @@ export function statusEmailContent(event) {
     subject: `${event.application?.isTest ? "[TEST] " : ""}Unique College: ${event.notificationSubject}`,
     text: ["Unique College of Health Science and Technology", event.application?.isTest ? "TEST RECORD — NOT VALID FOR REAL ADMISSION" : "", event.notificationText, "", "View your secure applicant portal: https://apply.uniquecollegekwali.com/"].filter(Boolean).join("\n")
   };
-  const labels = { SUBMITTED: "Under review", REVIEWED: "Under review", RETURNED: "Corrections required", ACCEPTED: "Application accepted", ADMITTED: "Admitted", REJECTED: "Application decision", INTERVIEW_SCHEDULED: "Interview scheduled" };
+  const labels = { SUBMITTED: "Under review", REVIEWED: "Under review", RETURNED: "Corrections required", ACCEPTED: "Application accepted", ADMITTED: "Admitted", REJECTED: "Application rejected", INTERVIEW_SCHEDULED: "Screening scheduled" };
   const status = event.kind === "OFFER_RESPONSE" ? "Offer response recorded" : event.kind === "CLEARANCE" ? "Clearance updated" : labels[event.toStatus] || "Application status updated";
   const instructions = ["OFFER_RESPONSE", "CLEARANCE"].includes(event.kind) ? "Sign in to see your offer response, acceptance payment and clearance progress."
     : event.toStatus === "ADMITTED" ? "Sign in using your existing applicant email and password. You must change your password to activate student access. Your account and admission records are preserved."
-    : event.toStatus === "RETURNED"
-    ? "Sign in, read the admissions note, correct your form or documents, and submit again."
+    : event.toStatus === "REJECTED"
+    ? "Sign in to read the reason from admissions. Contact admissions if you need to correct and resubmit your application."
+    : event.toStatus === "RETURNED" || event.toStatus === "INTERVIEW_SCHEDULED"
+    ? applicationStatusMessage(event.toStatus)
     : event.toStatus === "ACCEPTED"
       ? "An admission offer is available. Sign in to accept or decline it, download your application, view your quoted acceptance fee and track clearance. Final admission follows these checks."
       : event.toStatus === "SUBMITTED" || event.toStatus === "REVIEWED"

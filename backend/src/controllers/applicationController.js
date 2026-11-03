@@ -5,7 +5,7 @@ import { fileMetadata } from "../services/uploadService.js";
 import { hasPermission } from "../services/permissions.js";
 import { auditedMutation } from "../services/audit.js";
 import { Prisma } from "@prisma/client";
-import { canReviewTransition, hasVerifiedAdmissionDocuments, reviewStatusesFor } from "../services/admissionWorkflow.js";
+import { applicationStatusMessage, canReviewTransition, hasVerifiedAdmissionDocuments, reviewStatusesFor } from "../services/admissionWorkflow.js";
 import { formAccessFor } from "../services/formAccess.js";
 import { readyForReview } from "../services/applicationReview.js";
 import { attemptStatusEmail, statusEmailConfigured } from "../services/statusEmail.js";
@@ -98,7 +98,8 @@ export const updateApplicationStatus = asyncHandler(async (req, res) => {
   if (req.body.status === "ACCEPTED" && current.status !== "ACCEPTED" && !screened(current)) return res.status(409).json({ message: "Publish a successful screening result before issuing an admission offer." });
   if (req.body.status === "ADMITTED" && current.status !== "ADMITTED" && admissionFailure(current)) return res.status(409).json({ success: false, message: admissionFailure(current) });
   if (current.status === "ACCEPTED" && !["ACCEPTED", "ADMITTED"].includes(req.body.status) && current.payments.some((payment) => payment.type === "ACCEPTANCE_FEE" && ["PENDING", "VERIFIED"].includes(payment.status))) return res.status(409).json({ success: false, message: "An acceptance payment is recorded. Resolve it with admissions before withdrawing this offer." });
-  if (req.body.status === "RETURNED" && !req.body.reviewNote?.trim()) return res.status(422).json({ success: false, message: "Explain the corrections required before returning this application." });
+  const statusMessage = applicationStatusMessage(req.body.status, req.body.reviewNote);
+  if (req.body.status === "REJECTED" && !statusMessage) return res.status(422).json({ success: false, message: "Enter the exact issue before rejecting this application." });
   if (["ACCEPTED", "ADMITTED"].includes(req.body.status) && current.status !== req.body.status && !formAccessFor(current, { official: true }).unlocked) {
     return res.status(409).json({ success: false, message: "A simulated application fee does not qualify this application for an official offer or admission." });
   }
@@ -109,7 +110,7 @@ export const updateApplicationStatus = asyncHandler(async (req, res) => {
   let credentials = null;
   const data = {
     status: req.body.status,
-    reviewNote: req.body.reviewNote || null,
+    reviewNote: statusMessage,
     ...(req.body.interviewDate !== undefined ? { interviewDate: req.body.interviewDate ? new Date(req.body.interviewDate) : null } : {}),
     entranceExamScore: req.body.entranceExamScore,
     interviewScore: req.body.interviewScore,
@@ -166,7 +167,7 @@ export const updateApplicationStatus = asyncHandler(async (req, res) => {
         applicationId: current.id,
         fromStatus: current.status,
         toStatus: req.body.status,
-        note: req.body.reviewNote || null,
+        note: statusMessage,
         changedBy: req.user.name,
         ...(policy ? { notificationSubject: "Admission offer ready", notificationText: renderAdmissionMessage(policy.offerMessage, { programme: current.courseOfInterest }) } : {}),
         ...(current.status !== req.body.status ? { emailStatus: "PENDING", emailRecipient: current.email } : {})

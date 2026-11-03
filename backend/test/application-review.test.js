@@ -35,7 +35,7 @@ test("review API hides unsubmitted details and rejects premature decisions", asy
     async function decision(body) { return fetch(base + "/status", { method: "PATCH", headers, body: JSON.stringify(body) }); }
     assert.equal((await decision({ status: "REVIEWED" })).status, 409);
     Object.assign(application, { status: "SUBMITTED", submittedAt: new Date(), updatedAt: new Date(), statusHistory: [] });
-    assert.equal((await decision({ status: "RETURNED", reviewNote: "" })).status, 422);
+    assert.equal((await decision({ status: "REJECTED", reviewNote: "   " })).status, 422);
     application.status = "REVIEWED";
     assert.equal((await decision({ status: "ACCEPTED" })).status, 409);
     const history = [];
@@ -50,10 +50,16 @@ test("review API hides unsubmitted details and rejects premature decisions", asy
     });
     const returned = await decision({ status: "RETURNED", reviewNote: "Correct your date of birth." });
     assert.equal(returned.status, 200);
+    assert.match(application.reviewNote, /make the required corrections/);
+    assert.equal(history[0].note, application.reviewNote);
     assert.equal(application.status, "RETURNED");
     assert.equal(history[0].emailStatus, "PENDING");
     assert.equal(history[0].emailRecipient, application.email);
     assert.equal((await returned.json()).data.application.reviewReady, false);
+    application.status = "REVIEWED";
+    assert.equal((await decision({ status: "REJECTED", reviewNote: "The certificate is unreadable." })).status, 200);
+    assert.equal(application.reviewNote, "The certificate is unreadable.");
+    assert.equal(history.at(-1).emailStatus, "PENDING");
     Object.assign(application, {
       status: "REVIEWED", screeningStatus: "EXEMPT", isTest: true, declarationAccepted: true, formFeeAmount: 20000,
       applicant: { id: "test-user", role: "APPLICANT" },

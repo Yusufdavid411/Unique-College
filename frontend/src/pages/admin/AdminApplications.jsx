@@ -15,6 +15,7 @@ export default function AdminApplications() {
   const { user } = useAuth();
   const [applications, setApplications] = useState([]);
   const [selectedApplication, setSelectedApplication] = useState(null);
+  const [statusChoice, setStatusChoice] = useState("");
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [feedback, setFeedback] = useState("");
@@ -47,6 +48,7 @@ export default function AdminApplications() {
     setCredentials(null);
     try {
       const { data } = await api.get(`/applications/${applicationId}`);
+      setStatusChoice(data.data.status);
       setSelectedApplication(data.data);
     } catch (error) { setFeedback(apiErrorMessage(error, "Unable to open this application.")); }
   }
@@ -58,8 +60,10 @@ export default function AdminApplications() {
     setSaving(true);
     setFeedback("");
     try {
-      const { data } = await api.patch(`/applications/${selectedApplication.id}/status`, { status: formData.get("status"), reviewNote: formData.get("reviewNote") });
+      const status = formData.get("status");
+      const { data } = await api.patch(`/applications/${selectedApplication.id}/status`, { status, ...(status === "REJECTED" ? { reviewNote: formData.get("reviewNote") } : {}) });
       setSelectedApplication(data.data.application);
+      setStatusChoice(data.data.application.status);
       setCredentials(data.data.credentials || null);
       setFeedback(data.data.email?.status === "SENT" ? "Status updated. Notification submitted to the email provider." : "Status updated. Check email notification status below.");
       loadApplications();
@@ -155,8 +159,8 @@ export default function AdminApplications() {
           <section className="review-status-card"><span className="eyebrow">Current status</span><h3>{ready || selectedApplication.status === "RETURNED" ? readableStatus(selectedApplication.status) : "Awaiting submission"}</h3><p>{ready ? `Submitted ${formatDate(selectedApplication.submittedAt)}. Review the form and documents below before updating the status.` : selectedApplication.status === "RETURNED" ? "Waiting for the applicant to correct and resubmit their form." : selectedApplication.paymentConfirmed ? "Payment confirmed. The applicant has not submitted their form for review yet." : "Waiting for successful payment and a submitted application. No form is available for review yet."}</p>
             {!ready && selectedApplication.reviewNote && <p>{selectedApplication.reviewNote}</p>}
             {ready && <form key={`${selectedApplication.id}-${selectedApplication.status}`} className="application-review-form" onSubmit={updateApplicationStatus}>
-              <label>Update status<select name="status" defaultValue={selectedApplication.status} disabled={saving}>{(selectedApplication.allowedStatuses || [selectedApplication.status]).map((status) => <option key={status} value={status}>{readableStatus(status)}</option>)}</select></label>
-              <label>Message to applicant<textarea name="reviewNote" rows="3" maxLength={2000} defaultValue={selectedApplication.reviewNote || ""} placeholder="Explain any corrections required or the next step." disabled={saving} /></label>
+              <label>Update status<select name="status" defaultValue={selectedApplication.status} onChange={(event) => setStatusChoice(event.target.value)} disabled={saving}>{(selectedApplication.allowedStatuses || [selectedApplication.status]).map((status) => <option key={status} value={status}>{status === "INTERVIEW_SCHEDULED" ? "Screening scheduled" : readableStatus(status)}</option>)}</select></label>
+              {statusChoice === "REJECTED" && <label>Reason for rejection<textarea name="reviewNote" rows="3" maxLength={2000} required defaultValue={selectedApplication.status === "REJECTED" ? selectedApplication.reviewNote || "" : ""} placeholder="Type the exact issue and what needs to be corrected so the applicant knows what to change." disabled={saving} /></label>}
               <button className="button" type="submit" disabled={saving}>{saving ? "Saving…" : "Update application status"}</button>
             </form>}
           </section>
