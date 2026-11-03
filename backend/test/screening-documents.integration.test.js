@@ -36,6 +36,12 @@ test("PostgreSQL screening, automatic letter and completed-form downloads", { sk
       if (url.endsWith("/payments")) { const payload = JSON.parse(options.body); reference = payload.tx_ref; amount = Number(payload.amount); providerId++; return { ok: true, json: async () => ({ status: "success", data: { link: "https://checkout.flutterwave.com/v3/hosted/pay/fixture" } }) }; }
       return { ok: true, json: async () => ({ status: "success", data: { id: providerId, tx_ref: reference, amount, currency: "NGN", status: "successful" } }) };
     }, { enabled: true, mode: "live", secretKey: "FLWSECK-fixture-not-a-real-key", webhookHash: "fixture-only", returnUrl: "http://localhost:5173/applicant/payments" });
+    await assert.rejects(() => gateway.start(applicant.id, "SCREENING_FEE"), /eligible application/);
+    assert.equal((await call(`/applications/${application.id}/status`, "PATCH", { status: "SCREENING_APPROVED" }, admin)).status, 200);
+    const approval = await prisma.applicationStatusHistory.findFirst({ where: { applicationId: application.id, kind: "SCREENING_APPROVAL" } });
+    assert.equal(approval.emailRecipient, applicant.email);
+    assert.match(approval.notificationText, /accepted for screening/);
+    assert.equal((await call("/screening/schedule", "POST", schedule, admin)).status, 409);
     const screening = await gateway.start(applicant.id, "SCREENING_FEE");
     assert.equal(amount, 2000);
     assert.equal((await gateway.verify(screening.reference, applicant.id)).status, "VERIFIED");

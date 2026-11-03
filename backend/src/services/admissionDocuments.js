@@ -30,7 +30,7 @@ export function feeVerified(application, type, amount) {
 }
 export function screeningProgress(application, defaultAmount) {
   const status = application.screeningStatus || "NOT_SCHEDULED";
-  const eligible = readyForReview(application) && ["SUBMITTED", "PENDING", "REVIEWED", "INTERVIEW_SCHEDULED"].includes(application.status) && ["NOT_SCHEDULED", "SCHEDULED"].includes(status);
+  const eligible = readyForReview(application) && ((application.status === "REVIEWED" && status === "APPROVED") || (application.status === "INTERVIEW_SCHEDULED" && status === "SCHEDULED"));
   const amount = application.screeningFeeAmount ?? defaultAmount;
   const simulation = process.env.PAYMENT_PROVIDER === "flutterwave" && process.env.FLUTTERWAVE_MODE === "test" && process.env.FLUTTERWAVE_RESTRICTED_PRODUCTION_TEST === "true";
   const paid = feeVerified(application, "SCREENING_FEE", amount) || (simulation && !application.isTest && feeVerified({ ...application, isTest: true, payments: (application.payments || []).filter((payment) => payment.provider === "FLUTTERWAVE") }, "SCREENING_FEE", amount));

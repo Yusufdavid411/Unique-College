@@ -165,7 +165,7 @@ export const gallerySchema = z.object({
 
 export const statusSchema = z.object({
   body: z.object({
-    status: z.enum(["DRAFT", "PENDING", "SUBMITTED", "REVIEWED", "RETURNED", "INTERVIEW_SCHEDULED", "ACCEPTED", "ADMITTED", "REJECTED"]),
+    status: z.enum(["DRAFT", "PENDING", "SUBMITTED", "REVIEWED", "RETURNED", "INTERVIEW_SCHEDULED", "SCREENING_APPROVED", "ACCEPTED", "ADMITTED", "REJECTED"]),
     reviewNote: optionalString,
     interviewDate: optionalDate,
     entranceExamScore: z.coerce.number().min(0).max(100).optional(),

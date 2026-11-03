@@ -21,7 +21,7 @@ export default function AdminScreening() {
     return () => controller.abort();
   }, []);
   useEffect(() => { const controller = new AbortController(); setLoading(true); setSelected([]); setRecords([]); api.get("/applications", { signal: controller.signal }).then(({ data }) => { if (!controller.signal.aborted) setRecords(data.data); }).catch((failure) => { if (!controller.signal.aborted) setError(apiErrorMessage(failure)); }).finally(() => { if (!controller.signal.aborted) setLoading(false); }); return () => controller.abort(); }, [revision]);
-  const eligible = records.filter((record) => record.applicant?.isActive && record.reviewReady && record.screeningPaid && ["SUBMITTED", "PENDING", "REVIEWED", "INTERVIEW_SCHEDULED"].includes(record.status) && ["NOT_SCHEDULED", "SCHEDULED"].includes(record.screeningStatus));
+  const eligible = records.filter((record) => record.applicant?.isActive && record.reviewReady && record.screeningPaid && ((record.status === "REVIEWED" && record.screeningStatus === "APPROVED") || (record.status === "INTERVIEW_SCHEDULED" && record.screeningStatus === "SCHEDULED")));
   async function schedule(event) {
     event.preventDefault(); if (busy || !selected.length) return;
     const fields = new FormData(event.currentTarget);

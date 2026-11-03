@@ -4,7 +4,7 @@ import { portalPath } from "../api/portalLinks.js";
 export default function ScreeningProgress() {
   const { application, journey, screening } = useApplicant();
   if (!screening || screening.status === "EXEMPT") return null;
-  const awaitingSchedule = screening.status === "NOT_SCHEDULED" || (screening.status === "SCHEDULED" && !screening.date);
+  const awaitingSchedule = ["NOT_SCHEDULED", "APPROVED"].includes(screening.status) || (screening.status === "SCHEDULED" && !screening.date);
   if (awaitingSchedule) {
     if (!journey?.submitted || !["SUBMITTED", "PENDING", "REVIEWED", "INTERVIEW_SCHEDULED"].includes(application?.status)) return null;
     if (!screening.eligible) return null;

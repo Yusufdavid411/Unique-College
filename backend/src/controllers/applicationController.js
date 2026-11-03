@@ -75,7 +75,7 @@ function reviewResponse(application) {
     reviewNote: application.reviewNote, statusHistory: application.statusHistory, emailConfigured: statusEmailConfigured(),
     payments: application.payments.filter((payment) => payment.status === "VERIFIED"), allowedStatuses: []
   };
-  return { ...application, admission: admissionProgressFor(application), reviewReady, paymentConfirmed, allowedStatuses: reviewStatusesFor(application.status).filter((status) => status !== "ADMITTED" || application.status === "ADMITTED" || !admissionFailure(application)), emailConfigured: statusEmailConfigured() };
+  return { ...application, admission: admissionProgressFor(application), reviewReady, paymentConfirmed, allowedStatuses: reviewStatusesFor(application.status).filter((status) => status === "SCREENING_APPROVED" ? (application.screeningStatus || "NOT_SCHEDULED") === "NOT_SCHEDULED" : status === "ACCEPTED" ? application.status === "ACCEPTED" || screened(application) : status !== "ADMITTED" || application.status === "ADMITTED" || !admissionFailure(application)), emailConfigured: statusEmailConfigured() };
 }
 
 export const getApplication = asyncHandler(async (req, res) => {
@@ -97,6 +97,8 @@ export const updateApplicationStatus = asyncHandler(async (req, res) => {
   if (!current) return res.status(404).json({ success: false, message: "Application not found" });
   if (!readyForReview(current)) return res.status(409).json({ success: false, message: "Only a paid, submitted application can be reviewed. Wait for the applicant to submit their form." });
   if (!canReviewTransition(current.status, req.body.status)) return res.status(409).json({ success: false, message: "This decision is not available from the current application status" });
+  const approveScreening = req.body.status === "SCREENING_APPROVED";
+  if (approveScreening && (!current.applicant?.isActive || (current.screeningStatus || "NOT_SCHEDULED") !== "NOT_SCHEDULED")) return res.status(409).json({ success: false, message: "Only active applicants awaiting a screening decision can be accepted for screening." });
   if (req.body.status === "ACCEPTED" && current.status !== "ACCEPTED" && !screened(current)) return res.status(409).json({ message: "Publish a successful screening result before issuing an admission offer." });
   if (req.body.status === "ADMITTED" && current.status !== "ADMITTED" && admissionFailure(current)) return res.status(409).json({ success: false, message: admissionFailure(current) });
   if (current.status === "ACCEPTED" && !["ACCEPTED", "ADMITTED"].includes(req.body.status) && current.payments.some((payment) => payment.type === "ACCEPTANCE_FEE" && ["PENDING", "VERIFIED"].includes(payment.status))) return res.status(409).json({ success: false, message: "An acceptance payment is recorded. Resolve it with admissions before withdrawing this offer." });
@@ -111,7 +113,8 @@ export const updateApplicationStatus = asyncHandler(async (req, res) => {
 
   let credentials = null;
   const data = {
-    status: req.body.status,
+    status: approveScreening ? "REVIEWED" : req.body.status,
+    ...(approveScreening ? { screeningStatus: "APPROVED" } : ["RETURNED", "REJECTED"].includes(req.body.status) && ["APPROVED", "SCHEDULED"].includes(current.screeningStatus) ? { screeningStatus: "NOT_SCHEDULED", screeningAt: null, screeningVenue: null, screeningInstructions: null } : {}),
     reviewNote: statusMessage,
     ...(req.body.interviewDate !== undefined ? { interviewDate: req.body.interviewDate ? new Date(req.body.interviewDate) : null } : {}),
     entranceExamScore: req.body.entranceExamScore,
@@ -128,6 +131,7 @@ export const updateApplicationStatus = asyncHandler(async (req, res) => {
   const application = await auditedMutation(prisma, { actorId: req.user.id, action: "application.status:" + req.body.status, targetType: "application", targetId: current.id }, async (transaction) => {
     const latest = await transaction.application.findUnique({ where: { id: current.id }, include: { applicant: true, documents: { where: { supersededAt: null } }, payments: true, schoolForms: true } });
     if (!latest || latest.status !== current.status || !readyForReview(latest)) throw Object.assign(new Error("This application changed. Refresh before saving."), { statusCode: 409 });
+    if (approveScreening && (!latest.applicant?.isActive || (latest.screeningStatus || "NOT_SCHEDULED") !== "NOT_SCHEDULED")) throw Object.assign(new Error("Screening eligibility changed. Refresh before saving."), { statusCode: 409 });
     if (["ACCEPTED", "ADMITTED"].includes(req.body.status) && latest.status !== req.body.status && latest.screeningStatus === "PASSED" && !feeVerified(latest, "SCREENING_FEE", latest.screeningFeeAmount)) throw Object.assign(new Error("A verified official screening fee is required before issuing an offer or admission."), { statusCode: 409 });
     if (["ACCEPTED", "ADMITTED"].includes(req.body.status) && latest.status !== req.body.status && !formAccessFor(latest, { official: true }).unlocked) throw Object.assign(new Error("A simulated application fee does not qualify this application for an official offer or admission."), { statusCode: 409 });
     if (latest.status === "ACCEPTED" && !["ACCEPTED", "ADMITTED"].includes(req.body.status) && latest.payments.some((payment) => payment.type === "ACCEPTANCE_FEE" && ["PENDING", "VERIFIED"].includes(payment.status))) throw Object.assign(new Error("Resolve the recorded acceptance payment before withdrawing this offer."), { statusCode: 409 });
@@ -169,14 +173,15 @@ export const updateApplicationStatus = asyncHandler(async (req, res) => {
       data: {
         applicationId: current.id,
         fromStatus: current.status,
-        toStatus: req.body.status,
+        toStatus: data.status,
         note: statusMessage,
         changedBy: req.user.name,
         ...(policy ? { notificationSubject: "Admission offer ready", notificationText: renderAdmissionMessage(policy.offerMessage, { programme: current.courseOfInterest }) } : {}),
-        ...(current.status !== req.body.status ? { emailStatus: "PENDING", emailRecipient: current.email } : {})
+        ...(approveScreening ? { kind: "SCREENING_APPROVAL", notificationSubject: "Application accepted for screening", notificationText: statusMessage } : {}),
+        ...(approveScreening || current.status !== data.status ? { emailStatus: "PENDING", emailRecipient: current.applicant?.email || current.email } : {})
       }
     });
-    return { updated: await transaction.application.findUnique({ where: { id: req.params.id }, include: applicationDetails }), historyId: current.status !== req.body.status ? history?.id : null };
+    return { updated: await transaction.application.findUnique({ where: { id: req.params.id }, include: applicationDetails }), historyId: approveScreening || current.status !== data.status ? history?.id : null };
   }, { isolationLevel: "Serializable", timeout: 15000 });
 
   const email = await attemptStatusEmail(application.historyId);

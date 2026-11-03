@@ -24,7 +24,7 @@ router.post("/schedule", requirePermission("applications.review"), asyncHandler(
   if (date < new Date(Date.now() + 60000)) return res.status(422).json({ message: "Choose a future examination date and time." });
   const result = await prisma.$transaction(async (database) => {
     const records = await database.application.findMany({ where: { id: { in: input.ids } }, include: { payments: true, applicant: { select: { email: true, isActive: true } }, statusHistory: { where: { kind: "SCREENING_SCHEDULE" }, orderBy: { createdAt: "desc" }, take: 1, select: { notificationText: true } } } });
-    if (records.length !== input.ids.length || records.some((record) => !record.applicant?.isActive || !readyForReview(record) || !["SUBMITTED", "PENDING", "REVIEWED", "INTERVIEW_SCHEDULED"].includes(record.status) || !["NOT_SCHEDULED", "SCHEDULED"].includes(record.screeningStatus))) throw conflict("Only active applicants with paid, submitted applications awaiting screening may be scheduled. Refresh the selection.");
+    if (records.length !== input.ids.length || records.some((record) => !record.applicant?.isActive || !screeningProgress(record).eligible)) throw conflict("Accept the application for screening before scheduling an exam.");
     if (new Set(records.map((record) => record.isTest)).size > 1) throw conflict("Preview and real applicants must be scheduled separately.");
     const fee = await screeningPolicy(database);
     if (records.some((record) => !screeningProgress(record, fee.amount).paid)) throw conflict("Only applicants with a verified screening fee can be scheduled.");

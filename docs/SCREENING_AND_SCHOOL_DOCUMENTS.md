@@ -4,8 +4,8 @@
 
 1. Register an applicant account and pay the quoted application fee (new default NGN 5,000).
 2. Complete the application, upload credentials and submit for review.
-3. Admissions selects paid, submitted applicants for a physical screening/entrance exam. One applicant or a selected group of up to 50 can receive the same date, time (Africa/Lagos), venue and instructions.
-4. Each invitation captures the current screening quote (default NGN 2,000). The applicant pays through Flutterwave; only exact verified NGN transactions in the correct test/live mode satisfy payment.
+3. Admissions reviews the submitted application and chooses Accept for screening, Reject, or Corrections required. Accept for screening notifies the applicant and unlocks screening payment; it does not issue an admission offer.
+4. The applicant pays the screening fee through Flutterwave (default NGN 2,000; the quote is saved when checkout starts). After verification, admissions schedules the exam and sends the personalized date, time (Africa/Lagos), venue and instructions.
 5. After the examination time and confirmed screening payment, authorised admissions staff publish each candidate's actual result. Scheduling a group does not pass, offer admission to or enrol the group.
 6. A successful screening result, verified credentials and the existing application checks allow an individual admission offer. Acceptance remains NGN 5,000 by default, editable in Settings.
 7. The applicant accepts the offer and pays the quoted acceptance fee. Confirmation automatically issues the admission letter when approved session/duration/dates/appendix settings are complete. Incomplete or stale settings never reverse a successful payment: issuance waits for registry correction and payment-status refresh or an explicit release retry. The applicant completes the acceptance form online and obtains required handwritten signatures on the downloaded copy.
