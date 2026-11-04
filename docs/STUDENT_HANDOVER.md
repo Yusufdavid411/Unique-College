@@ -81,9 +81,8 @@ is not implied by admission.
 
 The current officialEmail field reserves an address; it does not provision a mailbox.
 Resend delivery and the full student portal are not activated by this register.
-Email notifications never contain a password. Existing first-login password-change
-controls handle activation without requiring a new account, email delivery or a
-password-reset link. Forgotten-password recovery still requires the separate
+Email notifications never contain a password. Final admission enables student
+sign-in without a new account or a password-reset link. Forgotten-password recovery still requires the separate
 email/recovery feature; it is not provided by knowing a student's email address.
 
 ## Deferred database and portal work
@@ -96,7 +95,7 @@ email/recovery feature; it is not provided by knowing a student's email address.
   checklists can extend the current response/clearance foundation later. Preserve
   existing admitted students, identifiers and quoted fees.
 - Stage 3: permission-scoped staff workflows for Admissions, Registrar and Finance.
-- Student portal foundation: portal.uniquecollegekwali.com now supports activation,
+- Student portal foundation: portal.uniquecollegekwali.com now supports sign-in,
   profile, academic details, records and announcements. It is not the full later-stage
   academic/finance platform.
 - Stage 6: general institutional fees, invoicing and broader finance workflows.

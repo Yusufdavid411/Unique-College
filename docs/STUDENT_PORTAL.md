@@ -31,8 +31,7 @@ administration screens or visual branding:
 - Documents and receipts: the existing accepted application PDF, separate verified
   payment receipts and private supporting admission documents. No new public file URLs.
 - Announcements: published student notices only; excerpts open into full notices.
-- Account security: existing password controls, with student activation on first
-  post-admission sign-in.
+- Account security: optional password changes from account settings.
 
 White backgrounds, restrained blue accents, progressive disclosure, responsive
 sidebar/drawer, keyboard focus handling, Escape-to-close and skip navigation are
@@ -40,7 +39,7 @@ shared through PortalShell. The desktop menu and mobile toggle use complementary
 breakpoints. Portal pages are lazy-loaded to avoid adding the entire student UI
 to the first public-page bundle.
 
-## Identity and secure cross-subdomain transfer
+## Identity and portal access
 
 Final admission creates one StudentProfile linked uniquely to the existing User
 and original Application. The migration backfills already admitted students without
@@ -48,7 +47,10 @@ changing their password, admission or payment history. Students sign in with the
 existing login email or assigned username; the reserved officialEmail is not a
 provisioned mailbox.
 
-An admitted user signing in on apply is transferred to the student host. JWTs are
+An admitted user stays on the applicant dashboard and can follow its student
+portal link to sign in with the same credentials. The applicant session stays
+active. The legacy continuation route can still redeem previously issued transfer
+codes, but normal applicant sign-in no longer initiates one. JWTs are
 never placed in a URL or shared through broad-domain cookies. The API generates a
 60-second, random, one-use code stored only as a SHA-256 hash. Redemption also
 requires an HttpOnly, Secure-in-production, SameSite=Strict, API-host-only cookie
@@ -56,8 +58,7 @@ bound to the originating browser. The code is carried in a fragment, removed fro
 history before redemption, and cannot be replayed after use, expiry or session
 revocation. Origin-scoped applicant/student/admin session keys remain separate.
 
-Transfer expiry falls back to normal student sign-in. Students who still need a
-password change must complete it before accessing records. A student role alone
+Transfer expiry falls back to normal student sign-in. A student role alone
 is insufficient: an admitted application and matching linked profile are required.
 The permanent student portal has a dedicated login; applicants cannot use it early.
 
