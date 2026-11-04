@@ -3,16 +3,28 @@ import { api, apiErrorMessage } from "../../api/client.js";
 import { SendPasswordReset } from "../../components/PasswordRecovery.jsx";
 import StaffAssignments from "../../components/StaffAssignments.jsx";
 import { useAuth } from "../../context/AuthContext.jsx";
+import AdminDirectorySearch from "../../components/AdminDirectorySearch.jsx";
 
 export default function AdminUsers() {
   const { user } = useAuth();
   const [result, setResult] = useState({ users: [], total: 0 });
-  const [page, setPage] = useState(1);
+  const [{ page, search }, setQuery] = useState({ page: 1, search: "" });
+  const [searchInput, setSearchInput] = useState("");
   const [notice, setNotice] = useState("");
   const [credentials, setCredentials] = useState(null);
   const [busy, setBusy] = useState(false);
-  async function load() { setResult((await api.get("/users", { params: { page } })).data.data); }
-  useEffect(() => { load().catch((error) => setNotice(apiErrorMessage(error))); }, [page]);
+  const [loading, setLoading] = useState(true);
+  async function load() { setResult((await api.get("/users", { params: { page, search } })).data.data); }
+  useEffect(() => {
+    const controller = new AbortController();
+    setLoading(true);
+    api.get("/users", { params: { page, search }, signal: controller.signal })
+      .then(({ data }) => { if (!controller.signal.aborted) setResult(data.data); })
+      .catch((error) => { if (!controller.signal.aborted) { setResult({ users: [], total: 0 }); setNotice(apiErrorMessage(error)); } })
+      .finally(() => { if (!controller.signal.aborted) setLoading(false); });
+    return () => controller.abort();
+  }, [page, search]);
+  function setPage(update) { setQuery((current) => ({ ...current, page: update(current.page) })); }
   async function create(event) {
     event.preventDefault();
     const form = event.currentTarget;
@@ -39,8 +51,9 @@ export default function AdminUsers() {
       <form className="form-panel" onSubmit={create}><h2>Create staff account</h2><div className="staff-account-fields"><label>Full name<input name="name" minLength={2} maxLength={150} required autoComplete="name" /></label><label>Email<input name="email" type="email" required autoComplete="email" /></label></div><button type="submit" className="button" disabled={busy}>{busy ? "Creating…" : "Create staff account"}</button></form>
       {credentials && <section className="admission-credentials"><strong>Share these credentials securely</strong><span>{credentials.email}</span><code>{credentials.password}</code><p>This initial password is shown only now. Staff can change it later in Settings.</p><button type="button" onClick={() => setCredentials(null)}>Hide credentials</button></section>}
       <section className="admin-list" aria-labelledby="staff-directory-title"><h2 id="staff-directory-title">Registered staff</h2>
-        {result.users.map((user) => <article className="admin-list-item" key={user.id}><div><strong>{user.name}</strong><span>{user.email}</span><small>{user.role} · {user.isActive ? "Active" : "Inactive"}</small></div>{user.role === "STAFF" && <button type="button" disabled={busy} onClick={() => toggle(user)}>{user.isActive ? "Deactivate" : "Activate"}</button>}</article>)}
-        <nav className="portal-form-actions" aria-label="Staff account pages"><button type="button" disabled={busy || page === 1} onClick={() => setPage((value) => value - 1)}>Previous</button><span>Page {page}</span><button type="button" disabled={busy || page * 25 >= result.total} onClick={() => setPage((value) => value + 1)}>Next</button></nav>
+        <AdminDirectorySearch label="Search staff accounts" placeholder="Name, email, role or assigned programme" value={searchInput} onChange={setSearchInput} onSearch={(value) => setQuery({ page: 1, search: value })} disabled={busy} />
+        {loading ? <p role="status">Loading staff accounts…</p> : !result.users.length ? <p>{search ? "No staff accounts match your search." : "No staff accounts to display."}</p> : result.users.map((user) => <article className="admin-list-item" key={user.id}><div><strong>{user.name}</strong><span>{user.email}</span><small>{user.role} · {user.isActive ? "Active" : "Inactive"}</small></div>{user.role === "STAFF" && <button type="button" disabled={busy} onClick={() => toggle(user)}>{user.isActive ? "Deactivate" : "Activate"}</button>}</article>)}
+        <nav className="portal-form-actions" aria-label="Staff account pages"><button type="button" disabled={busy || loading || page === 1} onClick={() => setPage((value) => value - 1)}>Previous</button><span>Page {page}</span><button type="button" disabled={busy || loading || page * 25 >= result.total} onClick={() => setPage((value) => value + 1)}>Next</button></nav>
       </section>
       <SendPasswordReset />
       {(user?.role === "ADMIN" || user?.permissions?.includes("staff.assignments.manage")) && <StaffAssignments />}

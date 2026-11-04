@@ -9,6 +9,7 @@ import ApplicationDownloads from "../../components/ApplicationDownloads.jsx";
 import ScreeningReview from "../../components/ScreeningReview.jsx";
 import { SendPasswordReset } from "../../components/PasswordRecovery.jsx";
 import { useAuth } from "../../context/AuthContext.jsx";
+import AdminDirectorySearch, { matchesDirectorySearch } from "../../components/AdminDirectorySearch.jsx";
 
 const readableStatus = (value) => ({ SCREENING_APPROVED: "Accept for screening", INTERVIEW_SCHEDULED: "Screening scheduled", SUBMITTED: "New submission", PENDING: "Under review", REVIEWED: "Under review", RETURNED: "Corrections required", ACCEPTED: "Admission offered", ADMITTED: "Admitted", DRAFT: "Not submitted" }[value] || value?.replaceAll("_", " ").toLowerCase().replace(/\b\w/g, (letter) => letter.toUpperCase()));
 const formatDate = (value) => value ? new Date(value).toLocaleDateString() : "Not submitted";
@@ -31,6 +32,7 @@ export default function AdminApplications() {
   const [feedback, setFeedback] = useState("");
   const [credentials, setCredentials] = useState(null);
   const [filter, setFilter] = useState("all");
+  const [search, setSearch] = useState("");
   const dialog = useRef(null);
 
   const loadApplications = useCallback(async () => {
@@ -142,7 +144,7 @@ export default function AdminApplications() {
     else if (!event.shiftKey && (document.activeElement === last || document.activeElement === dialog.current)) { event.preventDefault(); first?.focus(); }
   }
 
-  const visibleApplications = applications.filter((application) => filter === "all" || (filter === "submitted" ? application.reviewReady : !application.reviewReady));
+  const visibleApplications = applications.filter((application) => (filter === "all" || (filter === "submitted" ? application.reviewReady : !application.reviewReady)) && matchesDirectorySearch(search, application.fullName, application.email, application.applicationNumber, application.courseOfInterest, applicationStatusLabel(application)));
   async function deleteApplicantAccount(event) {
     event.preventDefault();
     if (saving || !selectedApplication?.applicant) return;
@@ -169,6 +171,7 @@ export default function AdminApplications() {
 
   return <div className="admin-page">
     <header className="admin-header"><span className="eyebrow">Admissions office</span><h1>Applications</h1><p>Review submitted applications and keep applicants informed.</p></header>
+    <AdminDirectorySearch label="Search applications" placeholder="Name, email, application ID, programme or status" value={search} onChange={setSearch} />
     {!selectedApplication && feedback && <p className="admin-feedback" role="status">{feedback}</p>}
     <div className="review-filters" role="group" aria-label="Application queue">{[["all", "All applications"], ["submitted", "Submitted applications"], ["waiting", "Not ready for review"]].map(([value, label]) => <button key={value} type="button" aria-pressed={filter === value} onClick={() => setFilter(value)}>{label}</button>)}</div>
     <div className="admin-table-card"><div className="admin-table-wrap"><table className="review-queue">
@@ -177,7 +180,7 @@ export default function AdminApplications() {
         <td data-label="Applicant"><strong>{application.fullName}</strong><small>{application.applicationNumber || application.email}</small></td>
         <td data-label="Programme">{application.courseOfInterest || "Not submitted"}</td><td data-label="Submitted">{formatDate(application.submittedAt)}</td>
         <td><button className={`review-status-button status-chip--${application.status.toLowerCase()}`} type="button" onClick={() => openApplication(application.id)} aria-label={`View status for ${application.fullName}`}><span>{applicationStatusLabel(application)}</span>{application.status === "SUBMITTED" && <small>New</small>}<span aria-hidden="true">→</span></button></td>
-      </tr>) : <tr><td colSpan="4">{filter === "submitted" ? "No submitted applications are ready for review." : "No applicants in this queue."}</td></tr>}</tbody>
+      </tr>) : <tr><td colSpan="4">{search.trim() ? "No applications in this queue match your search." : filter === "submitted" ? "No submitted applications are ready for review." : "No applicants in this queue."}</td></tr>}</tbody>
     </table></div></div>
     {selectedApplication && <div className="application-review-backdrop">
       <section ref={dialog} tabIndex={-1} onKeyDown={dialogKeyDown} className="application-review-panel" role="dialog" aria-modal="true" aria-labelledby="application-review-title">
@@ -200,7 +203,8 @@ export default function AdminApplications() {
             </section>}
             {!ready && selectedApplication.reviewNote && <p>{selectedApplication.reviewNote}</p>}
             {ready && <form key={`${selectedApplication.id}-${selectedApplication.status}`} className="application-review-form" onSubmit={updateApplicationStatus}>
-              {selectedApplication.status === "REVIEWED" && selectedApplication.screeningStatus === "PASSED" && <p><strong>Next:</strong> Verify the supporting documents, then choose Admission offered once the required payments are verified. Admitted becomes available after offer acceptance, verified acceptance payment, the required acceptance form and clearance.</p>}
+              {["REVIEWED", "ACCEPTED"].includes(selectedApplication.status) && ["PASSED", "EXEMPT"].includes(selectedApplication.screeningStatus) && selectedApplication.admissionPaymentBlocker && <p role="status"><strong>Official admission blocked:</strong> {selectedApplication.admissionPaymentBlocker}</p>}
+              {selectedApplication.status === "REVIEWED" && selectedApplication.screeningStatus === "PASSED" && !selectedApplication.admissionPaymentBlocker && <p><strong>Next:</strong> Verify the supporting documents, then choose Admission offered. Admitted becomes available after offer acceptance, verified acceptance payment, the required acceptance form and clearance.</p>}
               <label>Update status<select name="status" defaultValue={selectedApplication.status} onChange={(event) => setStatusChoice(event.target.value)} disabled={saving}>{(selectedApplication.allowedStatuses || [selectedApplication.status]).map((status) => <option key={status} value={status}>{status === selectedApplication.status ? applicationStatusLabel(selectedApplication) : readableStatus(status)}</option>)}</select></label>
               {statusChoice === "REJECTED" && <label>Reason for rejection<textarea name="reviewNote" rows="3" maxLength={2000} required defaultValue={selectedApplication.status === "REJECTED" ? selectedApplication.reviewNote || "" : ""} placeholder="Type the exact issue and what needs to be corrected so the applicant knows what to change." disabled={saving} /></label>}
               <button className="button primary application-status-submit" type="submit" disabled={saving}><Check size={18} aria-hidden="true" />{saving ? "Saving…" : "Update application status"}</button>

@@ -6,6 +6,7 @@ import { asyncHandler } from "../utils/asyncHandler.js";
 import { ok } from "../utils/apiResponse.js";
 import { studentRecord, enrolmentInclude } from "../services/studentRecords.js";
 import { auditedMutation } from "../services/audit.js";
+import { academicSearch, containsSearch } from "../services/directorySearch.js";
 
 const router = Router();
 router.get("/", requireAuth, requirePermission("students.read"), asyncHandler(async (req, res) => {
@@ -13,9 +14,14 @@ router.get("/", requireAuth, requirePermission("students.read"), asyncHandler(as
     page: z.coerce.number().int().min(1).max(10000).default(1),
     search: z.string().trim().max(100).default("")
   }).parse(req.query);
+  const match = containsSearch(search);
   const where = {
     status: "ADMITTED", isTest: false, applicant: { is: { role: "STUDENT" } },
-    ...(search ? { OR: ["fullName", "email", "studentNumber", "applicationNumber", "courseOfInterest"].map((field) => ({ [field]: { contains: search, mode: "insensitive" } })) } : {})
+    ...(search ? { OR: [
+      ...["fullName", "email", "studentNumber", "applicationNumber", "courseOfInterest"].map((field) => ({ [field]: match })),
+      { applicant: { is: { OR: [{ email: match }, { portalUsername: match }, { officialEmail: match }] } } },
+      { studentProfile: { is: { enrolments: { some: { OR: academicSearch(match) } } } } }
+    ] } : {})
   };
   const [students, total] = await prisma.$transaction([
     prisma.application.findMany({

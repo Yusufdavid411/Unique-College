@@ -66,6 +66,12 @@ export const listApplications = asyncHandler(async (req, res) => {
   ok(res, applications.map((application) => ({ ...application, courseOfInterest: readyForReview(application) ? application.courseOfInterest : null, reviewReady: readyForReview(application), screeningPaid: screeningProgress(application, screeningFee).paid })));
 });
 
+function officialPaymentBlocker(application) {
+  if (!formAccessFor(application, { official: true }).unlocked) return "A verified official application fee is required. A Flutterwave test payment cannot be used for an official offer or admission.";
+  if (application.screeningStatus === "PASSED" && !feeVerified(application, "SCREENING_FEE", application.screeningFeeAmount)) return "A verified official screening fee is required. A Flutterwave test payment cannot be used for an official offer or admission.";
+  return null;
+}
+
 function reviewResponse(application) {
   const reviewReady = readyForReview(application);
   const paymentConfirmed = formAccessFor(application).unlocked;
@@ -75,7 +81,15 @@ function reviewResponse(application) {
     reviewNote: application.reviewNote, statusHistory: application.statusHistory, emailConfigured: statusEmailConfigured(),
     payments: application.payments.filter((payment) => payment.status === "VERIFIED"), allowedStatuses: []
   };
-  return { ...application, admission: admissionProgressFor(application), reviewReady, paymentConfirmed, allowedStatuses: reviewStatusesFor(application.status).filter((status) => status === "SCREENING_APPROVED" ? (application.screeningStatus || "NOT_SCHEDULED") === "NOT_SCHEDULED" : status === "ACCEPTED" ? application.status === "ACCEPTED" || screened(application) : status !== "ADMITTED" || application.status === "ADMITTED" || !admissionFailure(application)), emailConfigured: statusEmailConfigured() };
+  const admissionPaymentBlocker = officialPaymentBlocker(application);
+  const allowedStatuses = reviewStatusesFor(application.status).filter((status) => {
+    if (status === application.status) return true;
+    if (status === "SCREENING_APPROVED") return (application.screeningStatus || "NOT_SCHEDULED") === "NOT_SCHEDULED";
+    if (status === "ACCEPTED") return screened(application) && !admissionPaymentBlocker;
+    if (status === "ADMITTED") return !admissionFailure(application) && !admissionPaymentBlocker;
+    return true;
+  });
+  return { ...application, admission: admissionProgressFor(application), reviewReady, paymentConfirmed, admissionPaymentBlocker, allowedStatuses, emailConfigured: statusEmailConfigured() };
 }
 
 export const getApplication = asyncHandler(async (req, res) => {
@@ -104,8 +118,9 @@ export const updateApplicationStatus = asyncHandler(async (req, res) => {
   if (current.status === "ACCEPTED" && !["ACCEPTED", "ADMITTED"].includes(req.body.status) && current.payments.some((payment) => payment.type === "ACCEPTANCE_FEE" && ["PENDING", "VERIFIED"].includes(payment.status))) return res.status(409).json({ success: false, message: "An acceptance payment is recorded. Resolve it with admissions before withdrawing this offer." });
   const statusMessage = applicationStatusMessage(req.body.status, req.body.reviewNote);
   if (req.body.status === "REJECTED" && !statusMessage) return res.status(422).json({ success: false, message: "Enter the exact issue before rejecting this application." });
-  if (["ACCEPTED", "ADMITTED"].includes(req.body.status) && current.status !== req.body.status && !formAccessFor(current, { official: true }).unlocked) {
-    return res.status(409).json({ success: false, message: "A simulated application fee does not qualify this application for an official offer or admission." });
+  if (["ACCEPTED", "ADMITTED"].includes(req.body.status) && current.status !== req.body.status) {
+    const paymentBlocker = officialPaymentBlocker(current);
+    if (paymentBlocker) return res.status(409).json({ success: false, message: paymentBlocker });
   }
   if (["ACCEPTED", "ADMITTED"].includes(req.body.status) && current.status !== req.body.status && (!current.applicant || !current.declarationAccepted || !hasVerifiedAdmissionDocuments(current.documents))) {
     return res.status(422).json({ success: false, message: "Admission requires an applicant account, verified form payment, declaration, and verified supporting documents" });
@@ -132,8 +147,10 @@ export const updateApplicationStatus = asyncHandler(async (req, res) => {
     const latest = await transaction.application.findUnique({ where: { id: current.id }, include: { applicant: true, documents: { where: { supersededAt: null } }, payments: true, schoolForms: true } });
     if (!latest || latest.status !== current.status || !readyForReview(latest)) throw Object.assign(new Error("This application changed. Refresh before saving."), { statusCode: 409 });
     if (approveScreening && (!latest.applicant?.isActive || (latest.screeningStatus || "NOT_SCHEDULED") !== "NOT_SCHEDULED")) throw Object.assign(new Error("Screening eligibility changed. Refresh before saving."), { statusCode: 409 });
-    if (["ACCEPTED", "ADMITTED"].includes(req.body.status) && latest.status !== req.body.status && latest.screeningStatus === "PASSED" && !feeVerified(latest, "SCREENING_FEE", latest.screeningFeeAmount)) throw Object.assign(new Error("A verified official screening fee is required before issuing an offer or admission."), { statusCode: 409 });
-    if (["ACCEPTED", "ADMITTED"].includes(req.body.status) && latest.status !== req.body.status && !formAccessFor(latest, { official: true }).unlocked) throw Object.assign(new Error("A simulated application fee does not qualify this application for an official offer or admission."), { statusCode: 409 });
+    if (["ACCEPTED", "ADMITTED"].includes(req.body.status) && latest.status !== req.body.status) {
+      const paymentBlocker = officialPaymentBlocker(latest);
+      if (paymentBlocker) throw Object.assign(new Error(paymentBlocker), { statusCode: 409 });
+    }
     if (latest.status === "ACCEPTED" && !["ACCEPTED", "ADMITTED"].includes(req.body.status) && latest.payments.some((payment) => payment.type === "ACCEPTANCE_FEE" && ["PENDING", "VERIFIED"].includes(payment.status))) throw Object.assign(new Error("Resolve the recorded acceptance payment before withdrawing this offer."), { statusCode: 409 });
     if (req.body.status === "ADMITTED" && current.status !== "ADMITTED") {
       const issue = admissionFailure(latest);

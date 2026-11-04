@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { api, apiErrorMessage } from "../../api/client.js";
 import { portalPath } from "../../api/portalLinks.js";
 import AdminNotice from "../../components/AdminNotice.jsx";
+import AdminDirectorySearch from "../../components/AdminDirectorySearch.jsx";
 
 export default function AdminStudents() {
   const [result, setResult] = useState({ students: [], total: 0 });
@@ -24,14 +25,9 @@ export default function AdminStudents() {
     return () => controller.abort();
   }, [query, revision]);
 
-  function findStudents(event) {
-    event.preventDefault();
-    setQuery((current) => ({ ...current, page: 1, search: search.trim() }));
-  }
-
   return <div className="admin-page">
     <header className="admin-header"><span className="eyebrow">Student records</span><h1>Students</h1><p>Admitted applicants appear here automatically. Admission decisions stay under Applications.</p><Link className="button secondary" to={portalPath("/admin/applications")}>Review applications</Link></header>
-    <form className="student-search" onSubmit={findStudents}><label>Find a student<input type="search" value={search} maxLength={100} onChange={(event) => setSearch(event.target.value)} placeholder="Name, email, student number or programme" /></label><button type="submit" className="button" disabled={loading}>Search</button></form>
+    <AdminDirectorySearch label="Search students" placeholder="Name, email, ID, programme, department, level or session" value={search} onChange={setSearch} onSearch={(value) => setQuery({ page: 1, search: value })} disabled={loading} />
     <AdminNotice type="error">{error}</AdminNotice>
     {error ? <button className="button secondary" type="button" onClick={() => setRevision((value) => value + 1)}>Try again</button> : <>
       <div className="admin-table-card"><div className="admin-table-wrap"><table className="review-queue" aria-label="Admitted students" aria-busy={loading}>

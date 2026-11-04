@@ -7,6 +7,7 @@ import { requireAuth, requirePermission } from "../middleware/auth.js";
 import { auditedMutation } from "../services/audit.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
 import { ok } from "../utils/apiResponse.js";
+import { academicSearch, containsSearch } from "../services/directorySearch.js";
 
 const safeSelection = { id: true, name: true, email: true, role: true, isActive: true, createdAt: true };
 const router = Router();
@@ -14,7 +15,13 @@ router.use((req, res, next) => { res.set("Cache-Control", "no-store"); next(); }
 router.use(requireAuth, requirePermission("users.manage"));
 router.get("/", asyncHandler(async (req, res) => {
   const { page, search } = z.object({ page: z.coerce.number().int().min(1).max(10000).default(1), search: z.string().trim().max(100).default("") }).parse(req.query);
-  const where = { role: { in: ["ADMIN", "STAFF"] }, ...(search ? { OR: [{ name: { contains: search, mode: "insensitive" } }, { email: { contains: search, mode: "insensitive" } }] } : {}) };
+  const match = containsSearch(search);
+  const where = { role: { in: ["ADMIN", "STAFF"] }, ...(search ? { OR: [
+    { name: match }, { email: match },
+    ...(["admin", "staff"].includes(search.toLowerCase()) ? [{ role: search.toUpperCase() }] : []),
+    { roleAssignments: { some: { role: { name: match } } } },
+    { staffAssignments: { some: { isActive: true, enrolment: { OR: academicSearch(match) } } } }
+  ] } : {}) };
   const [users, total] = await prisma.$transaction([prisma.user.findMany({ where, select: safeSelection, orderBy: [{ createdAt: "desc" }, { id: "desc" }], skip: (page - 1) * 25, take: 25 }), prisma.user.count({ where })]);
   ok(res, { users, total, page });
 }));
