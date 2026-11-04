@@ -1,14 +1,18 @@
 import { useEffect, useState } from "react";
-import { useParams } from "react-router-dom";
+import { Link, useParams } from "react-router-dom";
 import { api, apiErrorMessage } from "../api/client.js";
 import { notify } from "../api/notifications.js";
 import { ErrorToast } from "./ToastNotifications.jsx";
 import PrivateFileButton from "./PrivateFileButton.jsx";
 import { useConfirmation } from "../context/ConfirmationContext.jsx";
+import { useApplicant } from "../context/ApplicantContext.jsx";
+import { portalPath } from "../api/portalLinks.js";
 const titles = { ACCEPTANCE: "Acceptance form", GUARANTOR: "Guarantor’s form", STUDENT_RECORD: "Student record form" };
 export default function SchoolFormEditor() {
   const confirmAction = useConfirmation();
   const { kind } = useParams();
+  const applicant = useApplicant();
+  const dashboardPath = portalPath(applicant ? "/applicant" : "/student");
   const [result, setResult] = useState(null);
   const [values, setValues] = useState({});
   const [error, setError] = useState("");
@@ -27,7 +31,7 @@ export default function SchoolFormEditor() {
     catch (failure) { setError(apiErrorMessage(failure)); }
     finally { setBusy(false); }
   }
-  return <div className="portal-page"><header className="portal-page-header"><div><span className="eyebrow">School documents</span><h1>{titles[kind] || "School form"}</h1></div></header><ErrorToast message={error} />{!result ? <section className="student-card"><p>{error ? "This form is not available yet." : "Loading form…"}</p>{error && <button className="button" type="button" onClick={() => setRevision((value) => value + 1)}>Try again</button>}</section> : result.record?.status === "SUBMITTED" ? <section className="student-card"><h2>Form submitted</h2><p>Download and sign where indicated.</p><PrivateFileButton endpoint={`/records/applications/${result.applicationId}/documents/${kind}`} filename={`${kind.toLowerCase()}.pdf`}>Download {kind === "ACCEPTANCE" ? "acceptance form" : "completed form"} (PDF)</PrivateFileButton></section> : <form className="student-card student-form" onSubmit={save}>{kind !== "ACCEPTANCE" && <details><summary>Before you complete this form</summary><p>Enter only accurate information. Do not sign on behalf of a guarantor or witness. The school may require the printed original with handwritten signatures.</p></details>}
+  return <div className="portal-page"><header className="portal-page-header"><div><span className="eyebrow">School documents</span><h1>{titles[kind] || "School form"}</h1></div></header><ErrorToast message={error} />{!result ? <section className="student-card"><p>{error ? "This form is not available yet." : "Loading form…"}</p>{error && <button className="button" type="button" onClick={() => setRevision((value) => value + 1)}>Try again</button>}</section> : result.record?.status === "SUBMITTED" ? <section className="student-card"><h2>Form submitted</h2><p>Download and sign where indicated.</p><div className="school-form-completion-actions"><PrivateFileButton endpoint={`/records/applications/${result.applicationId}/documents/${kind}`} filename={`${kind.toLowerCase()}.pdf`}>Download {kind === "ACCEPTANCE" ? "acceptance form" : "completed form"} (PDF)</PrivateFileButton>{kind === "ACCEPTANCE" && <Link className="button primary" to={dashboardPath} onClick={() => applicant?.refresh({ background: true })}>Back to dashboard</Link>}</div></section> : <form className="student-card student-form" onSubmit={save}>{kind !== "ACCEPTANCE" && <details><summary>Before you complete this form</summary><p>Enter only accurate information. Do not sign on behalf of a guarantor or witness. The school may require the printed original with handwritten signatures.</p></details>}
     {kind === "ACCEPTANCE" && result.acceptance && <dl className="student-definition-grid">
       <div><dt>Application form number</dt><dd>{result.acceptance.applicationNumber}</dd></div>
       <div><dt>Academic session</dt><dd>{result.acceptance.session || "Not yet set"}</dd></div>
