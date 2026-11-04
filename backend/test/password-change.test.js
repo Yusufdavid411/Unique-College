@@ -11,7 +11,8 @@ test("password policy explains the missing requirement before submitting", () =>
   assert.match(passwordValidationMessage("lowercasepassword2027"), /uppercase/);
   assert.match(passwordValidationMessage("UPPERCASEPASSWORD2027"), /lowercase/);
   assert.match(passwordValidationMessage("LongPasswordNoNumbers"), /number/);
-  assert.match(passwordValidationMessage("Short1"), /12 characters/);
+  assert.match(passwordValidationMessage("Short1"), /too short/);
+  assert.equal(passwordValidationMessage("Strong12"), "");
   assert.match(passwordValidationMessage("Á".repeat(40) + "Password2027"), /too long/);
   assert.equal(passwordValidationMessage("ValidPasswordExample2027"), "");
 });
@@ -19,7 +20,7 @@ test("password policy explains the missing requirement before submitting", () =>
 test("account owners can change passwords, receive useful validation and revoke previous sessions", async () => {
   const original = { user: prisma.user.findUnique, transaction: prisma.$transaction };
   const oldPassword = "OriginalPasswordExample2026";
-  const nextPassword = "UpdatedPasswordExample2027";
+  const nextPassword = "Strong12";
   const state = { id: "password-owner", name: "Account owner", email: "password-test@example.invalid", role: "ADMIN", isActive: true, sessionVersion: 0, mustChangePassword: false, passwordHash: await bcrypt.hash(oldPassword, 12) };
   const oldHash = state.passwordHash;
   const audits = [];

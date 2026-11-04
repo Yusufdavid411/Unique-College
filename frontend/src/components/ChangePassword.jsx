@@ -35,8 +35,8 @@ export default function ChangePassword({ embedded = false }) {
     <form className="form-panel" onSubmit={submit}>
       <Heading>{activating ? "Activate student access" : "Account security"}</Heading><p>{activating ? "Enter your existing applicant password and choose a new password to activate student access. Then sign in again." : "After changing your password, sign in again with the new password."}</p>
       <label>Current password<PasswordInput label="current password" name="currentPassword" autoComplete="current-password" required /></label>
-      <label>New password<PasswordInput label="new password" name="password" autoComplete="new-password" minLength={12} maxLength={72} required /></label>
-      <p>Use at least 12 characters including uppercase, lowercase, and a number.</p>
+      <label>New password<PasswordInput label="new password" name="password" autoComplete="new-password" minLength={8} maxLength={72} required /></label>
+      <p>Use uppercase and lowercase letters with a number. Choose a password that is hard to guess.</p>
       <label>Confirm password<PasswordInput label="confirmation password" name="confirmation" autoComplete="new-password" required /></label>
       <ErrorToast message={error} />
       <button className="button" type="submit" disabled={busy}>{busy ? "Updating…" : "Change password"}</button><button type="button" onClick={logout}>Sign out</button>

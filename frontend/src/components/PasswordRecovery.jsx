@@ -61,9 +61,9 @@ export default function PasswordRecovery({ reset = false, scope = "applicant" })
       <h1>{done ? reset ? "Password updated" : "Check your email" : reset ? "Choose a new password" : "Forgot password?"}</h1>
       {!done && <form onSubmit={submit}>
         {reset ? <>
-          <p>Use at least 12 characters with uppercase, lowercase and a number.</p>
-          <label>New password<PasswordInput name="password" autoComplete="new-password" minLength={12} maxLength={72} required /></label>
-          <label>Confirm password<PasswordInput name="confirmation" autoComplete="new-password" minLength={12} maxLength={72} required /></label>
+          <p>Use uppercase and lowercase letters with a number. Choose a password that is hard to guess.</p>
+          <label>New password<PasswordInput name="password" autoComplete="new-password" minLength={8} maxLength={72} required /></label>
+          <label>Confirm password<PasswordInput name="confirmation" autoComplete="new-password" minLength={8} maxLength={72} required /></label>
         </> : <>
           <p>Enter your registered email. We’ll email you a secure reset link.</p>
           <label>Email address<input name="email" type="email" autoComplete="email" required maxLength={254} /></label>

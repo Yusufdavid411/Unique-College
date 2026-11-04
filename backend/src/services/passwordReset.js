@@ -4,7 +4,7 @@ import { z } from "zod";
 import { prisma } from "../config/prisma.js";
 import { statusEmailConfigured } from "./statusEmail.js";
 
-export const resetPasswordSchema = z.string().min(12, "Use at least 12 characters").max(72)
+export const resetPasswordSchema = z.string().min(8, "Your new password is too short. Choose a longer password.").max(72)
   .regex(/[A-Z]/, "Add an uppercase letter").regex(/[a-z]/, "Add a lowercase letter")
   .regex(/[0-9]/, "Add a number").refine((value) => Buffer.byteLength(value, "utf8") <= 72, "Use at most 72 bytes");
 export const resetRequestSchema = z.object({ email: z.string().trim().email().max(254).transform((value) => value.toLowerCase()) });

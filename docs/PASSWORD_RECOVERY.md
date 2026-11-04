@@ -18,7 +18,7 @@ Links use the account's canonical portal: `admin.uniquecollegekwali.com/reset-pa
 - 30-minute expiry, single use, one current token per user, 60-second account cooldown, additional IP rate limiting. IP limits are instance-local on serverless hosting; account cooldown is database-backed.
 - Atomic token consumption, password change, session-version increment and audit event; concurrent/replayed tokens cannot change a password twice.
 - Changed password invalidates existing login sessions and old reset links. Inactive accounts cannot reset.
-- Password requires at least 12 characters, uppercase, lowercase and a number, at most 72 UTF-8 bytes. Passwords remain bcrypt hashes.
+- Password changes and resets require at least 8 characters, uppercase, lowercase and a number, at most 72 UTF-8 bytes. User-facing guidance emphasizes strong passwords without specifying a character count. Passwords remain bcrypt hashes.
 - No automatic login after resetting. Sign in again through the relevant portal.
 
 Complete a real delivery test after Resend is configured: request from each portal, open email, reset, verify old password and old sessions fail, and verify reuse/expired links fail. Tests must not send real email or reset existing users without authorization.

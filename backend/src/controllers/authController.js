@@ -10,7 +10,7 @@ export const changePassword = asyncHandler(async (req, res) => {
   const body = z.object({
     currentPassword: z.string().min(1, "Enter your current password").max(128),
     password: z.string()
-      .min(12, "Use at least 12 characters")
+      .min(8, "Your new password is too short. Choose a longer password.")
       .max(72, "Use no more than 72 characters")
       .regex(/[A-Z]/, "Add at least one uppercase letter (A-Z)")
       .regex(/[a-z]/, "Add at least one lowercase letter (a-z)")

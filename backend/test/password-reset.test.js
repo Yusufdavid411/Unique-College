@@ -35,9 +35,9 @@ test("recovery stores only hash, emails canonical single-use link and revokes se
   assert.notEqual(state.reset.tokenHash, token);
   assert.equal(state.reset.tokenHash, crypto.createHash("sha256").update(token).digest("hex"));
   assert.equal(state.reset.expiresAt.getTime() - now.getTime(), 1800000);
-  await completePasswordReset(token, "StrongPassword2027", state.options);
+  await completePasswordReset(token, "Strong12", state.options);
   assert.equal(state.user.sessionVersion, 3);
-  assert.equal(await bcrypt.compare("StrongPassword2027", state.user.passwordHash), true);
+  assert.equal(await bcrypt.compare("Strong12", state.user.passwordHash), true);
   assert.equal(state.reset, null);
   assert.equal(state.events.at(-1).action, "user.password_reset_completed");
   await assert.rejects(() => completePasswordReset(token, "AnotherPassword2027", state.options), /invalid or expired/);
@@ -76,6 +76,8 @@ test("expired and session-invalidated links fail", async () => {
 test("password policy and portal origins cannot be overridden by request input", () => {
   assert.equal(resetPasswordSchema.safeParse("weakpassword").success, false);
   assert.equal(resetPasswordSchema.safeParse("StrongPassword2027").success, true);
+  assert.equal(resetPasswordSchema.safeParse("Strong12").success, true);
+  assert.equal(resetPasswordSchema.safeParse("Short1").success, false);
   assert.equal(passwordResetUrl("ADMIN", "token"), "https://admin.uniquecollegekwali.com/reset-password#token");
   assert.equal(passwordResetUrl("STUDENT", "token"), "https://portal.uniquecollegekwali.com/reset-password#token");
   assert.equal(passwordResetUrl("STAFF", "token"), "https://staff.uniquecollegekwali.com/reset-password#token");
