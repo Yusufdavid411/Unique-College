@@ -4925,7 +4925,8 @@ th {
 .application-submit-dialog .document-page-actions { justify-content: flex-end; }
 .applicant-header-actions { display: flex; align-items: center; gap: .65rem; min-width: 0; margin-left: auto; }
 .screening-selection-actions { display: flex; flex-wrap: wrap; gap: .65rem; align-items: center; }
-.screening-dashboard-card { margin-bottom: 1rem; }
+.screening-dashboard-card,
+.review-status-card { margin-bottom: 1rem; }
 .applicant-notifications { position: relative; flex: none; }
 .applicant-notifications > summary { list-style: none; display: flex; align-items: center; gap: .3rem; min-height: 44px; padding: .4rem .65rem; border: 1px solid currentColor; border-radius: 8px; cursor: pointer; }
 .applicant-notifications > summary::-webkit-details-marker { display: none; }
