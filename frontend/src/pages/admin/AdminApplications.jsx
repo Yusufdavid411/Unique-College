@@ -23,17 +23,16 @@ export default function AdminApplications() {
   const [feedback, setFeedback] = useState("");
   const [credentials, setCredentials] = useState(null);
   const [filter, setFilter] = useState("all");
-  const [testing, setTesting] = useState(false);
   const dialog = useRef(null);
 
   const loadApplications = useCallback(async () => {
     setLoading(true);
     try {
-      const { data } = await api.get("/applications", { params: testing ? { testing: "true" } : {} });
+      const { data } = await api.get("/applications");
       setApplications(data.data || []);
     } catch (error) { setFeedback(apiErrorMessage(error, "Unable to load applications.")); }
     finally { setLoading(false); }
-  }, [testing]);
+  }, []);
   useEffect(() => { loadApplications(); }, [loadApplications]);
   const selectedId = selectedApplication?.id;
   useEffect(() => {
@@ -143,7 +142,6 @@ export default function AdminApplications() {
 
   return <div className="admin-page">
     <header className="admin-header"><span className="eyebrow">Admissions office</span><h1>Applications</h1><p>Review submitted applications and keep applicants informed.</p></header>
-    <label className="check-field"><input type="checkbox" checked={testing} onChange={(event) => setTesting(event.target.checked)} />Preview records only</label>
     {!selectedApplication && feedback && <p className="admin-feedback" role="status">{feedback}</p>}
     <div className="review-filters" role="group" aria-label="Application queue">{[["all", "All applications"], ["submitted", "Submitted applications"], ["waiting", "Not ready for review"]].map(([value, label]) => <button key={value} type="button" aria-pressed={filter === value} onClick={() => setFilter(value)}>{label}</button>)}</div>
     <div className="admin-table-card"><div className="admin-table-wrap"><table className="review-queue">

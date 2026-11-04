@@ -13,6 +13,35 @@ test("staff creation precedes the directory and its pagination", async () => {
   assert.doesNotMatch(source, /admin-two-col/);
 });
 
+test("application lists ignore the retired preview filter", async () => {
+  const original = { user: prisma.user.findUnique, list: prisma.application.findMany, setting: prisma.siteSetting.findUnique };
+  const calls = [];
+  const server = app.listen(0, "127.0.0.1");
+  await new Promise((resolve) => server.once("listening", resolve));
+  const base = `http://127.0.0.1:${server.address().port}/api/applications`;
+  const headers = { Authorization: `Bearer ${jwt.sign({ sub: "admin", version: 0 }, env.jwtSecret)}` };
+  try {
+    prisma.user.findUnique = async () => ({ id: "admin", role: "ADMIN", isActive: true, sessionVersion: 0 });
+    prisma.application.findMany = async (options) => { calls.push(options); return []; };
+    prisma.siteSetting.findUnique = async () => null;
+    for (const suffix of ["", "?testing=true", "?testing=false"]) {
+      const response = await fetch(base + suffix, { headers });
+      assert.equal(response.status, 200);
+      assert.deepEqual((await response.json()).data, []);
+      assert.equal(calls.at(-1).where.isTest, false);
+    }
+    for (const filename of ["AdminApplications.jsx", "AdminStudents.jsx"]) {
+      const source = await readFile(new URL(`../../frontend/src/pages/admin/${filename}`, import.meta.url), "utf8");
+      assert.doesNotMatch(source, /Preview records only|setTesting|query\.testing/);
+    }
+  } finally {
+    prisma.user.findUnique = original.user;
+    prisma.application.findMany = original.list;
+    prisma.siteSetting.findUnique = original.setting;
+    await new Promise((resolve) => server.close(resolve));
+  }
+});
+
 test("student register is permission-protected, read-only, paginated and isolated from preview records", async () => {
   const original = { user: prisma.user.findUnique, list: prisma.application.findMany, count: prisma.application.count, transaction: prisma.$transaction };
   const calls = [];
@@ -52,8 +81,8 @@ test("student register is permission-protected, read-only, paginated and isolate
     assert.deepEqual(Object.keys(query.select).sort(), ["id", "fullName", "email", "applicationNumber", "studentNumber", "courseOfInterest", "admittedAt", "applicant"].sort());
     assert.deepEqual(query.select.applicant.select, { portalUsername: true, isActive: true, mustChangePassword: true });
     assert.equal((await fetch(base + "?testing=true", { headers: headers("registrar") })).status, 200);
-    assert.equal(calls.at(-1).where.isTest, true);
-    for (const queryString of ["?page=0", "?page=10001", "?testing=invalid", `?search=${"x".repeat(101)}`]) assert.equal((await fetch(base + queryString, { headers: headers("admin") })).status, 422);
+    assert.equal(calls.at(-1).where.isTest, false);
+    for (const queryString of ["?page=0", "?page=10001", `?search=${"x".repeat(101)}`]) assert.equal((await fetch(base + queryString, { headers: headers("admin") })).status, 422);
     assert.equal((await fetch(base, { method: "POST", headers: headers("admin") })).status, 404);
   } finally {
     prisma.user.findUnique = original.user;

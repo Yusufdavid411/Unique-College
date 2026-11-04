@@ -27,13 +27,15 @@ Test payments cannot unlock real applicants. Existing real receipts retain their
 format regardless of the globally configured gateway mode.
 
 The test account follows the same fee quote, server verification, unlock, upload, submission,
-review, acceptance and download flow. Admins use Preview records only to review test
-records. Test admissions have TEST-prefixed student numbers/usernames, no official mailbox,
+review, acceptance and download flow. The dedicated demo applicant was removed on
+4 November 2026 at the school's request. Applications and Students no longer expose
+preview-record filters; their lists always exclude dedicated test applications.
+Test admissions have TEST-prefixed student numbers/usernames, no official mailbox,
 and are excluded from real admissions statistics. PDFs are marked not valid for admission.
 This does not activate real charges or approve the alternate merchant for school settlements.
 
 The portal uses the same clean interface in test and live modes, without repeated test
-banners. Admins select Preview records only to find simulated applications. Unavailable
+banners. Real applicants using the configured test checkout remain in the normal application list. Unavailable
 checkout remains disabled with concise guidance. Test markings on downloadable records,
 test flags, notification labels and gateway-mode checks are retained. Switching to live
 credentials does not require removing temporary paragraphs from the interface.

@@ -9,13 +9,12 @@ import { auditedMutation } from "../services/audit.js";
 
 const router = Router();
 router.get("/", requireAuth, requirePermission("students.read"), asyncHandler(async (req, res) => {
-  const { page, search, testing } = z.object({
+  const { page, search } = z.object({
     page: z.coerce.number().int().min(1).max(10000).default(1),
-    search: z.string().trim().max(100).default(""),
-    testing: z.enum(["true", "false"]).default("false")
+    search: z.string().trim().max(100).default("")
   }).parse(req.query);
   const where = {
-    status: "ADMITTED", isTest: testing === "true", applicant: { is: { role: "STUDENT" } },
+    status: "ADMITTED", isTest: false, applicant: { is: { role: "STUDENT" } },
     ...(search ? { OR: ["fullName", "email", "studentNumber", "applicationNumber", "courseOfInterest"].map((field) => ({ [field]: { contains: search, mode: "insensitive" } })) } : {})
   };
   const [students, total] = await prisma.$transaction([

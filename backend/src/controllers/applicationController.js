@@ -52,7 +52,7 @@ export const createApplication = asyncHandler(async (req, res) => {
 export const listApplications = asyncHandler(async (req, res) => {
   const status = req.query.status;
   const applications = await prisma.application.findMany({
-    where: { isTest: req.query.testing === "true", ...(status ? { status } : {}) },
+    where: { isTest: false, ...(status ? { status } : {}) },
     select: {
       id: true, isTest: true, applicationNumber: true, fullName: true, email: true, status: true,
       applicant: { select: { isActive: true } },

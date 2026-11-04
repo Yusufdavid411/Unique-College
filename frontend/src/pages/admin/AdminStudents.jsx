@@ -6,7 +6,7 @@ import AdminNotice from "../../components/AdminNotice.jsx";
 
 export default function AdminStudents() {
   const [result, setResult] = useState({ students: [], total: 0 });
-  const [query, setQuery] = useState({ page: 1, search: "", testing: "false" });
+  const [query, setQuery] = useState({ page: 1, search: "" });
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -32,7 +32,6 @@ export default function AdminStudents() {
   return <div className="admin-page">
     <header className="admin-header"><span className="eyebrow">Student records</span><h1>Students</h1><p>Admitted applicants appear here automatically. Admission decisions stay under Applications.</p><Link className="button secondary" to={portalPath("/admin/applications")}>Review applications</Link></header>
     <form className="student-search" onSubmit={findStudents}><label>Find a student<input type="search" value={search} maxLength={100} onChange={(event) => setSearch(event.target.value)} placeholder="Name, email, student number or programme" /></label><button type="submit" className="button" disabled={loading}>Search</button></form>
-    <label className="check-field"><input type="checkbox" checked={query.testing === "true"} onChange={(event) => setQuery((current) => ({ ...current, page: 1, testing: event.target.checked ? "true" : "false" }))} />Preview records only</label>
     <AdminNotice type="error">{error}</AdminNotice>
     {error ? <button className="button secondary" type="button" onClick={() => setRevision((value) => value + 1)}>Try again</button> : <>
       <div className="admin-table-card"><div className="admin-table-wrap"><table className="review-queue" aria-label="Admitted students" aria-busy={loading}>
