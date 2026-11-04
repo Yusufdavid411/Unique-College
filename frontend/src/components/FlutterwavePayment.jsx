@@ -9,6 +9,7 @@ import LoadingButton from "./LoadingButton.jsx";
 import { trustedPaymentCheckout } from "../api/paymentCheckout.js";
 import { ErrorToast } from "./ToastNotifications.jsx";
 import { useConfirmation } from "../context/ConfirmationContext.jsx";
+import { paymentSuccessExpiry, showPaymentSuccess } from "../api/paymentDisplay.js";
 
 export default function FlutterwavePayment() {
   const confirmAction = useConfirmation();
@@ -17,11 +18,25 @@ export default function FlutterwavePayment() {
   const navigate = useNavigate();
   const [busy, setBusy] = useState(false);
   const [notice, setNotice] = useState("");
+  const [now, setNow] = useState(Date.now);
   const operation = useRef(false);
   const callbackHandled = useRef(false);
   const pending = application.payments.find((payment) => payment.status === "PENDING");
   const onlinePending = pending?.provider === "FLUTTERWAVE";
   const history = application.payments.filter((payment) => payment.status !== "CANCELLED");
+
+  useEffect(() => {
+    const update = () => setNow(Date.now());
+    const nextExpiry = application.payments.map(paymentSuccessExpiry).filter((expiry) => expiry > Date.now()).sort((first, second) => first - second)[0];
+    const timer = nextExpiry ? window.setTimeout(update, Math.min(nextExpiry - Date.now() + 20, 2147483647)) : null;
+    window.addEventListener("focus", update);
+    document.addEventListener("visibilitychange", update);
+    return () => {
+      if (timer !== null) window.clearTimeout(timer);
+      window.removeEventListener("focus", update);
+      document.removeEventListener("visibilitychange", update);
+    };
+  }, [application.payments, now]);
 
   const verify = useCallback(async (reference) => {
     if (operation.current) return;
@@ -70,12 +85,13 @@ export default function FlutterwavePayment() {
   }
 
   function feeCard(type, label, amount, paid, available) {
+    if (paid && !showPaymentSuccess(application.payments, type, amount, now)) return null;
     const feePending = pending?.type === type ? pending : null;
     const canResume = feePending?.provider === "FLUTTERWAVE";
     const blocked = Boolean(pending && (!canResume || pending.type !== type));
     return <section className="portal-alert payment-bank-card" key={type} aria-label={label}>
       <span className="eyebrow">{label}</span><strong className="payment-fee-value">{amount == null ? "Not quoted" : `NGN ${Number(amount).toLocaleString("en-NG", { minimumFractionDigits: 2 })}`}</strong>
-      {paid ? <p><CheckCircle2 size={18} /> {type === "APPLICATION_FEE" ? "Your application form is available." : type === "SCREENING_FEE" ? "Screening payment confirmed. Check your exam invitation." : Number(amount) === 0 ? "No acceptance payment is required. Track clearance on your dashboard." : "Acceptance fee confirmed. Track clearance on your dashboard."}</p> : !available ? <p>{admission?.response === "DECLINED" ? "This offer was declined. Contact admissions if you need assistance." : "Accept your active admission offer on the dashboard before paying this fee."}</p> : <>
+      {paid ? <><p className="payment-success-message"><CheckCircle2 size={20} aria-hidden="true" /><strong>Payment successful</strong></p><p>{type === "APPLICATION_FEE" ? "Your application form is available." : type === "SCREENING_FEE" ? "Your screening payment is confirmed. Check your exam invitation." : "Your acceptance payment is confirmed. Continue your admission progress on the dashboard."}</p><p>Your receipt is available in Payment history below.</p></> : !available ? <p>{admission?.response === "DECLINED" ? "This offer was declined. Contact admissions if you need assistance." : "Accept your active admission offer on the dashboard before paying this fee."}</p> : <>
         {!paymentGateway.ready && <p role="status">Online payments are temporarily unavailable for this account. Please check back shortly. Do not transfer money outside this checkout.</p>}
         {blocked && <p>Another payment is awaiting confirmation. Check its status before paying again.</p>}
         {pending && !onlinePending && <button type="button" className="button secondary" disabled={busy} onClick={withdrawLegacyReceipt}>Withdraw incorrect receipt</button>}
@@ -88,7 +104,7 @@ export default function FlutterwavePayment() {
   return <div className="portal-page">
     <header className="portal-page-header"><div><span className="eyebrow">Secure online payment</span><h1>Payments</h1><p>Pay through Flutterwave. Confirmation and separate receipts are automatic.</p></div></header>
     {admission?.offered && feeCard("ACCEPTANCE_FEE", "Acceptance fee", admission.amount, admission.paid, admission.canPay)}
-    {screening?.eligible && feeCard("SCREENING_FEE", "Screening / entrance-exam fee", screening.amount, screening.paid, true)}
+    {(screening?.eligible || screening?.paid) && feeCard("SCREENING_FEE", "Screening / entrance-exam fee", screening.amount, screening.paid, true)}
     {feeCard("APPLICATION_FEE", "Application form fee", formAccess.amount, formAccess.unlocked, true)}
     <ErrorToast message={notice} />
     <section className="payment-history"><h2>Payment history</h2>

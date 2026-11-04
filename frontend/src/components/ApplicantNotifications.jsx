@@ -45,7 +45,7 @@ function NotificationPanel({ application }) {
     };
   }, []);
   return <details ref={panel} className="applicant-notifications" onToggle={(event) => setOpen(event.currentTarget.open)}>
-    <summary aria-label={unreadCount ? `Admissions notifications (${unreadCount} unread)` : "Admissions notifications"}><Bell size={21} aria-hidden="true" />{unreadCount > 0 && <span aria-hidden="true">{unreadCount}</span>}</summary>
+    <summary className={unreadCount ? "notification-trigger has-unread" : "notification-trigger"} aria-label={unreadCount ? `Admissions notifications (${unreadCount} unread)` : "Admissions notifications"}><Bell size={25} className="notification-bell" aria-hidden="true" />{unreadCount > 0 && <span className="notification-count" aria-hidden="true">{unreadCount > 99 ? "99+" : unreadCount}</span>}</summary>
     <section className="applicant-notification-panel" aria-label="Admissions notifications">
       <h2>Notifications</h2>
       {events.length ? events.map((event) => <article key={event.id}>

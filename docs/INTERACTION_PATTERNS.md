@@ -15,3 +15,9 @@
   on small screens. A document preview must not close the enclosing application
   review panel when Escape is pressed.
 - Keep one visually prominent next action, separate from correction/rejection.
+- Verified fee success cards stay above Payment history for one hour from their
+  stored verification timestamp, then disappear automatically. History and receipts
+  remain available throughout; refreshing never restarts that display window.
+- The applicant bell rings only while unread messages exist. Opening notifications
+  clears the unread count using the existing read-state mechanism. Reduced-motion
+  preferences disable ringing.
