@@ -6,7 +6,7 @@
 2. Complete the application, upload credentials and submit for review.
 3. Admissions reviews the submitted application and chooses Accept for screening, Reject, or Corrections required. Accept for screening notifies the applicant and unlocks screening payment; it does not issue an admission offer.
 4. The applicant pays the screening fee through Flutterwave (default NGN 2,000; the quote is saved when checkout starts). After verification, admissions schedules the exam and sends the personalized date, time (Africa/Lagos), venue and instructions.
-5. After the examination time and confirmed screening payment, authorised admissions staff publish each candidate's actual result. Scheduling a group does not pass, offer admission to or enrol the group.
+5. With confirmed screening payment, authorised admissions staff publish each candidate's actual result after the examination time, or an administrator explicitly authorises an audited early publication. Scheduling a group does not pass, offer admission to or enrol the group.
 6. A successful screening result, verified credentials and the existing application checks allow an individual admission offer. Acceptance remains NGN 5,000 by default, editable in Settings.
 7. The applicant accepts the offer and pays the quoted acceptance fee. Confirmation automatically issues the admission letter when approved session/duration/dates/appendix settings are complete. Incomplete or stale settings never reverse a successful payment: issuance waits for registry correction and payment-status refresh or an explicit release retry. The applicant completes the acceptance form online and obtains required handwritten signatures on the downloaded copy.
 8. Registry clears the applicant and performs final admission. The existing account becomes a student account; no duplicate identity, backend or database is created. Student record and guarantor forms are available in Student portal → Documents & receipts.
@@ -16,7 +16,7 @@ All three fee settings are editable. Changing a policy does not silently change 
 ## Administrative screens
 
 - Admin → Screening & exams: select eligible applicants, review recipients, schedule/reschedule, and inspect email delivery results.
-- Admin → Screening & exams → Already invited → Record screening result: publish an individual result after the exam. Select scheduled candidates here to reschedule them; published outcomes cannot be reset by scheduling.
+- Admin → Screening & exams → Already invited → Record screening result: publish an individual result. Administrators can explicitly choose **Publish before exam date** and confirm an audited early override; payment and submission checks still apply. Select scheduled candidates here to reschedule them; published outcomes cannot be reset by scheduling.
 - Admin → Applications → Admission letter release: optional duration override and explicit release after payment.
 - Admin → Settings → School settings → Screening, messages & admission letters: screening fee, session, default duration, effective date, registration window, O-level deadline, lectures date and notification wording.
 - Application download panels in both admin and applicant/student portals use the same authenticated backend PDF endpoints. Receipts remain separate files.

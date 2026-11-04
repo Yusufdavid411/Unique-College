@@ -9,6 +9,7 @@ import { readyForReview } from "../services/applicationReview.js";
 import { documentsPolicy, screeningPolicy, screeningProgress, renderAdmissionMessage } from "../services/admissionDocuments.js";
 import { attemptStatusEmail, statusEmailConfigured } from "../services/statusEmail.js";
 import { processNotificationQueue } from "../services/notificationQueue.js";
+import { hasPermission } from "../services/permissions.js";
 
 const router = Router();
 const conflict = (message) => Object.assign(new Error(message), { statusCode: 409 });
@@ -56,17 +57,21 @@ router.post("/schedule", requirePermission("applications.review"), asyncHandler(
 }));
 router.patch("/:id/result", requirePermission("applications.admit"), asyncHandler(async (req, res) => {
   const id = z.string().uuid().parse(req.params.id);
-  const data = z.object({ outcome: z.enum(["PASSED", "FAILED"]), score: z.number().min(0).max(100).nullable(), note: z.string().trim().max(1500).default("") }).strict().parse(req.body);
+  const data = z.object({ outcome: z.enum(["PASSED", "FAILED"]), score: z.number().min(0).max(100).nullable(), note: z.string().trim().max(1500).default(""), publishBeforeExam: z.boolean().default(false) }).strict().parse(req.body);
+  if (data.publishBeforeExam && !hasPermission(req.user, "screening.results.publish_early")) return res.status(403).json({ success: false, message: "You do not have permission to publish results before the exam." });
   const eventId = await prisma.$transaction(async (database) => {
     const record = await database.application.findUnique({ where: { id }, include: { payments: true } });
     if (!record || !readyForReview(record)) throw conflict("A submitted, paid application is required.");
     if (record.screeningStatus === data.outcome && record.entranceExamScore === data.score) return null;
-    if (record.status !== "INTERVIEW_SCHEDULED" || record.screeningStatus !== "SCHEDULED" || !screeningProgress(record).paid || !record.screeningAt || record.screeningAt > new Date()) throw conflict("Record results only after the active scheduled exam, with the screening fee confirmed. Published results require a separate correction process.");
+    if (record.status !== "INTERVIEW_SCHEDULED" || record.screeningStatus !== "SCHEDULED" || !screeningProgress(record).paid || !record.screeningAt) throw conflict("A current screening schedule and confirmed screening fee are required. Published results require a separate correction process.");
+    const early = record.screeningAt > new Date();
+    if (early && !data.publishBeforeExam) throw conflict("The exam date has not arrived. An authorised administrator can choose Publish before exam date to continue.");
     const policy = await documentsPolicy(database);
     const text = renderAdmissionMessage(data.outcome === "PASSED" ? policy.passedMessage : policy.failedMessage, { date: new Intl.DateTimeFormat("en-GB", { timeZone: "Africa/Lagos", dateStyle: "full", timeStyle: "short" }).format(record.screeningAt), venue: record.screeningVenue, instructions: record.screeningInstructions, programme: record.courseOfInterest });
     await database.application.update({ where: { id }, data: { screeningStatus: data.outcome, screeningResultAt: new Date(), entranceExamScore: data.score, status: "REVIEWED" } });
-    const event = await database.applicationStatusHistory.create({ data: { applicationId: id, fromStatus: record.status, toStatus: "REVIEWED", kind: "SCREENING_RESULT", note: data.note || `Screening ${data.outcome.toLowerCase()}.`, changedBy: req.user.name, notificationSubject: data.outcome === "PASSED" ? "Screening successful" : "Screening result available", notificationText: text, emailRecipient: record.email, emailStatus: "PENDING" } });
-    await database.auditLog.create({ data: { actorId: req.user.id, action: "screening.result:" + data.outcome, targetType: "application", targetId: id } });
+    const note = [early ? `Early result authorised before the scheduled exam (${record.screeningAt.toISOString()}).` : "", data.note || `Screening ${data.outcome.toLowerCase()}.`].filter(Boolean).join(" ");
+    const event = await database.applicationStatusHistory.create({ data: { applicationId: id, fromStatus: record.status, toStatus: "REVIEWED", kind: "SCREENING_RESULT", note, changedBy: req.user.name, notificationSubject: data.outcome === "PASSED" ? "Screening successful" : "Screening result available", notificationText: text, emailRecipient: record.email, emailStatus: "PENDING" } });
+    await database.auditLog.create({ data: { actorId: req.user.id, action: (early ? "screening.result_early:" : "screening.result:") + data.outcome, targetType: "application", targetId: id } });
     return event.id;
   }, { isolationLevel: "Serializable", timeout: 15000 });
   ok(res, { email: await attemptStatusEmail(eventId) }, "Screening result published in the portal.");

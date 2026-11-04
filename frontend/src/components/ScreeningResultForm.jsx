@@ -2,8 +2,12 @@ import { useEffect, useRef, useState } from "react";
 import { api, apiErrorMessage } from "../api/client.js";
 import { notify } from "../api/notifications.js";
 import { ErrorToast } from "./ToastNotifications.jsx";
+import { useAuth } from "../context/AuthContext.jsx";
 
 export default function ScreeningResultForm({ application, busy, onBusyChange, onSaved }) {
+  const { user } = useAuth();
+  const canPublishEarly = user?.role === "ADMIN" || user?.permissions?.includes("screening.results.publish_early");
+  const [publishBeforeExam, setPublishBeforeExam] = useState(false);
   const [now, setNow] = useState(Date.now);
   const [error, setError] = useState("");
   const [confirmation, setConfirmation] = useState(null);
@@ -17,9 +21,9 @@ export default function ScreeningResultForm({ application, busy, onBusyChange, o
   }, []);
   function review(event) {
     event.preventDefault();
-    if (busy || waiting || !application.screeningPaid) return;
+    if (busy || (waiting && !(canPublishEarly && publishBeforeExam)) || !application.screeningPaid) return;
     const fields = new FormData(event.currentTarget);
-    setConfirmation({ outcome: fields.get("outcome"), score: fields.get("score") === "" ? null : Number(fields.get("score")), note: fields.get("note") });
+    setConfirmation({ outcome: fields.get("outcome"), score: fields.get("score") === "" ? null : Number(fields.get("score")), note: fields.get("note"), ...(waiting && publishBeforeExam ? { publishBeforeExam: true } : {}) });
     dialog.current.showModal();
   }
   async function publish() {
@@ -39,9 +43,10 @@ export default function ScreeningResultForm({ application, busy, onBusyChange, o
     <summary>Record screening result</summary>
     <ErrorToast message={error} />
     <form className="application-review-form" onSubmit={review}>
-      {waiting && <p role="status">Result entry opens after the scheduled exam time: {new Date(application.screeningAt).toLocaleString("en-GB", { timeZone: "Africa/Lagos" })} (WAT).</p>}
+      {waiting && <p role="status">Scheduled exam: {new Date(application.screeningAt).toLocaleString("en-GB", { timeZone: "Africa/Lagos" })} (WAT).{!canPublishEarly && " An authorised administrator can publish an early result."}</p>}
+      {waiting && canPublishEarly && <label className="check-field screening-early-choice"><input type="checkbox" checked={publishBeforeExam} disabled={busy} onChange={(event) => setPublishBeforeExam(event.target.checked)} /><span>Publish before exam date</span></label>}
       {!application.screeningPaid && <p role="status">The screening fee must be confirmed before publishing a result.</p>}
-      <fieldset disabled={busy || waiting || !application.screeningPaid}>
+      <fieldset disabled={busy || (waiting && !(canPublishEarly && publishBeforeExam)) || !application.screeningPaid}>
         <label>Result<select name="outcome" required defaultValue=""><option value="" disabled>Choose the authorised result</option><option value="PASSED">Passed</option><option value="FAILED">Not successful</option></select></label>
         <label>Score (optional)<input name="score" type="number" min={0} max={100} step="0.01" /></label>
         <label>Result note (optional)<textarea name="note" maxLength={1500} rows={3} /></label>
@@ -54,6 +59,7 @@ export default function ScreeningResultForm({ application, busy, onBusyChange, o
       <p><strong>{application.fullName}</strong> · {application.applicationNumber}</p>
       {confirmation && <p>Result: <strong>{confirmation.outcome === "PASSED" ? "Passed" : "Not successful"}</strong>{confirmation.score != null && <> · Score: {confirmation.score}%</>}</p>}
       <p>This result will appear in this applicant’s portal and be sent to their registered email.</p>
+      {confirmation?.publishBeforeExam && <p role="status"><strong>You are publishing before the scheduled exam date.</strong> This override will be recorded in the audit history.</p>}
       <form method="dialog" className="document-page-actions"><button className="button secondary" type="submit">Keep editing</button><button className="button primary" type="button" disabled={busy} onClick={publish}>Publish result</button></form>
     </dialog>
   </details>;
