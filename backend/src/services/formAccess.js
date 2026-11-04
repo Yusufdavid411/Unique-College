@@ -1,12 +1,9 @@
-import { Prisma } from "@prisma/client";
 import { prisma } from "../config/prisma.js";
+import { feeVerified } from "./paymentEligibility.js";
 
-export function formAccessFor(application, { official = false } = {}) {
+export function formAccessFor(application) {
   const fee = application.formFeeAmount;
-  const allowSimulation = !official && process.env.PAYMENT_PROVIDER === "flutterwave" && process.env.FLUTTERWAVE_MODE === "test" && process.env.FLUTTERWAVE_RESTRICTED_PRODUCTION_TEST === "true";
-  const unlocked = fee == null || new Prisma.Decimal(fee).equals(0) || (application.payments || []).some((payment) =>
-    (Boolean(payment.isTest) === Boolean(application.isTest) || (allowSimulation && payment.isTest && payment.provider === "FLUTTERWAVE")) &&
-    payment.type === "APPLICATION_FEE" && payment.status === "VERIFIED" && payment.currency === "NGN" && new Prisma.Decimal(payment.amount).equals(fee));
+  const unlocked = fee == null || feeVerified(application, "APPLICATION_FEE", fee);
   return { unlocked, amount: fee == null ? null : String(fee), currency: "NGN" };
 }
 

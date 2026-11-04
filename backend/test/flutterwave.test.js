@@ -115,10 +115,10 @@ test("test payments cannot use production databases, portals, deployments or liv
   assert.match(paymentConfigurationIssue({ ...config, mode: "live" }), /does not match/);
 });
 
-test("official-portal test checkout unlocks the form only during simulation, not official admission", async () => {
+test("official-portal demo checkout supports normal account access while demo mode is configured", async () => {
   const productionTest = { ...config, deploymentEnvironment: "production", databaseName: "neondb", returnUrl: "https://apply.uniquecollegekwali.com/payments", restrictedProductionTest: true };
   assert.equal(paymentConfigurationIssue(productionTest), null);
-  assert.ok(paymentConfigurationIssue({ ...productionTest, mode: "live", secretKey: "FLWSECK-live-example" }));
+  assert.equal(paymentConfigurationIssue({ ...productionTest, mode: "live", secretKey: "FLWSECK-live-example" }), null);
   assert.ok(paymentConfigurationIssue({ ...productionTest, returnUrl: "https://attacker.example/payments" }));
   const state = fixture();
   state.application.isTest = false;
@@ -133,7 +133,7 @@ test("official-portal test checkout unlocks the form only during simulation, not
   try {
     Object.assign(process.env, flags);
     assert.equal(formAccessFor(state.application).unlocked, true);
-    assert.equal(formAccessFor(state.application, { official: true }).unlocked, false);
+    assert.equal(formAccessFor(state.application, { official: true }).unlocked, true);
     process.env.FLUTTERWAVE_MODE = "live";
     assert.equal(formAccessFor(state.application).unlocked, false);
   } finally {

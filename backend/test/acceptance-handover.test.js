@@ -25,8 +25,8 @@ test("acceptance requires an explicit quote, exact fee, correct purpose and matc
 test("offer, editable future pricing, automatic acceptance payment, clearance and student activation share one identity", async () => {
   const owner = { id: "owner", name: "Fictional Applicant", email: "owner@example.invalid", passwordHash: await bcrypt.hash("ExistingApplicant123", 4), role: "APPLICANT", sessionVersion: 0, isActive: true, mustChangePassword: false };
   const originalHash = owner.passwordHash;
-  let application = { id: crypto.randomUUID(), applicantId: owner.id, applicationNumber: "TEST-HANDOVER-1234567", isTest: true, fullName: owner.name, email: owner.email, phoneNumber: "00000000000", status: "REVIEWED", screeningStatus: "EXEMPT", formFeeAmount: 20000, declarationAccepted: true, submittedAt: new Date(), updatedAt: new Date(), offerResponse: "PENDING", clearanceStatus: "PENDING" };
-  let payments = [{ id: "form", type: "APPLICATION_FEE", amount: 20000, currency: "NGN", status: "VERIFIED", isTest: true }];
+  let application = { id: crypto.randomUUID(), applicantId: owner.id, applicationNumber: "UCHK-HANDOVER-1234567", isTest: false, fullName: owner.name, email: owner.email, phoneNumber: "00000000000", status: "REVIEWED", screeningStatus: "PASSED", screeningFeeAmount: 2000, formFeeAmount: 5000, declarationAccepted: true, submittedAt: new Date(), updatedAt: new Date(), offerResponse: "PENDING", clearanceStatus: "PENDING" };
+  let payments = ["APPLICATION_FEE", "SCREENING_FEE"].map((type) => ({ id: type, type, amount: type === "APPLICATION_FEE" ? 5000 : 2000, currency: "NGN", status: "VERIFIED", isTest: true, provider: "FLUTTERWAVE" }));
   let documents = ["PASSPORT", "BIRTH_CERTIFICATE", "NATIONAL_ID", "EDUCATIONAL_RESULT"].map((type) => ({ id: crypto.randomUUID(), type, reviewStatus: "VERIFIED" }));
   let policy = { amount: 5000 };
   let histories = [];
@@ -63,7 +63,7 @@ test("offer, editable future pricing, automatic acceptance payment, clearance an
     auditLog: { create: async ({ data }) => { audits.push(data); return data; } },
     payment: {
       create: async ({ data }) => { const payment = { id: crypto.randomUUID(), status: "PENDING", checkoutUrl: null, checkoutStartedAt: null, ...data }; payments.push(payment); return payment; },
-      findFirst: async ({ where }) => { const payment = payments.find((item) => item.reference === where.reference && (!where.application || where.application.applicantId === owner.id)); return payment ? { ...payment, application: { applicantId: owner.id, isTest: true } } : null; },
+      findFirst: async ({ where }) => { const payment = payments.find((item) => item.reference === where.reference && (!where.application || where.application.applicantId === owner.id)); return payment ? { ...payment, application: { applicantId: owner.id, isTest: false } } : null; },
       findUnique: async ({ where }) => payments.find((payment) => payment.id === where.id),
       updateMany: async ({ where, data }) => { const payment = payments.find((item) => item.id === where.id && item.status === where.status); if (!payment || (where.OR && payment.checkoutStartedAt)) return { count: 0 }; Object.assign(payment, data); return { count: 1 }; }
     }
@@ -90,7 +90,10 @@ test("offer, editable future pricing, automatic acceptance payment, clearance an
   const call = (path, method = "GET", body, credential = token("admin")) => fetch(base + path, { method, headers: { "Content-Type": "application/json", ...(credential ? { Authorization: `Bearer ${credential}` } : {}) }, ...(body ? { body: JSON.stringify(body) } : {}) });
   const decision = (status) => call(`/applications/${application.id}/status`, "PATCH", { status });
   const clearance = (status, note = "") => call(`/applications/${application.id}/clearance`, "PATCH", { status, note });
+  const flags = { PAYMENT_PROVIDER: "flutterwave", FLUTTERWAVE_MODE: "test", FLUTTERWAVE_RESTRICTED_PRODUCTION_TEST: "true" };
+  const previousFlags = Object.fromEntries(Object.keys(flags).map((key) => [key, process.env[key]]));
   try {
+    Object.assign(process.env, flags);
     assert.equal((await call("/settings/acceptance-fee", "GET", undefined, "")).status, 401);
     assert.equal((await call("/settings/acceptance-fee", "PUT", { amount: 1 }, token("owner"))).status, 403);
     assert.equal((await call("/applicant/offer-response", "POST", { response: "ACCEPTED" }, token("owner"))).status, 409);
@@ -109,12 +112,13 @@ test("offer, editable future pricing, automatic acceptance payment, clearance an
     assert.equal((await decision("ADMITTED")).status, 409);
     const checkout = await gateway.start("owner", "ACCEPTANCE_FEE");
     assert.equal((await gateway.start("owner", "ACCEPTANCE_FEE")).reference, checkout.reference);
-    assert.equal(payments.length, 2);
+    assert.equal(payments.length, 3);
     providerAmount = 4999;
     await assert.rejects(gateway.verify(checkout.reference, "owner"), /do not match/);
     assert.equal((await clearance("CLEARED")).status, 409);
     providerAmount = 5000;
     assert.equal((await gateway.verify(checkout.reference, "owner")).status, "VERIFIED");
+    assert.equal(admissionProgressFor({ ...application, payments }).paid, true);
     await gateway.webhook({ event: "charge.completed", data: { id: 456 } });
     assert.equal(audits.filter((event) => event.action === "payment.flutterwave.verified").length, 1);
     assert.equal((await decision("REJECTED")).status, 409);
@@ -149,6 +153,9 @@ test("offer, editable future pricing, automatic acceptance payment, clearance an
     assert.equal((await repeated.json()).data.credentials, null);
     assert.equal((await clearance("PENDING")).status, 409);
   } finally {
+    for (const [key, value] of Object.entries(previousFlags)) {
+      if (value === undefined) delete process.env[key]; else process.env[key] = value;
+    }
     for (const [object, key, value] of saved.reverse()) object[key] = value;
     await new Promise((resolve) => server.close(resolve));
   }

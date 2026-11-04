@@ -131,7 +131,7 @@ export async function paymentReceiptPdf(application, payment) {
   });
   write(0, payment.isTest ? "Simulated payment verified with Flutterwave. No money received." : "Payment accepted and verified by the college.", 72, 570, 468, "Receipt note", 10);
   write(0, "This receipt does not constitute an admission offer.", 72, 590, 468, "Receipt note", 10);
-  if (payment.isTest) write(0, "TEST PAYMENT - NO REAL MONEY - NOT VALID FOR ADMISSION", 72, 630, 468, "Test payment notice", 11);
+  if (payment.isTest) write(0, "DEMO PAYMENT - NO REAL MONEY COLLECTED", 72, 630, 468, "Payment mode notice", 11);
   document.setTitle(`Payment receipt ${application.applicationNumber || ""}`);
   return document.save();
 }

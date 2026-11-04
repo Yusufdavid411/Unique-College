@@ -1,5 +1,5 @@
-import { Prisma } from "@prisma/client";
 import { z } from "zod";
+import { feeVerified } from "./paymentEligibility.js";
 
 export const acceptancePolicyKey = "acceptance_fee_policy";
 export const acceptancePolicySchema = z.object({ amount: z.number().finite().min(0).max(10000000).multipleOf(0.01) }).strict();
@@ -12,9 +12,7 @@ export async function acceptancePolicy(database) {
 export function admissionProgressFor(application) {
   const amount = application.acceptanceFeeAmount;
   const offered = ["ACCEPTED", "ADMITTED"].includes(application.status);
-  const paid = amount != null && (new Prisma.Decimal(amount).equals(0) || (application.payments || []).some((payment) =>
-    payment.type === "ACCEPTANCE_FEE" && payment.status === "VERIFIED" && payment.currency === "NGN" &&
-    Boolean(payment.isTest) === Boolean(application.isTest) && new Prisma.Decimal(payment.amount).equals(amount)));
+  const paid = feeVerified(application, "ACCEPTANCE_FEE", amount);
   const response = application.offerResponse || "PENDING";
   const clearanceStatus = application.clearanceStatus || "PENDING";
   return { offered, response, amount: amount == null ? null : String(amount), currency: "NGN", paid, clearanceStatus, clearanceNote: application.clearanceNote || null,

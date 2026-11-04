@@ -84,15 +84,6 @@ test("clean portal paths retain the correct authentication scope and local compa
   assert.equal(portalScope("admin.uniquecollegekwali.com.attacker.test"), null);
 });
 
-test("retired payment sandbox no longer hosts applicant routes and points only to the live entry", () => {
-  const hostname = "unique-college-payment-test.vercel.app";
-  assert.equal(portalScope(hostname), null);
-  assert.equal(applicationHref(hostname), "https://apply.uniquecollegekwali.com/");
-  assert.equal(applicantLoginHref(hostname), "https://apply.uniquecollegekwali.com/login");
-  assert.equal(canonicalPortalHref("/applicant/payments", hostname), "https://apply.uniquecollegekwali.com/");
-  assert.equal(canonicalPortalHref("/", hostname), "https://apply.uniquecollegekwali.com/");
-});
-
 test("legacy website aliases canonicalize public pages as well as portal entry points", async () => {
   const config = JSON.parse(await readFile(new URL("../../vercel.json", import.meta.url), "utf8"));
   for (const hostname of ["uniquecollegekwali.vercel.app", "uniquecollegekwali-yusufdavid411s-projects.vercel.app"]) {

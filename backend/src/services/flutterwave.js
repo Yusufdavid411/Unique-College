@@ -20,8 +20,8 @@ export function paymentConfigurationIssue(config) {
   const testKey = config.secretKey.startsWith("FLWSECK_TEST-");
   if (!["test", "live"].includes(config.mode)) return "Select a valid Flutterwave payment mode.";
   if ((config.mode === "test") !== testKey) return "The Flutterwave key does not match the configured payment mode.";
-  if (config.restrictedProductionTest) {
-    if (config.mode !== "test" || config.databaseName !== "neondb" || config.deploymentEnvironment !== "production" || config.returnUrl !== "https://apply.uniquecollegekwali.com/payments") return "Restricted testing requires test keys and the official production portal configuration.";
+  if (config.mode === "test" && config.restrictedProductionTest) {
+    if (config.databaseName !== "neondb" || config.deploymentEnvironment !== "production" || config.returnUrl !== "https://apply.uniquecollegekwali.com/payments") return "Demo payments require the official production portal configuration.";
     return null;
   }
   if (config.mode === "test") {
@@ -143,7 +143,7 @@ export function flutterwaveService(database, fetcher = fetch, config = paymentCo
   }
 
   async function preparePaidAdmissionLetter(payment) {
-    if (payment.type !== "ACCEPTANCE_FEE" || (payment.isTest && !payment.application.isTest)) return "NOT_REQUIRED";
+    if (payment.type !== "ACCEPTANCE_FEE") return "NOT_REQUIRED";
     try {
       const result = await releaseAdmissionLetter(database, payment.applicationId, { id: "system:flutterwave", name: "Automatic payment confirmation" });
       await attemptStatusEmail(result.eventId);

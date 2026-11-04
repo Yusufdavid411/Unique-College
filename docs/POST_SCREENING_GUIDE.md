@@ -29,4 +29,6 @@ Changing settings does not reschedule existing exams, alter existing fee quotes,
 
 ## Current payment limitation
 
-Flutterwave is still configured for test checkout. Regular applicants can simulate application and screening steps, but simulated payments are not accepted as official financial proof for a real admission offer, final admission or official letter release. Do not mark simulated payments as real or bypass these protections. Use the school's approved live merchant configuration for real admissions.
+Flutterwave currently uses demo checkout. While the configured demo mode is active, verified Flutterwave payments of the exact quoted amount unlock every stage on normal applicant accounts: form access, screening, offer, acceptance payment, acceptance form, clearance and student activation. No separate demo-account portal or preview-record selection is needed.
+
+Gateway verification, ownership, amount/currency matching and duplicate protection remain mandatory. Historical transactions retain their original mode and demo receipts do not claim that real money was collected. Changing to live keys/mode never relabels past transactions as real receipts. Document release still requires the school's approved letter settings, and admission still requires the admin's decisions.

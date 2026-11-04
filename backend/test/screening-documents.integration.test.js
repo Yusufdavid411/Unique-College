@@ -12,6 +12,9 @@ import { statusEmailContent } from "../src/services/statusEmail.js";
 test("PostgreSQL screening, automatic letter and completed-form downloads", { skip: !process.env.INTEGRATION_DATABASE_URL, timeout: 240000 }, async () => {
   assert.match(new URL(process.env.DATABASE_URL).pathname, /test/i);
   const marker = crypto.randomUUID();
+  const flags = { PAYMENT_PROVIDER: "flutterwave", FLUTTERWAVE_MODE: "test", FLUTTERWAVE_RESTRICTED_PRODUCTION_TEST: "true" };
+  const previousFlags = Object.fromEntries(Object.keys(flags).map((key) => [key, process.env[key]]));
+  Object.assign(process.env, flags);
   const ids = [];
   let application;
   const previous = await prisma.siteSetting.findUnique({ where: { key: "admissions_documents_policy" } });
@@ -35,7 +38,10 @@ test("PostgreSQL screening, automatic letter and completed-form downloads", { sk
     const gateway = flutterwaveService(prisma, async (url, options) => {
       if (url.endsWith("/payments")) { const payload = JSON.parse(options.body); reference = payload.tx_ref; amount = Number(payload.amount); providerId++; return { ok: true, json: async () => ({ status: "success", data: { link: "https://checkout.flutterwave.com/v3/hosted/pay/fixture" } }) }; }
       return { ok: true, json: async () => ({ status: "success", data: { id: providerId, tx_ref: reference, amount, currency: "NGN", status: "successful" } }) };
-    }, { enabled: true, mode: "live", secretKey: "FLWSECK-fixture-not-a-real-key", webhookHash: "fixture-only", returnUrl: "http://localhost:5173/applicant/payments" });
+    }, { enabled: true, mode: "test", secretKey: "FLWSECK_TEST-fixture-not-a-real-key", webhookHash: "fixture-only", returnUrl: "http://localhost:5173/applicant/payments", databaseName: "unique_college_test", testDatabaseName: "unique_college_test" });
+    await prisma.application.update({ where: { id: application.id }, data: { formFeeAmount: 5000 } });
+    const formPurchase = await gateway.start(applicant.id, "APPLICATION_FEE");
+    assert.equal((await gateway.verify(formPurchase.reference, applicant.id)).status, "VERIFIED");
     await assert.rejects(() => gateway.start(applicant.id, "SCREENING_FEE"), /eligible application/);
     assert.equal((await call(`/applications/${application.id}/status`, "PATCH", { status: "SCREENING_APPROVED" }, admin)).status, 200);
     const approval = await prisma.applicationStatusHistory.findFirst({ where: { applicationId: application.id, kind: "SCREENING_APPROVAL" } });
@@ -74,6 +80,7 @@ test("PostgreSQL screening, automatic letter and completed-form downloads", { sk
     const acceptance = await gateway.start(applicant.id, "ACCEPTANCE_FEE");
     assert.equal(amount, 5000);
     assert.equal((await gateway.verify(acceptance.reference, applicant.id)).letterStatus, "READY");
+    assert.equal(await prisma.payment.count({ where: { applicationId: application.id, isTest: true, status: "VERIFIED" } }), 3);
     assert.equal(await prisma.admissionLetter.count({ where: { applicationId: application.id } }), 1);
     assert.equal((await gateway.verify(acceptance.reference, applicant.id)).letterStatus, "READY");
     const form = { data: { contactAddress: "Fixture address Abuja", declaration: true }, submit: true, version: null };
@@ -86,6 +93,9 @@ test("PostgreSQL screening, automatic letter and completed-form downloads", { sk
       assert.ok((await response.arrayBuffer()).byteLength > 1000);
     }
   } finally {
+    for (const [key, value] of Object.entries(previousFlags)) {
+      if (value === undefined) delete process.env[key]; else process.env[key] = value;
+    }
     try {
       if (application) {
         await prisma.schoolForm.deleteMany({ where: { applicationId: application.id } });

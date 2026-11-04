@@ -1,6 +1,7 @@
 import { z } from "zod";
-import { Prisma } from "@prisma/client";
 import { readyForReview } from "./applicationReview.js";
+import { feeVerified } from "./paymentEligibility.js";
+export { feeVerified } from "./paymentEligibility.js";
 
 export const documentsPolicyKey = "admissions_documents_policy";
 export const screeningPolicyKey = "screening_policy";
@@ -25,15 +26,11 @@ export async function screeningPolicy(database) {
   const row = await database.siteSetting.findUnique({ where: { key: screeningPolicyKey } });
   return row ? z.object({ amount: z.number().finite().min(0).max(10000000).multipleOf(0.01) }).strict().parse(JSON.parse(row.value)) : { amount: 2000 };
 }
-export function feeVerified(application, type, amount) {
-  return amount != null && (new Prisma.Decimal(amount).equals(0) || application.payments.some((payment) => payment.type === type && payment.status === "VERIFIED" && payment.currency === "NGN" && Boolean(payment.isTest) === Boolean(application.isTest) && new Prisma.Decimal(payment.amount).equals(amount)));
-}
 export function screeningProgress(application, defaultAmount) {
   const status = application.screeningStatus || "NOT_SCHEDULED";
   const eligible = readyForReview(application) && ((application.status === "REVIEWED" && status === "APPROVED") || (application.status === "INTERVIEW_SCHEDULED" && status === "SCHEDULED"));
   const amount = application.screeningFeeAmount ?? defaultAmount;
-  const simulation = process.env.PAYMENT_PROVIDER === "flutterwave" && process.env.FLUTTERWAVE_MODE === "test" && process.env.FLUTTERWAVE_RESTRICTED_PRODUCTION_TEST === "true";
-  const paid = feeVerified(application, "SCREENING_FEE", amount) || (simulation && !application.isTest && feeVerified({ ...application, isTest: true, payments: (application.payments || []).filter((payment) => payment.provider === "FLUTTERWAVE") }, "SCREENING_FEE", amount));
+  const paid = feeVerified(application, "SCREENING_FEE", amount);
   return { status, eligible, amount: amount == null ? null : String(amount), paid, date: application.screeningAt || null, venue: application.screeningVenue || null, instructions: application.screeningInstructions || null };
 }
 export function screened(application) { return ["PASSED", "EXEMPT"].includes(application.screeningStatus); }

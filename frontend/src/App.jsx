@@ -35,7 +35,7 @@ import Events from "./pages/public/Events.jsx";
 import Privacy from "./pages/public/Privacy.jsx";
 import ChangePassword from "./components/ChangePassword.jsx";
 import { RecoveryScreen } from "./components/AppErrorBoundary.jsx";
-import { canonicalPortalHref, portalPath, portalScope, retiredPaymentSandbox } from "./api/portalLinks.js";
+import { canonicalPortalHref, portalPath, portalScope } from "./api/portalLinks.js";
 
 const StudentLayout = lazy(() => import("./components/StudentLayout.jsx"));
 const StaffLogin = lazy(() => import("./pages/staff/StaffLogin.jsx"));
@@ -64,7 +64,7 @@ export default function App() {
   const { pathname, search, hash } = useLocation();
   const destination = canonicalPortalHref(pathname);
   useEffect(() => {
-    if (destination) window.location.replace(retiredPaymentSandbox() ? destination : `${destination}${search}${hash}`);
+    if (destination) window.location.replace(`${destination}${search}${hash}`);
   }, [destination, search, hash]);
   if (destination) return <div className="loading-screen" role="status">Opening your secure portal…</div>;
   return (
