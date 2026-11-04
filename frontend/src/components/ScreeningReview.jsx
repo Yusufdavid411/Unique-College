@@ -4,13 +4,15 @@ import { api, apiErrorMessage } from "../api/client.js";
 import { portalPath } from "../api/portalLinks.js";
 import { notify } from "../api/notifications.js";
 import { ErrorToast } from "./ToastNotifications.jsx";
+import { useConfirmation } from "../context/ConfirmationContext.jsx";
 export default function ScreeningReview({ application, refresh }) {
+  const confirmAction = useConfirmation();
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   async function release(event) {
     event.preventDefault(); if (busy) return;
-    if (!window.confirm(`Release the school admission letter for ${application.fullName}? Check the course, dates, duration and approved fee appendix before proceeding.`)) return;
     const duration = new FormData(event.currentTarget).get("duration");
+    if (!await confirmAction({ title: "Release admission letter?", message: `Release the letter for ${application.fullName}? Confirm the course, dates, duration and approved fee appendix first.`, confirmLabel: "Release letter" })) return;
     setBusy(true); setError("");
     try { const { data } = await api.post(`/records/applications/${application.id}/issue-letter`, duration ? { duration } : {}); notify({ title: "Admission letter released", message: data.message, type: "info" }); await refresh(application.id); }
     catch (failure) { setError(apiErrorMessage(failure)); }

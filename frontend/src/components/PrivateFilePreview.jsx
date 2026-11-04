@@ -1,14 +1,23 @@
 import { useEffect, useId, useRef, useState } from "react";
-import { Eye } from "lucide-react";
+import { Download, Eye } from "lucide-react";
 import { api, apiErrorMessage, FILE_TRANSFER_TIMEOUT } from "../api/client.js";
 
 const imageTypes = ["image/jpeg", "image/png", "image/webp"];
 
-function PreviewDialog({ path, label, onClose }) {
+function PreviewDialog({ path, label, allowDownload, filename, onClose }) {
   const dialog = useRef(null);
   const title = useId();
   const [preview, setPreview] = useState(null);
   const [error, setError] = useState("");
+  function download() {
+    if (!preview) return;
+    const link = document.createElement("a");
+    link.href = preview.url;
+    link.download = filename || path.split("/").pop() || "document";
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+  }
 
   useEffect(() => {
     const controller = new AbortController();
@@ -36,7 +45,7 @@ function PreviewDialog({ path, label, onClose }) {
   }, [path]);
 
   return <dialog ref={dialog} className="private-preview-dialog" aria-labelledby={title} onCancel={(event) => { event.preventDefault(); onClose(); }}>
-    <header><h2 id={title}>{label}</h2><button type="button" className="button secondary" onClick={onClose}>Close</button></header>
+    <header><h2 id={title}>{label}</h2><div className="document-preview-actions">{allowDownload && preview && <button type="button" className="button secondary" onClick={download}><Download size={18} aria-hidden="true" />Download document</button>}<button type="button" className="button secondary" onClick={onClose}>Close</button></div></header>
     {error ? <p role="alert">{error}</p> : !preview ? <p role="status">Loading preview…</p> : preview.isImage
       ? <img src={preview.url} alt={label} onError={() => setError("This image could not be displayed.")} />
       : typeof navigator.pdfViewerEnabled === "boolean" && !navigator.pdfViewerEnabled
@@ -45,11 +54,11 @@ function PreviewDialog({ path, label, onClose }) {
   </dialog>;
 }
 
-export default function PrivateFilePreview({ path, label }) {
+export default function PrivateFilePreview({ path, label, buttonText, allowDownload = false, filename }) {
   const [open, setOpen] = useState(false);
   const trigger = useRef(null);
   return <>
-    <button ref={trigger} type="button" className="portal-add-button" aria-haspopup="dialog" aria-label={`Preview ${label}`} disabled={!path} onClick={() => setOpen(true)}><Eye size={17} aria-hidden="true" />{label}</button>
-    {open && <PreviewDialog path={path} label={label} onClose={() => { setOpen(false); requestAnimationFrame(() => trigger.current?.focus()); }} />}
+    <button ref={trigger} type="button" className={buttonText ? "button secondary document-view-button" : "portal-add-button"} aria-haspopup="dialog" aria-label={`Preview ${label}`} disabled={!path} onClick={() => setOpen(true)}><Eye size={17} aria-hidden="true" />{buttonText || label}</button>
+    {open && <PreviewDialog path={path} label={label} allowDownload={allowDownload} filename={filename} onClose={() => { setOpen(false); requestAnimationFrame(() => trigger.current?.focus()); }} />}
   </>;
 }

@@ -5,6 +5,7 @@ import { api, apiErrorMessage, MAX_UPLOAD_BYTES } from "../../api/client.js";
 import LoadingButton from "../../components/LoadingButton.jsx";
 import { ErrorToast } from "../../components/ToastNotifications.jsx";
 import PrivateFilePreview from "../../components/PrivateFilePreview.jsx";
+import { useConfirmation } from "../../context/ConfirmationContext.jsx";
 import FormPurchaseRequired from "../../components/FormPurchaseRequired.jsx";
 import { useApplicant } from "../../context/ApplicantContext.jsx";
 import { portalPath } from "../../api/portalLinks.js";
@@ -19,6 +20,7 @@ const documentTypes = [
 ];
 
 export default function ApplicantDocuments() {
+  const confirmAction = useConfirmation();
   const { application, journey, formAccess, loading, refresh } = useApplicant();
   const navigate = useNavigate();
   const operation = useRef(false);
@@ -36,7 +38,7 @@ export default function ApplicantDocuments() {
     if (!file || operation.current) return;
     if (file.size > MAX_UPLOAD_BYTES) return setNotice({ type: "error", message: "Choose a document of 4 MB or less." });
     const replacing = (application.documents || []).some((document) => document.type === type && !document.supersededAt);
-    if (replacing && !window.confirm(`Replace your ${label.toLowerCase()}? Only the new file will be included in your application.`)) return;
+    if (replacing && !await confirmAction({ title: "Replace uploaded document?", message: `Replace your ${label.toLowerCase()}? Only the new file will be included in your application.`, confirmLabel: "Replace document", cancelLabel: "Keep current file" })) return;
     operation.current = true;
     setBusy(type);
     setNotice({ type: "", message: "" });

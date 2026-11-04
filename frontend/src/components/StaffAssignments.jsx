@@ -1,7 +1,9 @@
 import { useEffect, useState } from "react";
 import { api } from "../api/client.js";
+import { useConfirmation } from "../context/ConfirmationContext.jsx";
 
 export default function StaffAssignments() {
+  const confirmAction = useConfirmation();
   const [options, setOptions] = useState({ staff: [], enrolments: [] });
   const [result, setResult] = useState(null);
   const [search, setSearch] = useState("");
@@ -24,7 +26,7 @@ export default function StaffAssignments() {
     catch {} finally { setBusy(false); }
   }
   async function remove(id) {
-    if (!window.confirm("Remove this staff member's access to this student and session?")) return;
+    if (!await confirmAction({ title: "Remove adviser assignment?", message: "This staff member will lose access to the selected student and session.", confirmLabel: "Remove assignment", danger: true })) return;
     setBusy(true); setNotice("");
     try { await api.delete(`/staff-assignments/${id}`); setNotice("Assignment removed."); await load(); }
     catch {} finally { setBusy(false); }

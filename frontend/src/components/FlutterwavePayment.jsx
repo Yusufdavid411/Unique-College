@@ -8,8 +8,10 @@ import PrivateFileButton from "./PrivateFileButton.jsx";
 import LoadingButton from "./LoadingButton.jsx";
 import { trustedPaymentCheckout } from "../api/paymentCheckout.js";
 import { ErrorToast } from "./ToastNotifications.jsx";
+import { useConfirmation } from "../context/ConfirmationContext.jsx";
 
 export default function FlutterwavePayment() {
+  const confirmAction = useConfirmation();
   const { application, formAccess, admission, screening, paymentGateway, refresh } = useApplicant();
   const { search } = useLocation();
   const navigate = useNavigate();
@@ -59,7 +61,7 @@ export default function FlutterwavePayment() {
 
   async function withdrawLegacyReceipt() {
     if (operation.current || !pending || onlinePending) return;
-    if (!window.confirm("Withdraw this receipt before paying online? Do not pay again if you have already transferred the money.")) return;
+    if (!await confirmAction({ title: "Withdraw this receipt?", message: "Do not pay again if you have already transferred money. Contact Admissions if you are unsure.", confirmLabel: "Withdraw receipt", danger: true })) return;
     operation.current = true;
     setBusy(true);
     try { await api.delete(`/applicant/payments/${pending.id}`); await refresh(); }

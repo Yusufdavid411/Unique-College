@@ -4,8 +4,10 @@ import { api, apiErrorMessage } from "../api/client.js";
 import { notify } from "../api/notifications.js";
 import { ErrorToast } from "./ToastNotifications.jsx";
 import PrivateFileButton from "./PrivateFileButton.jsx";
+import { useConfirmation } from "../context/ConfirmationContext.jsx";
 const titles = { ACCEPTANCE: "Acceptance form", GUARANTOR: "Guarantor’s form", STUDENT_RECORD: "Student record form" };
 export default function SchoolFormEditor() {
+  const confirmAction = useConfirmation();
   const { kind } = useParams();
   const [result, setResult] = useState(null);
   const [values, setValues] = useState({});
@@ -16,7 +18,7 @@ export default function SchoolFormEditor() {
   async function save(event) {
     event.preventDefault(); if (busy) return;
     const submit = event.nativeEvent.submitter?.value === "submit";
-    if (submit && !window.confirm("Submit these details for the school's record? Submitted entries cannot be edited without the registry's correction process.")) return;
+    if (submit && !await confirmAction({ title: "Submit your school form?", message: "Check your entries before submitting. Later changes require the registry's correction process.", confirmLabel: "Submit form", cancelLabel: "Keep editing" })) return;
     setBusy(true); setError("");
     try { const { data } = await api.put(`/school-forms/${kind}`, { data: values, submit, version: result.record?.updatedAt || null }); setResult({ ...result, record: data.data }); notify({ title: submit ? "Form submitted" : "Draft saved", message: data.message, type: "info" }); }
     catch (failure) { setError(apiErrorMessage(failure)); }

@@ -8,6 +8,7 @@ import "./styles/global.css";
 import AppErrorBoundary from "./components/AppErrorBoundary.jsx";
 import ToastNotifications from "./components/ToastNotifications.jsx";
 import { SchoolProvider } from "./context/SchoolContext.jsx";
+import { ConfirmationProvider } from "./context/ConfirmationContext.jsx";
 
 function ApplicationRoot() {
   React.useLayoutEffect(() => {
@@ -17,7 +18,7 @@ function ApplicationRoot() {
   return (
     <BrowserRouter>
       <AuthProvider>
-        <SchoolProvider><AdmissionsProvider><App /></AdmissionsProvider></SchoolProvider>
+        <ConfirmationProvider><SchoolProvider><AdmissionsProvider><App /></AdmissionsProvider></SchoolProvider></ConfirmationProvider>
       </AuthProvider>
     </BrowserRouter>
   );

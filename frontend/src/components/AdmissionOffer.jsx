@@ -4,8 +4,10 @@ import { api, apiErrorMessage } from "../api/client.js";
 import { portalPath } from "../api/portalLinks.js";
 import { useApplicant } from "../context/ApplicantContext.jsx";
 import { ErrorToast } from "./ToastNotifications.jsx";
+import { useConfirmation } from "../context/ConfirmationContext.jsx";
 
 export default function AdmissionOffer() {
+  const confirmAction = useConfirmation();
   const { application, admission, refresh } = useApplicant();
   const navigate = useNavigate();
   const operation = useRef(false);
@@ -17,7 +19,7 @@ export default function AdmissionOffer() {
 
   async function respond(response) {
     if (operation.current) return;
-    if (!window.confirm(response === "ACCEPTED" ? `Accept this offer? Your quoted acceptance fee is ${fee}.` : "Decline this offer? You will need to contact admissions to change your response.")) return;
+    if (!await confirmAction({ title: response === "ACCEPTED" ? "Accept your admission offer?" : "Decline your admission offer?", message: response === "ACCEPTED" ? `Your acceptance fee is ${fee}. Continue to confirm your choice and proceed with the required payment.` : "Your offer will be marked as declined. You will need to contact Admissions to change this response.", confirmLabel: response === "ACCEPTED" ? "Accept offer" : "Decline offer", danger: response === "DECLINED" })) return;
     operation.current = true;
     setBusy(true);
     setError("");

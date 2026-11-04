@@ -1,15 +1,16 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Bell, X } from "lucide-react";
+import { ArrowRight, Bell, X } from "lucide-react";
 import { Link, useSearchParams } from "react-router-dom";
 import { portalPath } from "../../api/portalLinks.js";
 import { api, apiErrorMessage } from "../../api/client.js";
-import PrivateFileButton from "../../components/PrivateFileButton.jsx";
+import PrivateFilePreview from "../../components/PrivateFilePreview.jsx";
 import ApplicationRecord from "../../components/ApplicationRecord.jsx";
 import ApplicationDownloads from "../../components/ApplicationDownloads.jsx";
 import ScreeningReview from "../../components/ScreeningReview.jsx";
 import { SendPasswordReset } from "../../components/PasswordRecovery.jsx";
 import { useAuth } from "../../context/AuthContext.jsx";
 import AdminDirectorySearch, { matchesDirectorySearch } from "../../components/AdminDirectorySearch.jsx";
+import { useConfirmation } from "../../context/ConfirmationContext.jsx";
 
 const readableStatus = (value) => ({ SCREENING_APPROVED: "Accept for screening", INTERVIEW_SCHEDULED: "Screening scheduled", SUBMITTED: "New submission", PENDING: "Under review", REVIEWED: "Under review", RETURNED: "Corrections required", ACCEPTED: "Admission offered", ADMITTED: "Admitted", DRAFT: "Not submitted" }[value] || value?.replaceAll("_", " ").toLowerCase().replace(/\b\w/g, (letter) => letter.toUpperCase()));
 const formatDate = (value) => value ? new Date(value).toLocaleDateString() : "Not submitted";
@@ -51,6 +52,7 @@ function applicationNextStep(application, allowed, canAdmit) {
 }
 
 export default function AdminApplications() {
+  const confirmAction = useConfirmation();
   const { user } = useAuth();
   const [searchParams] = useSearchParams();
   const requestedApplication = searchParams.get("application");
@@ -165,6 +167,7 @@ export default function AdminApplications() {
   }
 
   function dialogKeyDown(event) {
+    if (event.target.closest("dialog[open]")) return;
     if (event.key === "Escape" && !saving) setSelectedApplication(null);
     if (event.key !== "Tab") return;
     const focusable = [...dialog.current.querySelectorAll('button:not(:disabled), select:not(:disabled), textarea:not(:disabled), summary, a[href]')].filter((element) => element.getClientRects().length);
@@ -183,7 +186,7 @@ export default function AdminApplications() {
       setFeedback("Enter the exact account email to confirm deletion.");
       return;
     }
-    if (!window.confirm("Permanently delete this applicant login? The applicant will lose access to this application. Application and payment records will be retained.")) return;
+    if (!await confirmAction({ title: "Delete applicant login?", message: "The applicant will lose access to this application. Application and payment records will be retained. This action cannot be undone.", confirmLabel: "Delete login", danger: true })) return;
     setSaving(true);
     try {
       const { data } = await api.delete(`/applications/${selectedApplication.id}/account`, { data: { confirmation } });
@@ -231,7 +234,7 @@ export default function AdminApplications() {
             {nextStep && <section ref={nextAction} tabIndex={-1} className="application-next-action" aria-label="Next action">
               <h4>Next step</h4>
               <p>{nextStep.message}</p>
-              {nextStep.status && canReview && <button type="button" className="button primary" disabled={saving} onClick={() => updateApplicationStatus(nextStep.status)}>{nextStep.label}</button>}
+              {nextStep.status && canReview && <button type="button" className="button primary" disabled={saving} onClick={() => updateApplicationStatus(nextStep.status)}>{nextStep.label}<ArrowRight size={20} aria-hidden="true" /></button>}
               {nextStep.screening && <Link className="button primary" to={screeningLink}>{selectedApplication.status === "INTERVIEW_SCHEDULED" ? "Open screening record" : "Schedule screening"}</Link>}
               {nextStep.documents && <button type="button" className="button primary" onClick={() => { if (documentsPanel.current) { documentsPanel.current.open = true; documentsPanel.current.querySelector("summary")?.focus(); } }}>Review supporting documents</button>}
               {nextStep.clearance && <button type="button" className="button primary" disabled={saving} onClick={() => saveClearance("CLEARED", "")}>Complete clearance</button>}
@@ -265,7 +268,14 @@ export default function AdminApplications() {
           {ready && <>
             <ScreeningReview application={selectedApplication} refresh={openApplication} />
             <details className="review-disclosure"><summary>View submitted application</summary><ApplicationRecord application={selectedApplication} /></details>
-            <details ref={documentsPanel} className="review-disclosure"><summary>Review supporting documents</summary><div className="review-items">{selectedApplication.documents?.length ? selectedApplication.documents.map((document) => <div key={document.id} className="review-item"><PrivateFileButton path={document.path}>{readableStatus(document.type)}</PrivateFileButton><label>Document status<select disabled={saving} value={document.reviewStatus} onChange={(event) => updateDocument(document.id, event.target.value)}><option value="PENDING">Pending</option><option value="VERIFIED">Verified</option><option value="REJECTED">Corrections required</option></select></label></div>) : <p>No supporting documents supplied.</p>}</div></details>
+            <details ref={documentsPanel} className="review-disclosure"><summary>Review supporting documents</summary>
+              <div className="supporting-documents">
+                {selectedApplication.documents?.length ? selectedApplication.documents.map((document) => <article key={document.id} className="supporting-document">
+                  <div className="supporting-document-info"><strong>{readableStatus(document.type)}</strong><PrivateFilePreview path={document.path} label={readableStatus(document.type)} buttonText="View document" allowDownload /></div>
+                  <label className="supporting-document-status">Document status<select disabled={saving || selectedApplication.status === "ADMITTED"} value={document.reviewStatus} onChange={(event) => updateDocument(document.id, event.target.value)}><option value="PENDING">Pending</option><option value="VERIFIED">Verified</option><option value="REJECTED">Corrections required</option></select></label>
+                </article>) : <p>No supporting documents supplied.</p>}
+              </div>
+            </details>
           </>}
           {(user?.role === "ADMIN" || user?.permissions?.includes("users.manage")) && selectedApplication.applicant && <details className="review-disclosure"><summary>Account recovery</summary><SendPasswordReset key={selectedApplication.id} applicationId={selectedApplication.id} /></details>}
           {(ready || selectedApplication.payments?.some((payment) => payment.status === "VERIFIED")) && <details className="review-disclosure"><summary>Downloads and payment receipts</summary><ApplicationDownloads application={selectedApplication} /></details>}
