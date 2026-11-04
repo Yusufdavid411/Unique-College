@@ -44,10 +44,13 @@ test("offer, editable future pricing, automatic acceptance payment, clearance an
       update: async ({ data }) => { const { sessionVersion, ...rest } = data; Object.assign(owner, rest); if (sessionVersion) owner.sessionVersion += sessionVersion.increment; return owner; }
     },
     application: {
+      findMany: async () => [{ ...application, applicant: owner, documents, payments }],
       findUnique: async ({ where, include }) => {
         if ((where.id && where.id !== application.id) || (where.applicantId && where.applicantId !== owner.id)) return null;
         const applicant = include?.applicant?.select ? Object.fromEntries(Object.keys(include.applicant.select).map((key) => [key, owner[key]])) : owner;
-        return structuredClone({ ...application, applicant, payments, documents, statusHistory: histories });
+        const record = { ...application, applicant, payments, documents, statusHistory: histories };
+        if (!include?.admissionLetters) delete record.admissionLetters;
+        return structuredClone(record);
       },
       updateMany: async ({ where, data }) => {
         if ((where.status && where.status !== application.status) || (where.offerResponse && where.offerResponse !== application.offerResponse) || (where.updatedAt && +new Date(where.updatedAt) !== +new Date(application.updatedAt))) return { count: 0 };
@@ -137,7 +140,12 @@ test("offer, editable future pricing, automatic acceptance payment, clearance an
     const blocked = await decision("ADMITTED");
     assert.equal(blocked.status, 409);
     assert.match((await blocked.json()).message, /Release the admission letter/);
+    assert.equal((await (await call("/applications")).json()).data[0].finalAdmissionReady, false);
     application.admissionLetters = [{ id: "issued" }];
+    const ready = (await (await call("/applications")).json()).data[0];
+    assert.equal(ready.finalAdmissionReady, true);
+    assert.equal(ready.admissionLetters, undefined);
+    assert.equal(ready.documents, undefined);
     const admitted = await decision("ADMITTED");
     assert.equal(admitted.status, 200);
     const result = (await admitted.json()).data;

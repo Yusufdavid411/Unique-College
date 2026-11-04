@@ -13,6 +13,7 @@ import AdminDirectorySearch, { matchesDirectorySearch } from "../../components/A
 import { useConfirmation } from "../../context/ConfirmationContext.jsx";
 import { watDate } from "../../data/admissionsExamples.js";
 import ApplicationBulkNotice from "../../components/ApplicationBulkNotice.jsx";
+import BulkFinalAdmission from "../../components/BulkFinalAdmission.jsx";
 
 const queues = { all: "All applications", submitted: "Submitted applications", waiting: "Not ready for review", corrections: "Corrections required", screening: "In screening", passed: "Screening complete", offered: "Admission offered", failed: "Screening unsuccessful", rejected: "Rejected" };
 
@@ -230,6 +231,7 @@ export default function AdminApplications() {
     {!selectedApplication && feedback && <p className="admin-feedback" role="status">{feedback}</p>}
     <div className="review-filters" role="group" aria-label="Application queue">{Object.entries(queues).map(([value, label]) => <button key={value} type="button" aria-pressed={filter === value} onClick={() => setFilter(value)}>{label}</button>)}</div>
     {canReview && filter !== "all" && <ApplicationBulkNotice key={filter} audience={filter} label={queues[filter]} />}
+    {canReview && canAdmit && filter === "offered" && <BulkFinalAdmission key={search} applications={visibleApplications} refresh={loadApplications} />}
     <div className="admin-table-card"><div className="admin-table-wrap"><table className="review-queue">
       <thead><tr><th>Applicant</th><th>Programme</th><th>Submitted</th><th>Status / review</th></tr></thead>
       <tbody>{loading ? <tr><td colSpan="4">Loading applications…</td></tr> : visibleApplications.length ? visibleApplications.map((application) => <tr key={application.id}>

@@ -58,6 +58,9 @@ export const listApplications = asyncHandler(async (req, res) => {
     select: {
       id: true, isTest: true, applicationNumber: true, fullName: true, email: true, status: true,
       applicant: { select: { isActive: true, role: true } }, offerResponse: true,
+      acceptanceFeeAmount: true, clearanceStatus: true, requiresAcceptanceForm: true, declarationAccepted: true,
+      schoolForms: { select: { kind: true, status: true } }, admissionLetters: { take: 1, select: { id: true } },
+      documents: { where: { supersededAt: null }, select: { type: true, reviewStatus: true } },
       submittedAt: true, createdAt: true, courseOfInterest: true, formFeeAmount: true, screeningStatus: true, screeningAt: true, screeningVenue: true, screeningFeeAmount: true, entranceExamScore: true,
       payments: { select: { status: true, amount: true, type: true, currency: true, isTest: true, provider: true } }
     },
@@ -65,7 +68,13 @@ export const listApplications = asyncHandler(async (req, res) => {
   });
 
   const screeningFee = (await screeningPolicy(prisma)).amount;
-  ok(res, applications.map((application) => ({ ...application, courseOfInterest: readyForReview(application) ? application.courseOfInterest : null, reviewReady: readyForReview(application), screeningPaid: screeningProgress(application, screeningFee).paid, notificationAudience: application.applicant?.isActive && application.applicant.role === "APPLICANT" ? notificationAudience(application) : null })));
+  ok(res, applications.map(({ documents, schoolForms, admissionLetters, declarationAccepted, requiresAcceptanceForm, clearanceStatus, acceptanceFeeAmount, ...application }) => {
+    const reviewReady = readyForReview(application);
+    const activeApplicant = application.applicant?.isActive && application.applicant.role === "APPLICANT";
+    const finalAdmissionReady = Boolean(activeApplicant && reviewReady && application.status === "ACCEPTED" && declarationAccepted && hasVerifiedAdmissionDocuments(documents || []) &&
+      !admissionFailure({ ...application, schoolForms, admissionLetters, requiresAcceptanceForm, clearanceStatus, acceptanceFeeAmount }) && !admissionPaymentBlockerFor(application));
+    return { ...application, courseOfInterest: reviewReady ? application.courseOfInterest : null, reviewReady, screeningPaid: screeningProgress(application, screeningFee).paid, notificationAudience: activeApplicant ? notificationAudience(application) : null, finalAdmissionReady };
+  }));
 });
 
 function admissionPaymentBlockerFor(application) {
@@ -113,7 +122,7 @@ export const updateApplicationStatus = asyncHandler(async (req, res) => {
   }
   const current = await prisma.application.findUnique({
     where: { id: req.params.id },
-    include: { applicant: true, documents: { where: { supersededAt: null } }, payments: true, schoolForms: true }
+    include: { applicant: true, documents: { where: { supersededAt: null } }, payments: true, schoolForms: true, admissionLetters: { take: 1 } }
   });
   if (!current) return res.status(404).json({ success: false, message: "Application not found" });
   if (!readyForReview(current)) return res.status(409).json({ success: false, message: "Only a paid, submitted application can be reviewed. Wait for the applicant to submit their form." });
