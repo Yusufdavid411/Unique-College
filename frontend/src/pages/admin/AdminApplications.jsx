@@ -12,6 +12,9 @@ import { useAuth } from "../../context/AuthContext.jsx";
 import AdminDirectorySearch, { matchesDirectorySearch } from "../../components/AdminDirectorySearch.jsx";
 import { useConfirmation } from "../../context/ConfirmationContext.jsx";
 import { watDate } from "../../data/admissionsExamples.js";
+import ApplicationBulkNotice from "../../components/ApplicationBulkNotice.jsx";
+
+const queues = { all: "All applications", submitted: "Submitted applications", waiting: "Not ready for review", corrections: "Corrections required", screening: "In screening", passed: "Screening complete", offered: "Admission offered", failed: "Screening unsuccessful", rejected: "Rejected" };
 
 const readableStatus = (value) => ({ SCREENING_APPROVED: "Accept for screening", INTERVIEW_SCHEDULED: "Screening scheduled", SUBMITTED: "New submission", PENDING: "Under review", REVIEWED: "Under review", RETURNED: "Corrections required", ACCEPTED: "Admission offered", ADMITTED: "Admitted", DRAFT: "Not submitted" }[value] || value?.replaceAll("_", " ").toLowerCase().replace(/\b\w/g, (letter) => letter.toUpperCase()));
 const formatDate = (value) => value ? new Date(value).toLocaleDateString() : "Not submitted";
@@ -147,8 +150,7 @@ export default function AdminApplications() {
         message: `This sends an email and portal notification asking the applicant to submit by 11:59 pm WAT on ${date}. Check that this is the school’s intended deadline before sending.`,
         confirmLabel: "Send reminder"
       })) return;
-      const { data } = await api.post(`${endpoint}/reminder`);
-      setFeedback(data.message);
+      await api.post(`${endpoint}/reminder`);
       const response = await api.get(endpoint, { notifyOnError: false }).catch(() => null);
       if (response) setSelectedApplication(response.data.data);
     } catch (error) { setFeedback(error.response?.status === 429 && error.response.data?.message ? error.response.data.message : apiErrorMessage(error, "Unable to send the reminder.")); }
@@ -190,7 +192,7 @@ export default function AdminApplications() {
     else if (!event.shiftKey && (document.activeElement === last || document.activeElement === dialog.current)) { event.preventDefault(); first?.focus(); }
   }
 
-  const visibleApplications = applications.filter((application) => (filter === "all" || (filter === "submitted" ? application.reviewReady : !application.reviewReady)) && matchesDirectorySearch(search, application.fullName, application.email, application.applicationNumber, application.courseOfInterest, applicationStatusLabel(application)));
+  const visibleApplications = applications.filter((application) => (filter === "all" || application.notificationAudience === filter || (filter === "waiting" && !application.reviewReady && !application.notificationAudience)) && matchesDirectorySearch(search, application.fullName, application.email, application.applicationNumber, application.courseOfInterest, applicationStatusLabel(application)));
   async function deleteApplicantAccount(event) {
     event.preventDefault();
     if (saving || !selectedApplication?.applicant) return;
@@ -224,7 +226,8 @@ export default function AdminApplications() {
     <header className="admin-header"><span className="eyebrow">Admissions office</span><h1>Applications</h1><p>Review submitted applications and keep applicants informed.</p></header>
     <AdminDirectorySearch label="Search applications" placeholder="Name, email, application ID, programme or status" value={search} onChange={setSearch} />
     {!selectedApplication && feedback && <p className="admin-feedback" role="status">{feedback}</p>}
-    <div className="review-filters" role="group" aria-label="Application queue">{[["all", "All applications"], ["submitted", "Submitted applications"], ["waiting", "Not ready for review"]].map(([value, label]) => <button key={value} type="button" aria-pressed={filter === value} onClick={() => setFilter(value)}>{label}</button>)}</div>
+    <div className="review-filters" role="group" aria-label="Application queue">{Object.entries(queues).map(([value, label]) => <button key={value} type="button" aria-pressed={filter === value} onClick={() => setFilter(value)}>{label}</button>)}</div>
+    {canReview && filter !== "all" && <ApplicationBulkNotice key={filter} audience={filter} label={queues[filter]} />}
     <div className="admin-table-card"><div className="admin-table-wrap"><table className="review-queue">
       <thead><tr><th>Applicant</th><th>Programme</th><th>Submitted</th><th>Status / review</th></tr></thead>
       <tbody>{loading ? <tr><td colSpan="4">Loading applications…</td></tr> : visibleApplications.length ? visibleApplications.map((application) => <tr key={application.id}>
@@ -295,7 +298,7 @@ export default function AdminApplications() {
           {(ready || notification) && <details className="review-disclosure"><summary>Status history and email notifications</summary>
             <p>{notification?.emailStatus === "SENT" ? "Latest notification accepted by the email provider." : selectedApplication.emailConfigured ? "Notifications are queued or awaiting retry." : "Email sending is not configured. Status updates are still visible in the applicant portal."}</p>
             {notification && notification.emailStatus !== "SENT" && <button type="button" className="button secondary" disabled={saving || !selectedApplication.emailConfigured} onClick={retryEmail}>Retry email notification</button>}
-            <ol className="review-history">{selectedApplication.statusHistory?.map((event) => <li key={event.id}><strong>{event.kind === "SCREENING_RESULT" ? event.notificationSubject || "Screening result published" : event.kind === "APPLICATION_REMINDER" ? "Application reminder" : event.kind === "SCREENING_APPROVAL" ? "Accepted for screening" : readableStatus(event.toStatus)}</strong><span>{formatDate(event.createdAt)}</span>{event.note && <p>{event.note}</p>}</li>)}</ol>
+            <ol className="review-history">{selectedApplication.statusHistory?.map((event) => <li key={event.id}><strong>{event.kind?.startsWith("BULK_") ? event.notificationSubject : event.kind === "SCREENING_RESULT" ? event.notificationSubject || "Screening result published" : event.kind === "APPLICATION_REMINDER" ? "Application reminder" : event.kind === "SCREENING_APPROVAL" ? "Accepted for screening" : readableStatus(event.toStatus)}</strong><span>{formatDate(event.createdAt)}</span>{event.note && <p>{event.note}</p>}</li>)}</ol>
           </details>}
           {credentials && <div className="admission-credentials"><strong>Student account assigned</strong><span>Username: {credentials.portalUsername}</span><small>The student keeps their existing applicant login and must change their password at the next sign-in to activate student access. No separate password is issued.</small></div>}
         </div>

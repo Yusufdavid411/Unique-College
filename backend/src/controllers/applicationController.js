@@ -13,6 +13,7 @@ import { acceptancePolicy, admissionProgressFor, admissionFailure } from "../ser
 import { studentProfileData } from "../services/studentRecords.js";
 import { screened, documentsPolicy, renderAdmissionMessage, screeningPolicy, screeningProgress } from "../services/admissionDocuments.js";
 import { feeVerified } from "../services/paymentEligibility.js";
+import { notificationAudience } from "../services/applicationBulkNotifications.js";
 
 const applicationDetails = {
   applicant: { select: { id: true, name: true, email: true, role: true, isActive: true, portalUsername: true, officialEmail: true } },
@@ -56,7 +57,7 @@ export const listApplications = asyncHandler(async (req, res) => {
     where: { isTest: false, ...(status ? { status } : {}) },
     select: {
       id: true, isTest: true, applicationNumber: true, fullName: true, email: true, status: true,
-      applicant: { select: { isActive: true } },
+      applicant: { select: { isActive: true, role: true } }, offerResponse: true,
       submittedAt: true, createdAt: true, courseOfInterest: true, formFeeAmount: true, screeningStatus: true, screeningAt: true, screeningVenue: true, screeningFeeAmount: true, entranceExamScore: true,
       payments: { select: { status: true, amount: true, type: true, currency: true, isTest: true, provider: true } }
     },
@@ -64,7 +65,7 @@ export const listApplications = asyncHandler(async (req, res) => {
   });
 
   const screeningFee = (await screeningPolicy(prisma)).amount;
-  ok(res, applications.map((application) => ({ ...application, courseOfInterest: readyForReview(application) ? application.courseOfInterest : null, reviewReady: readyForReview(application), screeningPaid: screeningProgress(application, screeningFee).paid })));
+  ok(res, applications.map((application) => ({ ...application, courseOfInterest: readyForReview(application) ? application.courseOfInterest : null, reviewReady: readyForReview(application), screeningPaid: screeningProgress(application, screeningFee).paid, notificationAudience: application.applicant?.isActive && application.applicant.role === "APPLICANT" ? notificationAudience(application) : null })));
 });
 
 function admissionPaymentBlockerFor(application) {

@@ -1,12 +1,14 @@
 import { Router } from "express";
 import { z } from "zod";
 import rateLimit from "express-rate-limit";
+import { setTimeout as pause } from "node:timers/promises";
 import { prisma } from "../config/prisma.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
 import { ok } from "../utils/apiResponse.js";
 import { requestPasswordReset } from "../services/passwordReset.js";
 import { attemptStatusEmail, statusEmailConfigured } from "../services/statusEmail.js";
 import { createApplicationReminder } from "../services/applicationReminder.js";
+import { bulkAudiences, bulkLimit, bulkNotificationPreview, sendBulkApplicationNotification } from "../services/applicationBulkNotifications.js";
 import { updateClearance } from "../controllers/handoverController.js";
 import {
   deleteApplication,
@@ -26,6 +28,24 @@ const router = Router();
 
 router.post("/", (req, res) => res.status(410).json({ success: false, message: "Create an applicant account to purchase and complete your application form" }));
 router.get("/", requireAuth, requirePermission("applications.read"), listApplications);
+const bulkAccess = [requireAuth, requirePermission("applications.read"), requirePermission("applications.review")];
+const audienceSchema = z.enum(Object.keys(bulkAudiences));
+router.get("/bulk-notifications", ...bulkAccess, asyncHandler(async (req, res) => {
+  res.set("Cache-Control", "no-store");
+  const preview = await bulkNotificationPreview(prisma, audienceSchema.parse(req.query.audience));
+  ok(res, { ...preview, recipients: preview.recipients.map(({ id, fullName }) => ({ id, fullName })) });
+}));
+router.post("/bulk-notifications", ...bulkAccess, rateLimit({ windowMs: 15 * 60000, limit: 10, standardHeaders: "draft-8", legacyHeaders: false }), asyncHandler(async (req, res) => {
+  const input = z.object({ audience: audienceSchema, ids: z.array(z.string().uuid()).min(1).max(bulkLimit), closingDate: z.string().date().nullable(), message: z.string().trim().max(1500).optional() }).strict()
+    .refine(({ ids }) => new Set(ids).size === ids.length, "Recipients must be unique.").parse(req.body);
+  const events = await sendBulkApplicationNotification(prisma, input, req.user);
+  let emailSent = 0;
+  if (statusEmailConfigured()) for (const [index, event] of events.slice(0, 3).entries()) {
+    if (index) await pause(550);
+    if ((await attemptStatusEmail(event.id)).status === "SENT") emailSent++;
+  }
+  ok(res, { notified: events.length, emailPending: events.length - emailSent });
+}));
 router.get("/:id", requireAuth, requirePermission("applications.read"), validate(idParamSchema), getApplication);
 router.post("/:id/reminder", requireAuth, requirePermission("applications.read"), requirePermission("applications.review"), rateLimit({ windowMs: 15 * 60000, limit: 30, standardHeaders: "draft-8", legacyHeaders: false }), validate(idParamSchema), asyncHandler(async (req, res) => {
   res.set("Cache-Control", "no-store");
