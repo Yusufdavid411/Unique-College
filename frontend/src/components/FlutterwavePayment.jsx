@@ -24,6 +24,8 @@ export default function FlutterwavePayment() {
   const pending = application.payments.find((payment) => payment.status === "PENDING");
   const onlinePending = pending?.provider === "FLUTTERWAVE";
   const history = application.payments.filter((payment) => payment.status !== "CANCELLED");
+  const acceptanceFormSubmitted = application.schoolForms?.some((form) => form.kind === "ACCEPTANCE" && form.status === "SUBMITTED");
+  const canCompleteAcceptanceForm = admission?.offered && admission.response === "ACCEPTED" && admission.paid && !acceptanceFormSubmitted;
 
   useEffect(() => {
     const update = () => setNow(Date.now());
@@ -91,7 +93,7 @@ export default function FlutterwavePayment() {
     const blocked = Boolean(pending && (!canResume || pending.type !== type));
     return <section className="portal-alert payment-bank-card" key={type} aria-label={label}>
       <span className="eyebrow">{label}</span><strong className="payment-fee-value">{amount == null ? "Not quoted" : `NGN ${Number(amount).toLocaleString("en-NG", { minimumFractionDigits: 2 })}`}</strong>
-      {paid ? <><p className="payment-success-message"><CheckCircle2 size={20} aria-hidden="true" /><strong>Payment successful</strong></p><p>{type === "APPLICATION_FEE" ? "Your application form is available." : type === "SCREENING_FEE" ? "Your screening payment is confirmed. Check your exam invitation." : "Your acceptance payment is confirmed. Continue your admission progress on the dashboard."}</p><p>Your receipt is available in Payment history below.</p></> : !available ? <p>{admission?.response === "DECLINED" ? "This offer was declined. Contact admissions if you need assistance." : "Accept your active admission offer on the dashboard before paying this fee."}</p> : <>
+      {paid ? <><p className="payment-success-message"><CheckCircle2 size={20} aria-hidden="true" /><strong>Payment successful</strong></p>{type === "APPLICATION_FEE" && <p>Your application form is available.</p>}{type === "SCREENING_FEE" && <p>Check your exam invitation.</p>}<p>Your receipt is available in Payment history below.</p></> : !available ? <p>{admission?.response === "DECLINED" ? "This offer was declined. Contact admissions if you need assistance." : "Accept your active admission offer on the dashboard before paying this fee."}</p> : <>
         {!paymentGateway.ready && <p role="status">Online payments are temporarily unavailable for this account. Please check back shortly. Do not transfer money outside this checkout.</p>}
         {blocked && <p>Another payment is awaiting confirmation. Check its status before paying again.</p>}
         {pending && !onlinePending && <button type="button" className="button secondary" disabled={busy} onClick={withdrawLegacyReceipt}>Withdraw incorrect receipt</button>}
@@ -115,6 +117,7 @@ export default function FlutterwavePayment() {
         {payment.status === "VERIFIED" && <div className="payment-receipt-actions"><PrivateFileButton endpoint={`/records/applications/${application.id}/payments/${payment.id}/receipt`} filename={`${payment.reference}-receipt.pdf`}>Download payment receipt (PDF)</PrivateFileButton></div>}
       </article>)}
     </section>
-    {admission?.offered ? <div className="applicant-next-step"><p>Return to your dashboard to track your offer and clearance.</p><button type="button" className="button" onClick={() => navigate(portalPath("/applicant"))}>View admission progress</button></div> : <div className="applicant-next-step"><p>{formAccess.unlocked ? "Continue to your application form." : "Your form unlocks once Flutterwave confirms payment."}</p><button type="button" className="button primary" disabled={!formAccess.unlocked || busy} onClick={() => navigate(portalPath("/applicant/application"))}>Next: Application form</button></div>}
+    {!admission?.offered && <div className="applicant-next-step"><p>{formAccess.unlocked ? "Continue to your application form." : "Your form unlocks once Flutterwave confirms payment."}</p><button type="button" className="button primary" disabled={!formAccess.unlocked || busy} onClick={() => navigate(portalPath("/applicant/application"))}>Next: Application form</button></div>}
+    {canCompleteAcceptanceForm && <div className="applicant-next-step"><button type="button" className="button primary" disabled={busy} onClick={() => navigate(portalPath("/applicant/school-forms/ACCEPTANCE"))}>Complete acceptance form</button></div>}
   </div>;
 }
