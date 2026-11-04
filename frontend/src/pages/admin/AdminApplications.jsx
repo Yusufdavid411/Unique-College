@@ -11,6 +11,7 @@ import { SendPasswordReset } from "../../components/PasswordRecovery.jsx";
 import { useAuth } from "../../context/AuthContext.jsx";
 import AdminDirectorySearch, { matchesDirectorySearch } from "../../components/AdminDirectorySearch.jsx";
 import { useConfirmation } from "../../context/ConfirmationContext.jsx";
+import { watDate } from "../../data/admissionsExamples.js";
 
 const readableStatus = (value) => ({ SCREENING_APPROVED: "Accept for screening", INTERVIEW_SCHEDULED: "Screening scheduled", SUBMITTED: "New submission", PENDING: "Under review", REVIEWED: "Under review", RETURNED: "Corrections required", ACCEPTED: "Admission offered", ADMITTED: "Admitted", DRAFT: "Not submitted" }[value] || value?.replaceAll("_", " ").toLowerCase().replace(/\b\w/g, (letter) => letter.toUpperCase()));
 const formatDate = (value) => value ? new Date(value).toLocaleDateString() : "Not submitted";
@@ -134,6 +135,18 @@ export default function AdminApplications() {
     setFeedback("");
     const endpoint = `/applications/${selectedApplication.id}`;
     try {
+      const { data: policy } = await api.get("/settings/admissions");
+      const deadline = policy.data.closingDate;
+      if (!deadline || deadline < watDate()) {
+        setFeedback("Set a current or future submission deadline in Admissions setup before sending a reminder.");
+        return;
+      }
+      const date = new Intl.DateTimeFormat("en-GB", { dateStyle: "long", timeZone: "Africa/Lagos" }).format(new Date(deadline));
+      if (!await confirmAction({
+        title: "Send application reminder?",
+        message: `This sends an email and portal notification asking the applicant to submit by 11:59 pm WAT on ${date}. Check that this is the school’s intended deadline before sending.`,
+        confirmLabel: "Send reminder"
+      })) return;
       const { data } = await api.post(`${endpoint}/reminder`);
       setFeedback(data.message);
       const response = await api.get(endpoint, { notifyOnError: false }).catch(() => null);
@@ -227,7 +240,7 @@ export default function AdminApplications() {
           <section className="review-status-card"><span className="eyebrow">Current status</span><h3>{applicationStatusLabel(selectedApplication)}</h3><p>{ready ? `Submitted ${formatDate(selectedApplication.submittedAt)}. Review the form and documents below before updating the status.` : selectedApplication.status === "RETURNED" ? "Waiting for the applicant to correct and resubmit their form." : selectedApplication.paymentConfirmed ? "Payment confirmed. The applicant has not submitted their form for review yet." : "Waiting for successful payment and a submitted application. No form is available for review yet."}</p>
             {canRemind && <div>
               <button className="button primary" type="button" disabled={saving} onClick={sendReminder}><Bell size={18} aria-hidden="true" />Send application reminder</button>
-              <p>Sends the deadline and a link to continue by email and portal notification. Set the date under <Link to={portalPath("/admin/settings") + "#admissions-availability"}>Admissions availability</Link>.</p>
+              <p>Review or change the <Link to={portalPath("/admin/settings") + "#admissions-availability"}>application submission deadline</Link> before sending.</p>
             </div>}
             {!ready && selectedApplication.reviewNote && <p>{selectedApplication.reviewNote}</p>}
             {feedback && <p className="admin-feedback" role="status">{feedback}</p>}

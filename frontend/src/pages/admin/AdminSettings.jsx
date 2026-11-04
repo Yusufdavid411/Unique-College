@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { useSearchParams } from "react-router-dom";
+import { useLocation, useSearchParams } from "react-router-dom";
 import AdminNotice from "../../components/AdminNotice.jsx";
 import LoadingButton from "../../components/LoadingButton.jsx";
 import ChangePassword from "../../components/ChangePassword.jsx";
@@ -9,6 +9,7 @@ import { api, apiErrorMessage } from "../../api/client.js";
 import { useAdmissions } from "../../context/AdmissionsContext.jsx";
 import { useSchool } from "../../context/SchoolContext.jsx";
 import { schoolSettingsFormValues, schoolSettingsSections } from "../../data/schoolSettings.js";
+import { exampleSubmissionDeadline, watDate } from "../../data/admissionsExamples.js";
 
 export default function AdminSettings() {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -17,6 +18,7 @@ export default function AdminSettings() {
 }
 
 function SchoolSettings() {
+  const { hash } = useLocation();
   const dirtyFields = useRef(new Set());
   const [values, setValues] = useState(() => schoolSettingsFormValues());
   const [admissions, setAdmissions] = useState(null);
@@ -39,6 +41,12 @@ function SchoolSettings() {
       .finally(() => { if (!controller.signal.aborted) setLoading(false); });
     return () => controller.abort();
   }, [revision]);
+
+  useEffect(() => {
+    if (!loading && hash === "#admissions-availability") {
+      document.getElementById("admissions-availability")?.scrollIntoView({ block: "start" });
+    }
+  }, [hash, loading]);
 
   function changeField(key, value) {
     dirtyFields.current.add(key);
@@ -89,22 +97,27 @@ function SchoolSettings() {
   }
 
   return <div className="school-settings">
-    <PlatformReadiness />
     <AdminNotice type={notice.type}>{notice.message}</AdminNotice>
     {loading ? <p role="status">Loading school settings…</p> : failed ? <div className="empty-state"><p>Settings could not load.</p><button type="button" className="button" onClick={() => setRevision((value) => value + 1)}>Try again</button></div> : <>
+      <section className="admissions-settings-group" aria-labelledby="admissions-settings-title">
+      <header><h2 id="admissions-settings-title">Admissions setup</h2><p>Manage applications and reminders, screening fees and messages, acceptance fees, and admission letters in one place.</p></header>
       {admissions && <form className="form-panel" id="admissions-availability" onSubmit={saveAdmissions}>
-        <h2>Admissions availability</h2>
+        <h3>Applications and reminders</h3>
         <div className="settings-field-grid">
           <label>Status<select disabled={Boolean(saving)} value={String(admissions.open)} onChange={(event) => setAdmissions({ ...admissions, open: event.target.value === "true" })}><option value="false">Admissions closed</option><option value="true">Admissions open</option></select></label>
           <label>Application form price (NGN)<input disabled={Boolean(saving)} type="number" min="0" max="10000000" step="0.01" value={admissions.applicationFee ?? ""} onChange={(event) => setAdmissions({ ...admissions, applicationFee: event.target.value === "" ? null : Number(event.target.value) })} /></label>
           <label className="settings-full-width">Public admissions message<textarea disabled={Boolean(saving)} required minLength={5} maxLength={500} rows={3} value={admissions.message} onChange={(event) => setAdmissions({ ...admissions, message: event.target.value })} /></label>
-          <label>Application submission deadline (WAT)<input type="date" disabled={Boolean(saving)} value={admissions.closingDate || ""} onChange={(event) => setAdmissions({ ...admissions, closingDate: event.target.value })} /><small>Used in completion reminders; the deadline is 11:59 pm on this date. This does not automatically close admissions or block existing applicants.</small></label>
+          <label className="settings-full-width">Application submission deadline (WAT)<input type="date" disabled={Boolean(saving)} value={admissions.closingDate || ""} onChange={(event) => setAdmissions({ ...admissions, closingDate: event.target.value })} /><small>Reminders tell applicants to submit by 11:59 pm WAT on this date. It does not automatically close admissions and is separate from registration and O-level deadlines.</small></label>
         </div>
+        <p>Review the deadline before sending reminders. Replace any provisional date with the school’s official date.</p>
+        {(!admissions.closingDate || admissions.closingDate < watDate()) && <div><button type="button" className="button secondary" disabled={Boolean(saving)} onClick={() => setAdmissions({ ...admissions, closingDate: exampleSubmissionDeadline() })}>Suggest a deadline 30 days from today</button></div>}
         <details className="settings-help"><summary>How these controls work</summary><p>New applicants keep the form price quoted when they register. Closing admissions stops new registrations without removing existing applicants' access. Payments use the configured online checkout; bank instructions are no longer needed here.</p></details>
         <LoadingButton type="submit" disabled={Boolean(saving)} loading={saving === "admissions"} loadingText="Saving…">Save admissions settings</LoadingButton>
       </form>}
       {acceptance && <form className="form-panel" onSubmit={saveAcceptance}><h2>Acceptance fee</h2><label>Acceptance fee (NGN)<input type="number" required min="0" max="10000000" step="0.01" disabled={Boolean(saving)} value={acceptance.amount ?? ""} onChange={(event) => setAcceptance({ amount: event.target.value === "" ? null : Number(event.target.value) })} /></label><p>Applies to newly issued offers. Existing offers keep their quoted fee. Set zero only to waive the fee for new offers.</p><LoadingButton type="submit" disabled={Boolean(saving)} loading={saving === "acceptance"} loadingText="Saving…">Save acceptance fee</LoadingButton></form>}
       <AdmissionsDocumentsSettings />
+      </section>
+      <PlatformReadiness />
       {schoolSettingsSections.map((section) => <details className="settings-panel" key={section.id}>
         <summary>{section.title}</summary>
         <form className="form-panel" onSubmit={(event) => saveSection(event, section)}>
