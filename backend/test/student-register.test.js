@@ -37,11 +37,12 @@ test("application lists ignore the retired preview filter", async () => {
     const id = "21065a0b-924b-4593-91f3-380af65406f5";
     const screeningPayment = { type: "SCREENING_FEE", status: "VERIFIED", amount: 2000, currency: "NGN", isTest: true };
     for (const isTest of [true, false]) {
-      prisma.application.findUnique = async () => ({ id, status: "REVIEWED", screeningStatus: "PASSED", submittedAt: new Date(), formFeeAmount: 0, screeningFeeAmount: 2000, isTest: false, payments: [{ ...screeningPayment, isTest }] });
+      prisma.application.findUnique = async () => ({ id, status: "SUBMITTED", screeningStatus: "PASSED", submittedAt: new Date(), formFeeAmount: 0, screeningFeeAmount: 2000, isTest: false, payments: [{ ...screeningPayment, isTest }] });
       const response = await fetch(base + "/" + id, { headers });
       assert.equal(response.status, 200);
       const { data } = await response.json();
       assert.equal(data.allowedStatuses.includes("ACCEPTED"), !isTest);
+      assert.equal(data.allowedStatuses.includes("SCREENING_APPROVED"), false);
       assert.equal(data.screeningPaid, !isTest);
       if (isTest) assert.match(data.admissionPaymentBlocker, /official screening fee/);
     }

@@ -17,6 +17,7 @@ const screeningLabels = { APPROVED: "Accepted for screening", PASSED: "Screening
 const applicationStatusLabel = (application) => {
   if (application.status === "RETURNED") return readableStatus(application.status);
   if (!application.reviewReady) return "Awaiting submission";
+  if (application.status === "SUBMITTED" && application.screeningStatus === "PASSED") return "Resubmitted · Screening passed";
   return (application.status === "REVIEWED" && screeningLabels[application.screeningStatus]) || readableStatus(application.status);
 };
 
@@ -41,8 +42,8 @@ function applicationNextStep(application, allowed, canAdmit) {
   if (status === "INTERVIEW_SCHEDULED") return { message: "Record the outcome on the Screening & exams page.", screening: true };
   if (screeningStatus === "APPROVED") return application.screeningPaid ? { message: "Screening fee verified. Schedule the exam.", screening: true } : { message: "Wait for the screening fee to be verified." };
   if (screeningStatus === "FAILED") return { message: "The applicant did not pass screening. No admission offer is available." };
-  if (["PASSED", "EXEMPT"].includes(screeningStatus) && status === "REVIEWED") {
-    if (admissionPaymentBlocker) return { message: admissionPaymentBlocker };
+  if (["PASSED", "EXEMPT"].includes(screeningStatus) && ["SUBMITTED", "REVIEWED"].includes(status)) {
+    if (admissionPaymentBlocker) return { message: "The screening result is retained. " + admissionPaymentBlocker + " Do not reject or return this application just to get past the payment check." };
     if (!admissionDocumentsReady) return { message: "Verify the required documents before issuing a provisional offer.", documents: true };
     if (allowed.includes("ACCEPTED")) return { message: canAdmit ? "Issue the provisional offer so the applicant can accept it and pay the acceptance fee." : "An authorised admissions administrator can issue the provisional offer.", status: canAdmit ? "ACCEPTED" : null, label: "Issue provisional offer" };
   }
