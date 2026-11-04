@@ -32,7 +32,7 @@ student-name/photo lookup is added to login: identity stays private until sign-i
   on the backend, regardless of which buttons the frontend shows.
 - HOD creates draft course code/title/credit units/core-or-elective entries for
   a specific programme, academic session, level and semester, then publishes them.
-- Student Course catalogue requires the student's own confirmed academic
+- Student course registration requires the student's own confirmed academic
   assignment. Only published matching programme/session/level courses appear.
 - Student dashboard lists academic confirmation, biodata/student record and
   guarantor-form progress and links to the next unfinished task. This is onboarding,
@@ -42,31 +42,55 @@ Migrations 202611040018_academic_responsibilities and
 202611040019_academic_course_index_name are additive and must be deployed
 before the new frontend/API. Existing academic assignments are not changed.
 
-## Next tranche: actual course registration
+## Course registration
 
-Add academic semesters, registration windows and institutional unit-load policy.
-Do not invent minimum/maximum loads or treat admission fees as tuition payments.
-Course registration needs a student/session/programme/level/semester scope,
-versioned course-item snapshots, DRAFT → SUBMITTED → HOD_APPROVED (or RETURNED),
-declaration, duplicate prevention and an approved printable course form.
-HOD may approve only registrations in the appointed department. Preserve prior
-sessions and course snapshots; progression never rewrites historical levels.
+Implemented per programme/session/level and first/second semester. HOD or admin
+configures opening/closing times and minimum/maximum units; no values are guessed.
+All published core courses must be selected, electives are optional within limits.
+The student's confirmed enrolment determines ownership and programme.
+Submission captures immutable code/title/unit snapshots and waits for HOD review.
+SUBMITTED → APPROVED or RETURNED with a required correction reason. Returned
+registrations can be corrected within the open window. Approved registrations
+have a private downloadable course form. Duplicate submissions and stale
+versions are rejected. Approved registrations cannot be silently overwritten.
+Admission payments are not tuition payments; tuition billing/payment eligibility
+is not inferred by this module.
 
-## Results tranche
+## Results
 
-Use versioned result batches with course registration and actual student identity:
-HOD_DRAFT → SUBMITTED_TO_DEPARTMENT_EXAM_OFFICER →
-SUBMITTED_TO_GENERAL_EXAM_OFFICER → PUBLISHED.
-Record actor/timestamp at every transition. Return-to-sender needs a reason.
-Grades remain invisible to students until publication. Published corrections
-create an amendment rather than overwriting the original. Configure grade scales,
-assessment weights and GPA rules before calculation. General-officer appointment
-does not itself enable result access until these protected endpoints exist.
+Implemented one batch per course: DRAFT → DEPARTMENT_REVIEW → GENERAL_REVIEW →
+PUBLISHED. HOD enters one score out of 100 per approved registered student;
+departmental exam officer forwards; general exam officer publishes. Admin may
+perform every stage. Officers may return unpublished batches to the HOD with a
+required reason. Every transition has actor, timestamp and history. Students
+see only their own published entries. No grades/GPA are invented: grading scales
+and assessment weights require school policy. Published batches are locked;
+a future formal amendment workflow is required to correct them.
 
-## CBT and other services
+## CBT
 
-Plan restricted question banks, session/course exam eligibility, scheduled
-start/end, server-controlled timing, resumable attempts, answer autosave,
-accommodations and explicit result release. Never expose answer keys to browsers.
-Timetables, fees, exam cards and hostel are separate modules; do not add empty
-menu pages or claim these are operational.
+Implemented per-course draft examinations with multiple-choice questions, answer
+keys restricted to the database, a scheduled window and duration in minutes.
+HOD/admin saves draft and publishes, cancels only before any attempts exist, and
+releases scores only after the exam closes. Approved course registration is
+required. Students receive questions only after starting within the scheduled
+window. One resumable attempt is allowed per student/course examination.
+Deadline is server-controlled and survives refresh; answers autosave with
+optimistic version checking; late answers are ignored and saved answers are
+graded server-side. Submissions are immutable and scores stay hidden until
+explicit release. CBT does not bypass the official academic result chain.
+This is not a remote-proctoring system. Individual accommodations and item-bank
+imports remain future enhancements.
+
+## Setup and release
+
+Apply migration 202611040020_academic_registration_results_cbt before deploying
+the API/frontend. Run the isolated integration test against a database whose
+name contains test. Never run fixtures against the school's live database.
+Configure academic assignments, HOD/officer appointments, published courses and
+registration windows before inviting students to register. Configure actual
+exam dates/questions before publishing a CBT.
+
+School-fee invoicing, attendance, GPA/CGPA, transcript/graduation requests,
+teaching timetables, hostel and formal published-result amendments remain outside
+this release. No placeholder links or invented payments are used for them.

@@ -60,7 +60,10 @@ const AdminAnnouncements = lazy(() => import("./pages/admin/AdminAnnouncements.j
 const AdminScreening = lazy(() => import("./pages/admin/AdminScreening.jsx"));
 const SchoolFormEditor = lazy(() => import("./components/SchoolFormEditor.jsx"));
 const AcademicWorkspace = lazy(() => import("./components/AcademicWorkspace.jsx"));
-const StudentCourses = lazy(() => import("./pages/student/StudentCourses.jsx"));
+const studentAcademicService = (name) => lazy(() => import("./pages/student/StudentAcademicServices.jsx").then((module) => ({ default: module[name] })));
+const StudentCourses = studentAcademicService("StudentCourseRegistration");
+const StudentResults = studentAcademicService("StudentResults");
+const StudentCbt = studentAcademicService("StudentCbt");
 
 export default function App() {
   const scope = portalScope();
@@ -113,6 +116,8 @@ export default function App() {
           <Route path="profile" element={<StudentProfile />} />
           <Route path="academic" element={<StudentAcademic />} />
           <Route path="courses" element={<StudentCourses />} />
+          <Route path="results" element={<StudentResults />} />
+          <Route path="cbt" element={<StudentCbt />} />
           <Route path="records" element={<StudentRecords />} />
           <Route path="school-forms/:kind" element={<SchoolFormEditor />} />
           <Route path="announcements" element={<StudentAnnouncements />} />

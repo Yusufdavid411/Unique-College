@@ -1,5 +1,7 @@
 import { Router } from "express";
 import academicWorkRoutes from "./academicWorkRoutes.js";
+import academicFlowRoutes from "./academicFlowRoutes.js";
+import cbtRoutes from "./cbtRoutes.js";
 import staffRoutes from "./staffRoutes.js";
 import staffAssignmentRoutes from "./staffAssignmentRoutes.js";
 import { prisma } from "../config/prisma.js";
@@ -64,6 +66,8 @@ router.use("/school-forms", schoolFormRoutes);
 router.use("/student", studentPortalRoutes);
 router.use("/academic", academicRoutes);
 router.use("/academic-work", academicWorkRoutes);
+router.use("/academic-flow", academicFlowRoutes);
+router.use("/cbt", cbtRoutes);
 router.use("/announcements", announcementRoutes);
 router.use("/records", recordRoutes);
 router.use("/payments/flutterwave", paymentGatewayRoutes);

@@ -423,6 +423,7 @@ model AcademicProgramme {
   department AcademicDepartment @relation(fields: [departmentId], references: [id], onDelete: Restrict)
   enrolments StudentEnrolment[]
   courses AcademicCourse[]
+  registrationWindows CourseRegistrationWindow[]
   @@index([departmentId])
   @@map("academic_programmes")
 }
@@ -435,6 +436,7 @@ model AcademicSession {
   isActive Boolean @default(true)
   enrolments StudentEnrolment[]
   courses AcademicCourse[]
+  registrationWindows CourseRegistrationWindow[]
   @@map("academic_sessions")
 }
 
@@ -445,6 +447,7 @@ model AcademicLevel {
   isActive Boolean @default(true)
   enrolments StudentEnrolment[]
   courses AcademicCourse[]
+  registrationWindows CourseRegistrationWindow[]
   @@map("academic_levels")
 }
 
@@ -482,6 +485,9 @@ model AcademicCourse {
   programme AcademicProgramme @relation(fields: [programmeId], references: [id], onDelete: Restrict)
   session AcademicSession @relation(fields: [sessionId], references: [id], onDelete: Restrict)
   level AcademicLevel @relation(fields: [levelId], references: [id], onDelete: Restrict)
+  registrationItems CourseRegistrationItem[]
+  resultBatch CourseResultBatch?
+  cbtExams CbtExam[]
   @@unique([programmeId, sessionId, levelId, semester, code])
   @@index([departmentId, sessionId])
   @@map("academic_courses")
@@ -503,11 +509,121 @@ model StudentEnrolment {
   session AcademicSession @relation(fields: [sessionId], references: [id], onDelete: Restrict)
   level AcademicLevel @relation(fields: [levelId], references: [id], onDelete: Restrict)
   staffAssignments StaffStudentAssignment[]
+  courseRegistrations CourseRegistration[]
   @@unique([studentId, sessionId])
   @@index([programmeId])
   @@index([sessionId])
   @@index([levelId])
   @@map("student_enrolments")
+}
+
+model CourseRegistrationWindow {
+  id String @id @default(uuid())
+  programmeId String
+  sessionId String
+  levelId String
+  semester Int
+  opensAt DateTime
+  closesAt DateTime
+  minUnits Int
+  maxUnits Int
+  updatedAt DateTime @updatedAt
+  programme AcademicProgramme @relation(fields: [programmeId], references: [id], onDelete: Restrict)
+  session AcademicSession @relation(fields: [sessionId], references: [id], onDelete: Restrict)
+  level AcademicLevel @relation(fields: [levelId], references: [id], onDelete: Restrict)
+  @@unique([programmeId, sessionId, levelId, semester])
+  @@map("course_registration_windows")
+}
+
+model CourseRegistration {
+  id String @id @default(uuid())
+  enrolmentId String
+  semester Int
+  status String @default("SUBMITTED")
+  reviewNote String?
+  submittedAt DateTime @default(now())
+  reviewedBy String?
+  reviewedAt DateTime?
+  updatedAt DateTime @updatedAt
+  enrolment StudentEnrolment @relation(fields: [enrolmentId], references: [id], onDelete: Restrict)
+  items CourseRegistrationItem[]
+  @@unique([enrolmentId, semester])
+  @@map("course_registrations")
+}
+
+model CourseRegistrationItem {
+  id String @id @default(uuid())
+  registrationId String
+  courseId String
+  code String
+  title String
+  creditUnits Int
+  registration CourseRegistration @relation(fields: [registrationId], references: [id], onDelete: Restrict)
+  course AcademicCourse @relation(fields: [courseId], references: [id], onDelete: Restrict)
+  results CourseResultEntry[]
+  cbtAttempts CbtAttempt[]
+  @@unique([registrationId, courseId])
+  @@map("course_registration_items")
+}
+
+model CourseResultBatch {
+  id String @id @default(uuid())
+  courseId String @unique
+  status String @default("DRAFT")
+  reviewNote String?
+  history Json @default("[]")
+  createdBy String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  publishedAt DateTime?
+  course AcademicCourse @relation(fields: [courseId], references: [id], onDelete: Restrict)
+  entries CourseResultEntry[]
+  @@map("course_result_batches")
+}
+
+model CourseResultEntry {
+  id String @id @default(uuid())
+  batchId String
+  registrationItemId String
+  score Decimal @db.Decimal(5, 2)
+  batch CourseResultBatch @relation(fields: [batchId], references: [id], onDelete: Restrict)
+  registrationItem CourseRegistrationItem @relation(fields: [registrationItemId], references: [id], onDelete: Restrict)
+  @@unique([batchId, registrationItemId])
+  @@map("course_result_entries")
+}
+
+model CbtExam {
+  id String @id @default(uuid())
+  courseId String
+  title String
+  startsAt DateTime
+  endsAt DateTime
+  durationMinutes Int
+  questions Json
+  status String @default("DRAFT")
+  resultsReleased Boolean @default(false)
+  createdBy String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  course AcademicCourse @relation(fields: [courseId], references: [id], onDelete: Restrict)
+  attempts CbtAttempt[]
+  @@map("cbt_exams")
+}
+
+model CbtAttempt {
+  id String @id @default(uuid())
+  examId String
+  registrationItemId String
+  startedAt DateTime @default(now())
+  deadline DateTime
+  submittedAt DateTime?
+  answers Json @default("{}")
+  score Decimal? @db.Decimal(5, 2)
+  updatedAt DateTime @updatedAt
+  exam CbtExam @relation(fields: [examId], references: [id], onDelete: Restrict)
+  registrationItem CourseRegistrationItem @relation(fields: [registrationItemId], references: [id], onDelete: Restrict)
+  @@unique([examId, registrationItemId])
+  @@map("cbt_attempts")
 }
 
 model StaffStudentAssignment {

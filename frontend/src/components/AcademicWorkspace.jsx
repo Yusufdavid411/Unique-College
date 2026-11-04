@@ -3,6 +3,7 @@ import { api, apiErrorMessage } from "../api/client.js";
 import { useAuth } from "../context/AuthContext.jsx";
 import { useConfirmation } from "../context/ConfirmationContext.jsx";
 import { ErrorToast } from "./ToastNotifications.jsx";
+import AcademicOperations from "./AcademicOperations.jsx";
 
 const responsibilityLabels = { HOD: "Head of Department", DEPARTMENT_EXAM_OFFICER: "Department exam officer", GENERAL_EXAM_OFFICER: "General exam officer" };
 
@@ -18,6 +19,7 @@ export default function AcademicWorkspace() {
   const [loading, setLoading] = useState(false);
   const [revision, setRevision] = useState(0);
   const [responsibility, setResponsibility] = useState("HOD");
+  const canManage = admin || options?.appointments.some((item) => item.isActive && item.responsibility === "HOD" && item.departmentId === filter.departmentId);
   useEffect(() => {
     const controller = new AbortController();
     api.get("/academic-work/workspace", { signal: controller.signal }).then(({ data }) => {
@@ -41,7 +43,7 @@ export default function AcademicWorkspace() {
     if (busy) return;
     setBusy(true); setError("");
     try {
-      await api.request({ url: endpoint, method, data });
+      await api.request({ url: endpoint, method, data, timeout: 60000 });
       form?.reset();
       setRevision((value) => value + 1);
     } catch (failure) { setError(apiErrorMessage(failure)); }
@@ -87,17 +89,18 @@ export default function AcademicWorkspace() {
           {[["departmentId", "Department", options.departments], ["sessionId", "Academic session", options.sessions], ["levelId", "Level", options.levels]].map(([key, label, items]) => <label key={key}>{label}<select value={filter[key]} disabled={busy} onChange={(event) => setFilter({ ...filter, [key]: event.target.value })}><option value="">Select {label.toLowerCase()}</option>{items.map((item) => <option value={item.id} key={item.id}>{item.name}{item.isActive ? "" : " (inactive)"}</option>)}</select></label>)}
         </div>
         {!Object.values(filter).every(Boolean) ? <p>Select department, session and level to load courses.</p> : <>
-          <details><summary>Add course</summary><form className="student-form" onSubmit={addCourse}><fieldset className="student-field-grid" disabled={busy}>
+          {canManage && <details><summary>Add course</summary><form className="student-form" onSubmit={addCourse}><fieldset className="student-field-grid" disabled={busy}>
             <label>Programme<select name="programmeId" required defaultValue=""><option value="">Select programme</option>{options.programmes.filter((item) => item.departmentId === filter.departmentId && item.isActive).map((item) => <option value={item.id} key={item.id}>{item.name}</option>)}</select></label>
             <label>Semester<select name="semester"><option value="1">First semester</option><option value="2">Second semester</option></select></label>
             <label>Course code<input name="code" required maxLength={30} /></label>
             <label>Course title<input name="title" required minLength={2} maxLength={200} /></label>
             <label>Credit units<input name="creditUnits" type="number" required min={1} max={30} step={1} /></label>
             <label>Type<select name="category"><option value="CORE">Core</option><option value="ELECTIVE">Elective</option></select></label>
-          </fieldset><div><button className="button primary" type="submit" disabled={busy}>Save draft course</button></div></form></details>
-          {loading ? <p role="status">Loading courses…</p> : <div className="admin-list">{courses.map((course) => <article className="admin-list-item" key={course.id}><div><strong>{course.code} · {course.title}</strong><span>{course.creditUnits} units · Semester {course.semester} · {course.programme.name}</span><small>{course.published ? "Published" : "Draft"} · {course.category.toLowerCase()}</small></div><button className="button secondary" type="button" disabled={busy} onClick={() => mutate(`/academic-work/courses/${course.id}`, "PATCH", { published: !course.published })}>{course.published ? "Unpublish" : "Publish"}</button></article>)}{!courses.length && <p>No courses in this selection.</p>}</div>}
+          </fieldset><div><button className="button primary" type="submit" disabled={busy}>Save draft course</button></div></form></details>}
+          {loading ? <p role="status">Loading courses…</p> : <div className="admin-list">{courses.map((course) => <article className="admin-list-item" key={course.id}><div><strong>{course.code} · {course.title}</strong><span>{course.creditUnits} units · Semester {course.semester} · {course.programme.name}</span><small>{course.published ? "Published" : "Draft"} · {course.category.toLowerCase()}</small></div>{canManage && <button className="button secondary" type="button" disabled={busy} onClick={() => mutate(`/academic-work/courses/${course.id}`, "PATCH", { published: !course.published })}>{course.published ? "Unpublish" : "Publish"}</button>}</article>)}{!courses.length && <p>No courses in this selection.</p>}</div>}
         </>}
       </section>
+      {Object.values(filter).every(Boolean) && <AcademicOperations key={Object.values(filter).join(":")} filter={filter} programmes={options.programmes} />}
     </>}
   </div>;
 }

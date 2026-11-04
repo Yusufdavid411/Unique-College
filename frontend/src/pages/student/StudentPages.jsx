@@ -23,7 +23,7 @@ export function StudentDashboard() {
     <div className="student-quick-grid">{[["My profile", "Keep your contact and next-of-kin information current.", "/student/profile", UserRound], ["Documents & receipts", "Access your accepted form and separate admission receipts.", "/student/records", FolderOpen], ["Academic record", "Review the programme and session assigned by the registry.", "/student/academic", GraduationCap]].map(([title, text, path, Icon]) => <Link className="student-card" to={portalPath(path)} key={path}><Icon size={23} /><h2>{title}</h2><p>{text}</p><span>Open <ArrowRight size={15} /></span></Link>)}</div>
     <StudentAnnouncements compact />
     <StudentAdvisers />
-    <details className="student-card student-future"><summary>Other academic services</summary><p>Course registration, attendance, results/GPA, teaching timetables, school-fee billing and transcript requests are not enabled yet. They will appear when the school's academic policies and services are configured.</p></details>
+    <details className="student-card student-future"><summary>Other academic services</summary><p>School-fee billing, attendance, GPA/CGPA, teaching timetables and transcripts will be enabled when their institutional rules are configured.</p></details>
   </>;
 }
 

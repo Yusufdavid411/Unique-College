@@ -6,6 +6,7 @@ import { asyncHandler } from "../utils/asyncHandler.js";
 import { ok } from "../utils/apiResponse.js";
 import { auditedMutation } from "../services/audit.js";
 import { departmentCourseAccess, responsibilities } from "../services/academicResponsibilities.js";
+import { canReviewAcademicCourse } from "../services/academicFlow.js";
 
 const router = Router();
 router.use(requireAuth, requireRole("ADMIN", "STAFF"), (req, res, next) => { res.set("Cache-Control", "no-store"); next(); });
@@ -19,10 +20,11 @@ router.get("/workspace", asyncHandler(async (req, res) => {
     where: admin ? {} : { staffId: req.user.id, isActive: true },
     include: { staff: { select: { id: true, name: true, isActive: true } }, department: true }, orderBy: { createdAt: "desc" }, take: 1000
   });
-  const departmentIds = appointments.filter((item) => item.isActive && item.responsibility === "HOD").map((item) => item.departmentId);
+  const globalOfficer = appointments.some((item) => item.isActive && item.responsibility === "GENERAL_EXAM_OFFICER");
+  const departmentIds = appointments.filter((item) => item.isActive && item.departmentId).map((item) => item.departmentId);
   const [departments, programmes, sessions, levels, staff] = await Promise.all([
-    prisma.academicDepartment.findMany({ where: admin ? {} : { id: { in: departmentIds } }, orderBy: { name: "asc" } }),
-    prisma.academicProgramme.findMany({ where: admin ? {} : { departmentId: { in: departmentIds } }, orderBy: { name: "asc" } }),
+    prisma.academicDepartment.findMany({ where: admin || globalOfficer ? {} : { id: { in: departmentIds } }, orderBy: { name: "asc" } }),
+    prisma.academicProgramme.findMany({ where: admin || globalOfficer ? {} : { departmentId: { in: departmentIds } }, orderBy: { name: "asc" } }),
     prisma.academicSession.findMany({ orderBy: { startsAt: "desc" } }),
     prisma.academicLevel.findMany({ orderBy: { name: "asc" } }),
     admin ? prisma.user.findMany({ where: { role: "STAFF", isActive: true }, select: { id: true, name: true }, orderBy: { name: "asc" } }) : []
@@ -40,7 +42,7 @@ router.post("/appointments", requireRole("ADMIN"), asyncHandler(async (req, res)
     const current = await database.academicAppointment.findFirst({ where: { departmentId: data.departmentId, responsibility: data.responsibility, isActive: true } });
     if (current) throw Object.assign(new Error("End the current appointment before assigning its replacement."), { statusCode: 409 });
     return database.academicAppointment.create({ data: { ...data, assignedBy: req.user.id } });
-  }, { isolationLevel: "Serializable" });
+  }, { isolationLevel: "Serializable", maxWait: 10000, timeout: 25000 });
   ok(res, result, "Responsibility assigned.");
 }));
 
@@ -53,7 +55,7 @@ router.delete("/appointments/:id", requireRole("ADMIN"), asyncHandler(async (req
 
 router.get("/courses", asyncHandler(async (req, res) => {
   const filter = z.object({ departmentId: id, sessionId: id, levelId: id }).parse(req.query);
-  if (!await departmentCourseAccess(prisma, req.user, filter.departmentId)) throw denied();
+  if (!await canReviewAcademicCourse(prisma, req.user, filter)) throw denied();
   ok(res, await prisma.academicCourse.findMany({ where: filter, include: includes, orderBy: [{ semester: "asc" }, { code: "asc" }], take: 500 }));
 }));
 
@@ -72,7 +74,7 @@ router.post("/courses", asyncHandler(async (req, res) => {
     ]);
     if (!programme?.isActive || !programme.department.isActive || programme.departmentId !== data.departmentId || !session?.isActive || !level?.isActive) throw Object.assign(new Error("Choose active academic records in this department."), { statusCode: 422 });
     return database.academicCourse.create({ data: { ...data, createdBy: req.user.id } });
-  }, { isolationLevel: "Serializable" });
+  }, { isolationLevel: "Serializable", maxWait: 10000, timeout: 25000 });
   ok(res, result, "Draft course created.");
 }));
 
@@ -85,7 +87,7 @@ router.patch("/courses/:id", asyncHandler(async (req, res) => {
     if (!await departmentCourseAccess(database, req.user, course.departmentId)) throw denied();
     if (data.published && (!course.department.isActive || !course.programme.isActive || !course.session.isActive || !course.level.isActive)) throw Object.assign(new Error("The academic records must be active before publishing."), { statusCode: 409 });
     return database.academicCourse.update({ where: { id: courseId }, data });
-  }, { isolationLevel: "Serializable" });
+  }, { isolationLevel: "Serializable", maxWait: 10000, timeout: 25000 });
   ok(res, result);
 }));
 export default router;
