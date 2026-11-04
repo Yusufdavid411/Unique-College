@@ -151,7 +151,7 @@ export const updateApplicationStatus = asyncHandler(async (req, res) => {
   }
 
   const application = await auditedMutation(prisma, { actorId: req.user.id, action: "application.status:" + req.body.status, targetType: "application", targetId: current.id }, async (transaction) => {
-    const latest = await transaction.application.findUnique({ where: { id: current.id }, include: { applicant: true, documents: { where: { supersededAt: null } }, payments: true, schoolForms: true } });
+    const latest = await transaction.application.findUnique({ where: { id: current.id }, include: { applicant: true, documents: { where: { supersededAt: null } }, payments: true, schoolForms: true, admissionLetters: { take: 1 } } });
     if (!latest || latest.status !== current.status || !readyForReview(latest)) throw Object.assign(new Error("This application changed. Refresh before saving."), { statusCode: 409 });
     if (approveScreening && (!latest.applicant?.isActive || (latest.screeningStatus || "NOT_SCHEDULED") !== "NOT_SCHEDULED")) throw Object.assign(new Error("Screening eligibility changed. Refresh before saving."), { statusCode: 409 });
     if (["ACCEPTED", "ADMITTED"].includes(req.body.status) && latest.status !== req.body.status) {

@@ -10,13 +10,17 @@ import { academicSearch, containsSearch } from "../services/directorySearch.js";
 
 const router = Router();
 router.get("/", requireAuth, requirePermission("students.read"), asyncHandler(async (req, res) => {
-  const { page, search } = z.object({
+  const { page, search, sessionId, departmentId } = z.object({
     page: z.coerce.number().int().min(1).max(10000).default(1),
-    search: z.string().trim().max(100).default("")
-  }).parse(req.query);
+    search: z.string().trim().max(100).default(""),
+    sessionId: z.union([z.string().uuid(), z.literal("unassigned")]).optional(),
+    departmentId: z.string().uuid().optional()
+  }).refine((query) => !query.departmentId || (query.sessionId && query.sessionId !== "unassigned"), "Choose a session before filtering by department.").parse(req.query);
   const match = containsSearch(search);
   const where = {
     status: "ADMITTED", isTest: false, applicant: { is: { role: "STUDENT" } },
+    ...(sessionId === "unassigned" ? { AND: [{ OR: [{ studentProfile: { is: null } }, { studentProfile: { is: { enrolments: { none: {} } } } }] }] }
+      : sessionId ? { studentProfile: { is: { enrolments: { some: { sessionId, ...(departmentId ? { programme: { departmentId } } : {}) } } } } } : {}),
     ...(search ? { OR: [
       ...["fullName", "email", "studentNumber", "applicationNumber", "courseOfInterest"].map((field) => ({ [field]: match })),
       { applicant: { is: { OR: [{ email: match }, { portalUsername: match }, { officialEmail: match }] } } },

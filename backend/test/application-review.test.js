@@ -79,6 +79,7 @@ test("review API hides unsubmitted details and rejects premature decisions", asy
       applicationStatusHistory: { create: async ({ data }) => { history.push(data); return {}; } },
       auditLog: { create: async () => ({}) }
     });
+    application.admissionLetters = [{ id: "issued" }];
     const admitted = await decision({ status: "ADMITTED" });
     assert.equal(admitted.status, 200);
     const result = (await admitted.json()).data;

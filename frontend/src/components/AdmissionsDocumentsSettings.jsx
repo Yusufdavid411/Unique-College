@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useLocation } from "react-router-dom";
 import { api, apiErrorMessage } from "../api/client.js";
 import { ErrorToast } from "./ToastNotifications.jsx";
 import { notify } from "../api/notifications.js";
@@ -7,12 +8,22 @@ import { fillLetterExamples } from "../data/admissionsExamples.js";
 const dates = [["effectiveDate", "Admission effective date"], ["registrationOpen", "Registration/payment opens"], ["registrationDeadline", "Registration deadline"], ["resultDeadline", "O-level result deadline"], ["lecturesStart", "Lectures begin"]];
 const messages = [["screeningMessage", "Screening invitation"], ["passedMessage", "Successful screening"], ["failedMessage", "Unsuccessful screening"], ["offerMessage", "Admission offer ready"]];
 export default function AdmissionsDocumentsSettings() {
+  const { hash } = useLocation();
   const [value, setValue] = useState(null);
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
   const [revision, setRevision] = useState(0);
   useEffect(() => { const controller = new AbortController(); api.get("/settings/admissions-documents", { signal: controller.signal }).then(({ data }) => { if (!controller.signal.aborted) setValue(data.data); }).catch((failure) => { if (!controller.signal.aborted) setError(apiErrorMessage(failure)); }); return () => controller.abort(); }, [revision]);
   const change = (key, entry) => setValue((current) => ({ ...current, documents: { ...current.documents, [key]: entry } }));
+  const ready = Boolean(value);
+  useEffect(() => {
+    if (!ready || hash !== "#admission-letter-settings") return;
+    const letters = document.getElementById("admission-letter-settings");
+    if (!letters) return;
+    document.getElementById("admission-document-settings").open = true;
+    letters.open = true;
+    letters.querySelector("summary")?.focus();
+  }, [hash, ready]);
   async function save(event) {
     event.preventDefault(); if (busy) return; setBusy(true); setError("");
     try { const { data } = await api.put("/settings/admissions-documents", value); setValue(data.data); notify({ title: "Admissions document settings saved", message: data.message, type: "info" }); }

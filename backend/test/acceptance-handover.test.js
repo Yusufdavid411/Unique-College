@@ -17,7 +17,8 @@ test("acceptance requires an explicit quote, exact fee, correct purpose and matc
   const payment = { type: "ACCEPTANCE_FEE", amount: 5000, currency: "NGN", status: "VERIFIED", isTest: true };
   for (const change of [{ amount: 4999 }, { amount: 5001 }, { currency: "USD" }, { type: "APPLICATION_FEE" }, { status: "PENDING" }, { isTest: false }]) assert.equal(admissionProgressFor({ ...record, payments: [{ ...payment, ...change }] }).paid, false);
   assert.equal(admissionProgressFor({ ...record, payments: [payment] }).canAdmit, true);
-  assert.equal(admissionFailure({ ...record, payments: [payment] }), null);
+  assert.match(admissionFailure({ ...record, payments: [payment] }), /Release the admission letter/);
+  assert.equal(admissionFailure({ ...record, payments: [payment], admissionLetters: [{ id: "issued" }] }), null);
   for (const response of ["PENDING", "DECLINED"]) assert.match(admissionFailure({ ...record, offerResponse: response, payments: [payment] }), /accept the offer/);
   for (const amount of [-1, 5000.001, null, "5000", Infinity]) assert.equal(acceptancePolicySchema.safeParse({ amount }).success, false);
 });
@@ -133,6 +134,10 @@ test("offer, editable future pricing, automatic acceptance payment, clearance an
     assert.equal((await clearance("CLEARED")).status, 409);
     assert.equal((await call(`/applications/${application.id}/documents/${documents[0].id}`, "PATCH", { reviewStatus: "VERIFIED" })).status, 200);
     assert.equal((await clearance("CLEARED")).status, 200);
+    const blocked = await decision("ADMITTED");
+    assert.equal(blocked.status, 409);
+    assert.match((await blocked.json()).message, /Release the admission letter/);
+    application.admissionLetters = [{ id: "issued" }];
     const admitted = await decision("ADMITTED");
     assert.equal(admitted.status, 200);
     const result = (await admitted.json()).data;

@@ -100,6 +100,13 @@ test("student register is permission-protected, read-only, paginated and isolate
     assert.deepEqual(query.select.applicant.select, { portalUsername: true, isActive: true, mustChangePassword: true });
     assert.equal((await fetch(base + "?testing=true", { headers: headers("registrar") })).status, 200);
     assert.equal(calls.at(-1).where.isTest, false);
+    const sessionId = "11111111-1111-4111-8111-111111111111";
+    const departmentId = "22222222-2222-4222-8222-222222222222";
+    assert.equal((await fetch(base + `?sessionId=${sessionId}&departmentId=${departmentId}&search=Admitted`, { headers: headers("registrar") })).status, 200);
+    assert.deepEqual(calls.at(-1).where.studentProfile.is.enrolments.some, { sessionId, programme: { departmentId } });
+    assert.equal((await fetch(base + "?sessionId=unassigned", { headers: headers("registrar") })).status, 200);
+    assert.deepEqual(calls.at(-1).where.AND[0].OR[1].studentProfile.is.enrolments, { none: {} });
+    assert.equal((await fetch(base + `?departmentId=${departmentId}`, { headers: headers("registrar") })).status, 422);
     for (const queryString of ["?page=0", "?page=10001", `?search=${"x".repeat(101)}`]) assert.equal((await fetch(base + queryString, { headers: headers("admin") })).status, 422);
     assert.equal((await fetch(base, { method: "POST", headers: headers("admin") })).status, 404);
   } finally {

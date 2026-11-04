@@ -39,6 +39,7 @@ function applicationNextStep(application, allowed, canAdmit) {
     if (admissionPaymentBlocker) return { message: admissionPaymentBlocker };
     if (application.requiresAcceptanceForm && !application.schoolForms?.some((form) => form.kind === "ACCEPTANCE" && form.status === "SUBMITTED")) return { message: "Wait for the applicant to submit the acceptance form." };
     if (!admissionDocumentsReady) return { message: "Verify the required documents before completing admission.", documents: true };
+    if (!application.admissionLetters?.length) return { message: "Release the admission letter before confirming final admission.", letter: canAdmit };
     if (admission.clearanceStatus !== "CLEARED") return { message: "Review the applicant’s record and complete clearance.", clearance: canAdmit };
     if (allowed.includes("ADMITTED")) return { message: "Clearance is complete. Confirm final admission to enable student access.", status: canAdmit ? "ADMITTED" : null, label: "Confirm final admission" };
     return { message: "Check the offer and clearance details below before confirming final admission." };
@@ -71,6 +72,7 @@ export default function AdminApplications() {
   const [rejecting, setRejecting] = useState(false);
   const dialog = useRef(null);
   const documentsPanel = useRef(null);
+  const letterPanel = useRef(null);
   const nextAction = useRef(null);
   const rejectButton = useRef(null);
 
@@ -253,6 +255,7 @@ export default function AdminApplications() {
               {nextStep.status && canReview && <button type="button" className="button primary" disabled={saving} onClick={() => updateApplicationStatus(nextStep.status)}>{nextStep.label}<ArrowRight size={20} aria-hidden="true" /></button>}
               {nextStep.screening && <Link className="button primary" to={screeningLink}>{selectedApplication.status === "INTERVIEW_SCHEDULED" ? "Open screening record" : "Schedule screening"}</Link>}
               {nextStep.documents && <button type="button" className="button primary" onClick={() => { if (documentsPanel.current) { documentsPanel.current.open = true; documentsPanel.current.querySelector("summary")?.focus(); } }}>Review supporting documents</button>}
+              {nextStep.letter && <button type="button" className="button primary" onClick={() => { if (letterPanel.current) { letterPanel.current.open = true; letterPanel.current.querySelector("summary")?.focus(); } }}>Open admission letter release</button>}
               {nextStep.clearance && <button type="button" className="button primary" disabled={saving} onClick={() => saveClearance("CLEARED", "")}>Complete clearance</button>}
             </section>}
             {ready && canReview && (allowedStatuses.includes("RETURNED") || allowedStatuses.includes("REJECTED")) && <div className="application-exceptions">
@@ -282,7 +285,7 @@ export default function AdminApplications() {
             {selectedApplication.status === "ACCEPTED" && canAdmit && selectedApplication.admission?.paid && selectedApplication.admission.response === "ACCEPTED" && selectedApplication.clearanceStatus !== "CLEARED" && <form className="application-review-form" onSubmit={(event) => { event.preventDefault(); saveClearance("CORRECTIONS_REQUIRED", new FormData(event.currentTarget).get("note")); }}><label>Clearance corrections<textarea name="note" rows={3} minLength={5} maxLength={2000} required defaultValue={selectedApplication.clearanceNote || ""} disabled={saving} /></label><button type="submit" className="button secondary" disabled={saving}>Request clearance corrections</button></form>}
           </details>}
           {ready && <>
-            <ScreeningReview application={selectedApplication} refresh={openApplication} />
+            <ScreeningReview application={selectedApplication} refresh={openApplication} letterPanel={letterPanel} />
             <details className="review-disclosure"><summary>View submitted application</summary><ApplicationRecord application={selectedApplication} /></details>
             <details ref={documentsPanel} className="review-disclosure"><summary>Review supporting documents</summary>
               <div className="supporting-documents">
