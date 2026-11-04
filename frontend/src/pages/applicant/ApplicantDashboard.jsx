@@ -48,7 +48,7 @@ export default function ApplicantDashboard() {
       {["DRAFT", "RETURNED"].includes(application.status) && <section className="registration-resume student-next-step"><span className="eyebrow">Your next step</span><h2>{application.status === "RETURNED" ? "Continue your corrections" : "Complete your registration"}</h2><p>{!journey.paid ? "Confirm your application payment to unlock the form." : !formComplete ? "Complete and save your application form, then continue to Documents." : !documentsComplete ? "Your form is saved. Upload the remaining required documents." : "Your form and required documents are ready. Open Documents to check them and submit for review."}</p><Link className="button" to={portalPath(journey.path)}>Complete registration<ArrowRight size={18} /></Link></section>}
       {["REJECTED", "RETURNED"].includes(application.status) && application.reviewNote && <div className="portal-alert"><strong>{application.status === "REJECTED" ? "Reason for rejection" : "What to correct"}</strong><p>{application.reviewNote}</p></div>}
 
-      <ScreeningProgress />
+      {!["ACCEPTED", "ADMITTED", "REJECTED", "RETURNED"].includes(application.status) && <ScreeningProgress />}
       <section className="portal-progress-card">
         <div><span>Application progress</span><strong>{progress}%</strong></div>
         <div className="portal-progress"><span style={{ width: `${progress}%` }} /></div>

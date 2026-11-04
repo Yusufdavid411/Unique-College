@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Bell, Check, X } from "lucide-react";
+import { Bell, X } from "lucide-react";
 import { Link, useSearchParams } from "react-router-dom";
 import { portalPath } from "../../api/portalLinks.js";
 import { api, apiErrorMessage } from "../../api/client.js";
@@ -20,13 +20,39 @@ const applicationStatusLabel = (application) => {
   return (application.status === "REVIEWED" && screeningLabels[application.screeningStatus]) || readableStatus(application.status);
 };
 
+function applicationNextStep(application, allowed, canAdmit) {
+  const { status, screeningStatus, admission, admissionPaymentBlocker, admissionDocumentsReady } = application;
+  if (status === "ADMITTED") return { message: "Admission is final. Manage this record under Students." };
+  if (status === "REJECTED") return { message: "Application rejected. Request corrections only if the applicant should be allowed to resubmit." };
+  if (status === "ACCEPTED") {
+    if (admission?.response === "DECLINED") return { message: "The applicant declined the offer." };
+    if (admission?.response !== "ACCEPTED") return { message: "Wait for the applicant to accept the provisional offer." };
+    if (!admission.paid) return { message: "Wait for the applicant’s acceptance fee to be verified." };
+    if (admissionPaymentBlocker) return { message: admissionPaymentBlocker };
+    if (application.requiresAcceptanceForm && !application.schoolForms?.some((form) => form.kind === "ACCEPTANCE" && form.status === "SUBMITTED")) return { message: "Wait for the applicant to submit the acceptance form." };
+    if (!admissionDocumentsReady) return { message: "Verify the required documents before completing admission.", documents: true };
+    if (admission.clearanceStatus !== "CLEARED") return { message: "Review the applicant’s record and complete clearance.", clearance: canAdmit };
+    if (allowed.includes("ADMITTED")) return { message: "Clearance is complete. Confirm final admission to enable student access.", status: canAdmit ? "ADMITTED" : null, label: "Confirm final admission" };
+    return null;
+  }
+  if (allowed.includes("SCREENING_APPROVED")) return { message: "Review the submitted form and documents before accepting this applicant for screening.", status: "SCREENING_APPROVED", label: "Accept for screening" };
+  if (status === "INTERVIEW_SCHEDULED") return { message: "Record the outcome on the Screening & exams page.", screening: true };
+  if (screeningStatus === "APPROVED") return application.screeningPaid ? { message: "Screening fee verified. Schedule the exam.", screening: true } : { message: "Wait for the screening fee to be verified." };
+  if (screeningStatus === "FAILED") return { message: "The applicant did not pass screening. No admission offer is available." };
+  if (["PASSED", "EXEMPT"].includes(screeningStatus) && status === "REVIEWED") {
+    if (admissionPaymentBlocker) return { message: admissionPaymentBlocker };
+    if (!admissionDocumentsReady) return { message: "Verify the required documents before issuing a provisional offer.", documents: true };
+    if (allowed.includes("ACCEPTED")) return { message: "Issue the provisional offer so the applicant can accept it and pay the acceptance fee.", status: canAdmit ? "ACCEPTED" : null, label: "Issue provisional offer" };
+  }
+  return null;
+}
+
 export default function AdminApplications() {
   const { user } = useAuth();
   const [searchParams] = useSearchParams();
   const requestedApplication = searchParams.get("application");
   const [applications, setApplications] = useState([]);
   const [selectedApplication, setSelectedApplication] = useState(null);
-  const [statusChoice, setStatusChoice] = useState("");
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [feedback, setFeedback] = useState("");
@@ -34,6 +60,7 @@ export default function AdminApplications() {
   const [filter, setFilter] = useState("all");
   const [search, setSearch] = useState("");
   const dialog = useRef(null);
+  const documentsPanel = useRef(null);
 
   const loadApplications = useCallback(async () => {
     setLoading(true);
@@ -59,7 +86,6 @@ export default function AdminApplications() {
     setCredentials(null);
     try {
       const { data } = await api.get(`/applications/${applicationId}`);
-      setStatusChoice(data.data.status);
       setSelectedApplication(data.data);
     } catch (error) { setFeedback(apiErrorMessage(error, "Unable to open this application.")); }
   }
@@ -68,17 +94,13 @@ export default function AdminApplications() {
     if (requestedApplication) openApplication(requestedApplication);
   }, [requestedApplication]);
 
-  async function updateApplicationStatus(event) {
-    event.preventDefault();
+  async function updateApplicationStatus(status, reviewNote) {
     if (!selectedApplication || saving) return;
-    const formData = new FormData(event.currentTarget);
     setSaving(true);
     setFeedback("");
     try {
-      const status = formData.get("status");
-      const { data } = await api.patch(`/applications/${selectedApplication.id}/status`, { status, ...(status === "REJECTED" ? { reviewNote: formData.get("reviewNote") } : {}) });
+      const { data } = await api.patch(`/applications/${selectedApplication.id}/status`, { status, ...(status === "REJECTED" ? { reviewNote } : {}) });
       setSelectedApplication(data.data.application);
-      setStatusChoice(data.data.application.status);
       setCredentials(data.data.credentials || null);
       setFeedback(data.data.email?.status === "SENT" ? "Status updated. Notification submitted to the email provider." : "Status updated. Check email notification status below.");
       loadApplications();
@@ -120,14 +142,12 @@ export default function AdminApplications() {
     finally { setSaving(false); }
   }
 
-  async function saveClearance(event) {
-    event.preventDefault();
+  async function saveClearance(status, note) {
     if (saving) return;
-    const fields = new FormData(event.currentTarget);
     setSaving(true);
     setFeedback("");
     try {
-      const { data } = await api.patch(`/applications/${selectedApplication.id}/clearance`, { status: fields.get("status"), note: fields.get("note") });
+      const { data } = await api.patch(`/applications/${selectedApplication.id}/clearance`, { status, note });
       await openApplication(selectedApplication.id);
       setFeedback(data.message);
     } catch (error) { setFeedback(apiErrorMessage(error, "Clearance could not be updated.")); }
@@ -166,6 +186,10 @@ export default function AdminApplications() {
   }
 
   const ready = selectedApplication?.reviewReady;
+  const canReview = user?.role === "ADMIN" || user?.permissions?.includes("applications.review");
+  const canAdmit = user?.role === "ADMIN" || user?.permissions?.includes("applications.admit");
+  const allowedStatuses = selectedApplication?.allowedStatuses || [];
+  const nextStep = ready ? applicationNextStep(selectedApplication, allowedStatuses, canAdmit) : null;
   const canRemind = selectedApplication?.applicant?.isActive && selectedApplication.applicant.role === "APPLICANT" && !selectedApplication.submittedAt && ["DRAFT", "PENDING"].includes(selectedApplication.status) && (user?.role === "ADMIN" || user?.permissions?.includes("applications.review"));
   const notification = selectedApplication?.statusHistory?.find((event) => event.emailStatus !== "NOT_REQUIRED" && event.emailRecipient);
 
@@ -191,24 +215,23 @@ export default function AdminApplications() {
               <button className="button primary" type="button" disabled={saving} onClick={sendReminder}><Bell size={18} aria-hidden="true" />Send application reminder</button>
               <p>Sends the deadline and a link to continue by email and portal notification. Set the date under <Link to={portalPath("/admin/settings") + "#admissions-availability"}>Admissions availability</Link>.</p>
             </div>}
-            {ready && <section aria-label="Admissions roadmap">
-              <strong>Admissions roadmap</strong>
-              <ul>
-                <li>Under review → <strong>Accept for screening</strong> → Screening fee verified → Screening scheduled</li>
-                <li>After the exam → <strong>Publish individual result</strong> → Passed → <strong>Admission offered</strong></li>
-                <li>Offer accepted → Acceptance payment → Acceptance form and clearance → <strong>Admitted</strong> → Student portal</li>
-                <li>Under review → <strong>Reject</strong>, or choose <strong>Corrections required</strong> to let the applicant edit and resubmit.</li>
-              </ul>
-              {selectedApplication.screeningStatus === "APPROVED" && selectedApplication.status === "REVIEWED" && (selectedApplication.screeningPaid ? <Link className="button secondary" to={portalPath("/admin/screening")}>Go to Screening &amp; exams</Link> : <p>Next: Wait for the applicant’s screening fee to be verified.</p>)}
-            </section>}
             {!ready && selectedApplication.reviewNote && <p>{selectedApplication.reviewNote}</p>}
-            {ready && <form key={`${selectedApplication.id}-${selectedApplication.status}`} className="application-review-form" onSubmit={updateApplicationStatus}>
-              {["REVIEWED", "ACCEPTED"].includes(selectedApplication.status) && ["PASSED", "EXEMPT"].includes(selectedApplication.screeningStatus) && selectedApplication.admissionPaymentBlocker && <p role="status"><strong>Official admission blocked:</strong> {selectedApplication.admissionPaymentBlocker}</p>}
-              {selectedApplication.status === "REVIEWED" && selectedApplication.screeningStatus === "PASSED" && !selectedApplication.admissionPaymentBlocker && <p><strong>Next:</strong> Verify the supporting documents, then choose Admission offered. Admitted becomes available after offer acceptance, verified acceptance payment, the required acceptance form and clearance.</p>}
-              <label>Update status<select name="status" defaultValue={selectedApplication.status} onChange={(event) => setStatusChoice(event.target.value)} disabled={saving}>{(selectedApplication.allowedStatuses || [selectedApplication.status]).map((status) => <option key={status} value={status}>{status === selectedApplication.status ? applicationStatusLabel(selectedApplication) : readableStatus(status)}</option>)}</select></label>
-              {statusChoice === "REJECTED" && <label>Reason for rejection<textarea name="reviewNote" rows="3" maxLength={2000} required defaultValue={selectedApplication.status === "REJECTED" ? selectedApplication.reviewNote || "" : ""} placeholder="Type the exact issue and what needs to be corrected so the applicant knows what to change." disabled={saving} /></label>}
-              <button className="button primary application-status-submit" type="submit" disabled={saving}><Check size={18} aria-hidden="true" />{saving ? "Saving…" : "Update application status"}</button>
-            </form>}
+            {ready && nextStep && <section aria-label="Next action">
+              <p><strong>Next:</strong> {nextStep.message}</p>
+              {nextStep.status && canReview && <button type="button" className="button primary" disabled={saving} onClick={() => updateApplicationStatus(nextStep.status)}>{nextStep.label}</button>}
+              {nextStep.screening && <Link className="button primary" to={portalPath("/admin/screening")}>Go to Screening &amp; exams</Link>}
+              {nextStep.documents && <button type="button" className="button primary" onClick={() => { if (documentsPanel.current) { documentsPanel.current.open = true; documentsPanel.current.querySelector("summary")?.focus(); } }}>Review supporting documents</button>}
+              {nextStep.clearance && <button type="button" className="button primary" disabled={saving} onClick={() => saveClearance("CLEARED", "")}>Complete clearance</button>}
+            </section>}
+            {ready && canReview && (allowedStatuses.includes("RETURNED") || allowedStatuses.includes("REJECTED")) && <details className="review-disclosure" key={selectedApplication.id + selectedApplication.status}>
+              <summary>{allowedStatuses.includes("REJECTED") ? allowedStatuses.includes("RETURNED") ? "Reject application or request corrections" : "Reject application" : "Request corrections"}</summary>
+              {allowedStatuses.includes("RETURNED") && <button type="button" className="button secondary" disabled={saving} onClick={() => updateApplicationStatus("RETURNED")}>Request corrections</button>}
+              {allowedStatuses.includes("REJECTED") && <form className="application-review-form" onSubmit={(event) => { event.preventDefault(); updateApplicationStatus("REJECTED", new FormData(event.currentTarget).get("reviewNote")); }}>
+                <label>Reason for rejection<textarea name="reviewNote" rows={3} maxLength={2000} required placeholder="Explain why the applicant is disqualified." disabled={saving} /></label>
+                <button type="submit" className="danger-button" disabled={saving}>Confirm rejection</button>
+              </form>}
+            </details>}
+            {selectedApplication.acceptancePaymentRecorded && <p>To withdraw this offer, resolve the recorded acceptance payment with Admissions first.</p>}
           </section>
           {user?.role === "ADMIN" && selectedApplication.applicant?.role === "APPLICANT" && selectedApplication.status !== "ADMITTED" && <details className="review-disclosure" key={selectedApplication.id}><summary>Delete applicant account</summary>
             <form className="application-review-form" onSubmit={deleteApplicantAccount}>
@@ -219,13 +242,13 @@ export default function AdminApplications() {
           </details>}
           {selectedApplication.admission?.offered && <details className="review-disclosure"><summary>Offer, acceptance fee and clearance</summary>
             <dl className="admission-summary"><div><dt>Applicant response</dt><dd>{selectedApplication.admission.response.toLowerCase()}</dd></div><div><dt>Quoted acceptance fee</dt><dd>{selectedApplication.admission.amount == null ? "Not quoted" : `NGN ${Number(selectedApplication.admission.amount).toLocaleString("en-NG")}`}</dd></div><div><dt>Payment</dt><dd>{selectedApplication.admission.paid ? "Confirmed" : "Awaiting payment"}</dd></div><div><dt>Clearance</dt><dd>{selectedApplication.admission.clearanceStatus.toLowerCase().replaceAll("_", " ")}</dd></div></dl>
-            {selectedApplication.status === "ACCEPTED" && <form className="application-review-form" key={`${selectedApplication.id}-${selectedApplication.clearanceStatus}`} onSubmit={saveClearance}><label>Clearance decision<select name="status" defaultValue={selectedApplication.clearanceStatus || "PENDING"} disabled={saving}><option value="PENDING">Pending clearance</option><option value="CORRECTIONS_REQUIRED">Corrections required</option><option value="CLEARED">Cleared for final admission</option></select></label><label>Clearance note<textarea name="note" rows={3} maxLength={2000} defaultValue={selectedApplication.clearanceNote || ""} disabled={saving} /></label><p>Clearance requires the applicant's acceptance, confirmed acceptance fee and verified required documents. Once cleared, choose Admitted in Update status.</p><button className="button" type="submit" disabled={saving}>{saving ? "Saving…" : "Save clearance"}</button></form>}
+            {selectedApplication.status === "ACCEPTED" && canAdmit && selectedApplication.admission?.paid && selectedApplication.admission.response === "ACCEPTED" && selectedApplication.clearanceStatus !== "CLEARED" && <form className="application-review-form" onSubmit={(event) => { event.preventDefault(); saveClearance("CORRECTIONS_REQUIRED", new FormData(event.currentTarget).get("note")); }}><label>Clearance corrections<textarea name="note" rows={3} minLength={5} maxLength={2000} required defaultValue={selectedApplication.clearanceNote || ""} disabled={saving} /></label><button type="submit" className="button secondary" disabled={saving}>Request clearance corrections</button></form>}
           </details>}
           {feedback && <p className="admin-feedback" role="status">{feedback}</p>}
           {ready && <>
             <ScreeningReview application={selectedApplication} refresh={openApplication} />
             <details className="review-disclosure"><summary>View submitted application</summary><ApplicationRecord application={selectedApplication} /></details>
-            <details className="review-disclosure"><summary>Review supporting documents</summary><div className="review-items">{selectedApplication.documents?.length ? selectedApplication.documents.map((document) => <div key={document.id} className="review-item"><PrivateFileButton path={document.path}>{readableStatus(document.type)}</PrivateFileButton><label>Document status<select disabled={saving} value={document.reviewStatus} onChange={(event) => updateDocument(document.id, event.target.value)}><option value="PENDING">Pending</option><option value="VERIFIED">Verified</option><option value="REJECTED">Corrections required</option></select></label></div>) : <p>No supporting documents supplied.</p>}</div></details>
+            <details ref={documentsPanel} className="review-disclosure"><summary>Review supporting documents</summary><div className="review-items">{selectedApplication.documents?.length ? selectedApplication.documents.map((document) => <div key={document.id} className="review-item"><PrivateFileButton path={document.path}>{readableStatus(document.type)}</PrivateFileButton><label>Document status<select disabled={saving} value={document.reviewStatus} onChange={(event) => updateDocument(document.id, event.target.value)}><option value="PENDING">Pending</option><option value="VERIFIED">Verified</option><option value="REJECTED">Corrections required</option></select></label></div>) : <p>No supporting documents supplied.</p>}</div></details>
           </>}
           {(user?.role === "ADMIN" || user?.permissions?.includes("users.manage")) && selectedApplication.applicant && <details className="review-disclosure"><summary>Account recovery</summary><SendPasswordReset key={selectedApplication.id} applicationId={selectedApplication.id} /></details>}
           {(ready || selectedApplication.payments?.some((payment) => payment.status === "VERIFIED")) && <details className="review-disclosure"><summary>Downloads and payment receipts</summary><ApplicationDownloads application={selectedApplication} /></details>}

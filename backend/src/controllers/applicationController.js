@@ -82,14 +82,17 @@ function reviewResponse(application) {
     payments: application.payments.filter((payment) => payment.status === "VERIFIED"), allowedStatuses: []
   };
   const admissionPaymentBlocker = officialPaymentBlocker(application);
+  const admissionDocumentsReady = Boolean(application.applicant && application.declarationAccepted && hasVerifiedAdmissionDocuments(application.documents || []));
+  const acceptancePaymentRecorded = application.status === "ACCEPTED" && application.payments.some((payment) => payment.type === "ACCEPTANCE_FEE" && ["PENDING", "VERIFIED"].includes(payment.status));
   const allowedStatuses = reviewStatusesFor(application.status).filter((status) => {
     if (status === application.status) return true;
+    if (acceptancePaymentRecorded && ["RETURNED", "REJECTED"].includes(status)) return false;
     if (status === "SCREENING_APPROVED") return (application.screeningStatus || "NOT_SCHEDULED") === "NOT_SCHEDULED";
     if (status === "ACCEPTED") return screened(application) && !admissionPaymentBlocker;
     if (status === "ADMITTED") return !admissionFailure(application) && !admissionPaymentBlocker;
     return true;
   });
-  return { ...application, admission: admissionProgressFor(application), reviewReady, paymentConfirmed, admissionPaymentBlocker, allowedStatuses, emailConfigured: statusEmailConfigured() };
+  return { ...application, admission: admissionProgressFor(application), reviewReady, paymentConfirmed, admissionPaymentBlocker, admissionDocumentsReady, acceptancePaymentRecorded, allowedStatuses, emailConfigured: statusEmailConfigured() };
 }
 
 export const getApplication = asyncHandler(async (req, res) => {

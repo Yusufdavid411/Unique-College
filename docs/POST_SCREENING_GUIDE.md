@@ -9,9 +9,11 @@ Set the **Application submission deadline (WAT)** under **Settings → Admission
 1. The applicant attends the scheduled examination/screening. Scheduling alone does not mean they have passed or received an admission offer.
 2. Admin opens **Screening & exams → Already invited → Record screening result** on the applicant's card. Results are entered here, not under Applications.
 3. With the screening payment confirmed, an authorised admissions administrator publishes **Passed** or **Not successful**, optionally adding a score and note. Before the scheduled exam time, tick **Publish before exam date** and confirm the explicit early-publication warning. This requires `screening.results.publish_early` as well as `applications.admit`; administrators have both by default. The early override, operator and scheduled date are retained in audit/history. The portal and email receive the outcome normally. Other staff can publish after the exam with their usual result permission.
-4. For a successful applicant, admin reviews the supporting documents and selects **Admission offered** under Update status. Passing alone does not issue an offer. Official application and screening payments and verified required documents remain prerequisites.
-5. Applicant accepts the offer, pays the quoted acceptance fee, and completes the acceptance form. Fees remain administrator-editable; current agreed fees are application NGN 5,000, screening NGN 2,000 and acceptance NGN 5,000.
-6. Registrar completes clearance and releases the admission letter after verified acceptance payment and approved letter configuration. Final **Admitted** status creates student access on the same account. Letter release is a separate registrar action; it does not replace clearance.
+4. For a successful applicant, admin reviews supporting documents and chooses **Issue provisional offer** when the required official application and screening payments and documents are verified. Passing alone does not issue an offer.
+5. The provisional offer appears in the applicant dashboard. **Accept offer & continue to payment** opens Payments with the quoted acceptance fee first. The applicant pays, then completes the required acceptance form. Fees remain administrator-editable.
+6. Admin sees **Complete clearance** when the required acceptance steps and document checks are done, then **Confirm final admission** to enable student access. Letter release remains separate and requires verified acceptance payment and approved letter settings.
+
+The application popup shows the next available action or explains what is outstanding. Rejection requires a reason and confirmation where allowed. A recorded acceptance payment must be resolved before withdrawal; admitted records are managed in Students.
 
 ### Rescheduling
 
