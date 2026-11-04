@@ -61,13 +61,14 @@ export async function schoolFormPdf(application, form, details, studentProfile) 
   const put = (value, x, top, width, label, size = 9) => write(0, value, x, top - (form.kind === "STUDENT_RECORD" ? 4 : 1.5), width, label, size);
   if (form.kind === "ACCEPTANCE") {
     put(application.applicationNumber, 173, 144, 180, "Application number");
-    put(application.surname || application.fullName, 118, 164, 235, "Surname");
-    put(application.firstName, 132, 184, 220, "First name");
-    put(application.middleName, 143, 204, 220, "Middle name");
+    put(data.surname ?? (application.surname || application.fullName), 118, 164, 235, "Surname");
+    put(data.firstName ?? application.firstName, 132, 184, 220, "First name");
+    put(data.middleName ?? application.middleName, 143, 204, 220, "Middle name");
     put(data.contactAddress, 156, 224, 205, "Contact address");
     put(details.session, 201, 285, 148, "Session");
     put(details.programme, 74, 365, 435, "Programme");
     put(date(form.submittedAt), 102, 426, 117, "Date");
+    page.drawLine({ start: { x: 229.5, y: 462 }, end: { x: 254.5, y: 462 }, thickness: 0.8, color: rgb(0, 0, 0) });
   } else if (form.kind === "GUARANTOR") {
     put(application.fullName, 187, 164, 200, "Student name");
     put(details.programme, 160, 184, 225, "Programme");

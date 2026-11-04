@@ -30,10 +30,13 @@ test("letter configuration rejects missing, invalid and stale dates and unapprov
 });
 
 test("school forms enforce declaration, whitelisted fields and admission access", () => {
+  const acceptance = { surname: "Applicant", firstName: "Sample", middleName: "", contactAddress: "Abuja", declaration: true };
   assert.doesNotThrow(() => validateSchoolForm("ACCEPTANCE", {}, false));
-  assert.throws(() => validateSchoolForm("ACCEPTANCE", { contactAddress: "Abuja", declaration: false }, true));
-  assert.throws(() => validateSchoolForm("ACCEPTANCE", { contactAddress: "Abuja", declaration: true, signature: "forged" }, true));
-  assert.doesNotThrow(() => validateSchoolForm("ACCEPTANCE", { contactAddress: "Abuja", declaration: true }, true));
+  assert.throws(() => validateSchoolForm("ACCEPTANCE", { ...acceptance, declaration: false }, true));
+  assert.throws(() => validateSchoolForm("ACCEPTANCE", { ...acceptance, signature: "forged" }, true));
+  assert.throws(() => validateSchoolForm("ACCEPTANCE", { ...acceptance, firstName: "" }, true));
+  assert.throws(() => validateSchoolForm("ACCEPTANCE", { ...acceptance, programme: "Other programme" }, true));
+  assert.deepEqual(validateSchoolForm("ACCEPTANCE", acceptance, true), acceptance);
   assert.equal(schoolFormAllowed({ status: "ACCEPTED", offerResponse: "ACCEPTED", acceptanceFeeAmount: 5000, payments: [] }, { role: "APPLICANT" }, "ACCEPTANCE"), false);
   assert.equal(schoolFormAllowed({ status: "ADMITTED" }, { role: "STUDENT" }, "STUDENT_RECORD"), true);
   assert.equal(schoolFormAllowed({ status: "ACCEPTED" }, { role: "APPLICANT" }, "GUARANTOR"), false);
@@ -44,7 +47,7 @@ test("original school templates generate complete PDFs without altering page cou
   const snapshot = { ...defaultDocumentsPolicy, fullName: application.fullName, reference: "UCHST/REG/ADM/2035/UCHK-2035-ABCDEF", programme: application.courseOfInterest, session: "2035/2036", duration: "Two years", effectiveDate: "2035-09-01", registrationOpen: "2035-08-01", registrationDeadline: "2035-09-30", resultDeadline: "2035-09-30", lecturesStart: "2035-09-01", feeScheduleApproved: true };
   const letter = await PDFDocument.load(await admissionLetterPdf(application, { snapshot, issuedAt: new Date("2035-06-01") }));
   assert.equal(letter.getPageCount(), 2);
-  const form = await PDFDocument.load(await schoolFormPdf(application, { kind: "ACCEPTANCE", data: { contactAddress: "Abuja" }, submittedAt: new Date("2035-06-01") }, snapshot));
+  const form = await PDFDocument.load(await schoolFormPdf(application, { kind: "ACCEPTANCE", data: { surname: "Updated", firstName: "Sample", middleName: "", contactAddress: "Abuja" }, submittedAt: new Date("2035-06-01") }, snapshot));
   assert.equal(form.getPageCount(), 1);
   await assert.rejects(() => schoolFormPdf(application, { kind: "ACCEPTANCE", data: { contactAddress: "Long address ".repeat(100) } }, snapshot), /fit|long|shorten/i);
 });

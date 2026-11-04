@@ -14,7 +14,7 @@ export default function SchoolFormEditor() {
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
   const [revision, setRevision] = useState(0);
-  useEffect(() => { const controller = new AbortController(); setResult(null); setError(""); api.get(`/school-forms/${kind}`, { signal: controller.signal }).then(({ data }) => { if (!controller.signal.aborted) { setResult(data.data); setValues(data.data.record?.data || data.data.defaults || {}); } }).catch((failure) => { if (!controller.signal.aborted) setError(apiErrorMessage(failure)); }); return () => controller.abort(); }, [kind, revision]);
+  useEffect(() => { const controller = new AbortController(); setResult(null); setError(""); api.get(`/school-forms/${kind}`, { signal: controller.signal }).then(({ data }) => { if (!controller.signal.aborted) { setResult(data.data); setValues({ ...data.data.defaults, ...data.data.record?.data }); } }).catch((failure) => { if (!controller.signal.aborted) setError(apiErrorMessage(failure)); }); return () => controller.abort(); }, [kind, revision]);
   async function save(event) {
     event.preventDefault(); if (busy) return;
     setBusy(true); setError("");
@@ -27,7 +27,14 @@ export default function SchoolFormEditor() {
     catch (failure) { setError(apiErrorMessage(failure)); }
     finally { setBusy(false); }
   }
-  return <div className="portal-page"><header className="portal-page-header"><div><span className="eyebrow">School documents</span><h1>{titles[kind] || "School form"}</h1><p>Complete the details online. Your download uses the school’s original page, not a redesigned document.</p></div></header><ErrorToast message={error} />{!result ? <section className="student-card"><p>{error ? "This form is not available yet." : "Loading form…"}</p>{error && <button className="button" type="button" onClick={() => setRevision((value) => value + 1)}>Try again</button>}</section> : result.record?.status === "SUBMITTED" ? <section className="student-card"><h2>Form submitted</h2><p>Download your completed copy. Signature lines remain blank for the actual student, guarantor and witness to sign where required. No signature is created on anyone’s behalf.</p><PrivateFileButton endpoint={`/records/applications/${result.applicationId}/documents/${kind}`} filename={`${kind.toLowerCase()}.pdf`}>Download completed school form</PrivateFileButton></section> : <form className="student-card student-form" onSubmit={save}><details><summary>Before you complete this form</summary><p>Enter only accurate information. Do not sign on behalf of a guarantor or witness. The school may require the printed original with handwritten signatures.</p></details><div className="student-field-grid">
+  return <div className="portal-page"><header className="portal-page-header"><div><span className="eyebrow">School documents</span><h1>{titles[kind] || "School form"}</h1></div></header><ErrorToast message={error} />{!result ? <section className="student-card"><p>{error ? "This form is not available yet." : "Loading form…"}</p>{error && <button className="button" type="button" onClick={() => setRevision((value) => value + 1)}>Try again</button>}</section> : result.record?.status === "SUBMITTED" ? <section className="student-card"><h2>Form submitted</h2><p>Download and sign where indicated.</p><PrivateFileButton endpoint={`/records/applications/${result.applicationId}/documents/${kind}`} filename={`${kind.toLowerCase()}.pdf`}>Download {kind === "ACCEPTANCE" ? "acceptance form" : "completed form"} (PDF)</PrivateFileButton></section> : <form className="student-card student-form" onSubmit={save}>{kind !== "ACCEPTANCE" && <details><summary>Before you complete this form</summary><p>Enter only accurate information. Do not sign on behalf of a guarantor or witness. The school may require the printed original with handwritten signatures.</p></details>}
+    {kind === "ACCEPTANCE" && result.acceptance && <dl className="student-definition-grid">
+      <div><dt>Application form number</dt><dd>{result.acceptance.applicationNumber}</dd></div>
+      <div><dt>Academic session</dt><dd>{result.acceptance.session || "Not yet set"}</dd></div>
+      <div><dt>Programme</dt><dd>{result.acceptance.programme}</dd></div>
+      <div><dt>Offer response</dt><dd>Accepted</dd></div>
+    </dl>}
+    <div className="student-field-grid">
       {result.fields.filter(([, , , type]) => type !== "checkbox").map(([key, label, required, type]) => (
         <label key={key}>
           {label}{required ? " *" : ""}
