@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Check, X } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import { portalPath } from "../../api/portalLinks.js";
 import { api, apiErrorMessage } from "../../api/client.js";
 import PrivateFileButton from "../../components/PrivateFileButton.jsx";
@@ -15,6 +15,8 @@ const formatDate = (value) => value ? new Date(value).toLocaleDateString() : "No
 
 export default function AdminApplications() {
   const { user } = useAuth();
+  const [searchParams] = useSearchParams();
+  const requestedApplication = searchParams.get("application");
   const [applications, setApplications] = useState([]);
   const [selectedApplication, setSelectedApplication] = useState(null);
   const [statusChoice, setStatusChoice] = useState("");
@@ -53,6 +55,10 @@ export default function AdminApplications() {
       setSelectedApplication(data.data);
     } catch (error) { setFeedback(apiErrorMessage(error, "Unable to open this application.")); }
   }
+
+  useEffect(() => {
+    if (requestedApplication) openApplication(requestedApplication);
+  }, [requestedApplication]);
 
   async function updateApplicationStatus(event) {
     event.preventDefault();
@@ -161,6 +167,8 @@ export default function AdminApplications() {
               <strong>Admissions roadmap</strong>
               <ul>
                 <li>Under review → <strong>Accept for screening</strong> → Screening fee verified → Screening scheduled</li>
+                <li>After the exam → <strong>Publish individual result</strong> → Passed → <strong>Admission offered</strong></li>
+                <li>Offer accepted → Acceptance payment → Acceptance form and clearance → <strong>Admitted</strong> → Student portal</li>
                 <li>Under review → <strong>Reject</strong>, or choose <strong>Corrections required</strong> to let the applicant edit and resubmit.</li>
               </ul>
               {selectedApplication.screeningStatus === "APPROVED" && selectedApplication.status === "REVIEWED" && (selectedApplication.screeningPaid ? <Link className="button secondary" to={portalPath("/admin/screening")}>Go to Screening &amp; exams</Link> : <p>Next: Wait for the applicant’s screening fee to be verified.</p>)}

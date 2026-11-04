@@ -3,6 +3,8 @@ import { ListChecks, Send, X } from "lucide-react";
 import { api, apiErrorMessage } from "../../api/client.js";
 import { notify } from "../../api/notifications.js";
 import { ErrorToast } from "../../components/ToastNotifications.jsx";
+import { Link } from "react-router-dom";
+import { portalPath } from "../../api/portalLinks.js";
 export default function AdminScreening() {
   const [records, setRecords] = useState([]);
   const [selected, setSelected] = useState([]);
@@ -79,7 +81,8 @@ export default function AdminScreening() {
       <h2>Already invited</h2>
       <p>These applicants have already been scheduled. They are not included when you select applicants for new invitations.</p>
       {loading ? <p>Loading applicants…</p> : invited.length ? <div className="screening-selection">{invited.map((record) => <article className="admin-list-item" key={record.id}>
-        <div><strong>{record.fullName}</strong><span>{record.applicationNumber}</span><small>{new Date(record.screeningAt).toLocaleString("en-GB", { timeZone: "Africa/Lagos", dateStyle: "medium", timeStyle: "short" })} (WAT)</small></div>
+        <div><strong>{record.fullName}</strong><span>{record.applicationNumber}</span><small>{new Date(record.screeningAt).toLocaleString("en-GB", { timeZone: "Africa/Lagos", dateStyle: "medium", timeStyle: "short" })} (WAT)</small><small>{record.screeningStatus === "SCHEDULED" ? "Next: record the result after the exam." : record.screeningStatus === "PASSED" ? "Passed: review the individual admission decision." : "Not successful: contact admissions for guidance."}</small></div>
+        <Link className="button secondary" to={`${portalPath("/admin/applications")}?application=${encodeURIComponent(record.id)}`}>{record.screeningStatus === "SCHEDULED" ? "Record screening result" : "View application"}</Link>
       </article>)}</div> : <p>No applicants have been invited yet.</p>}
     </section>}
     <dialog ref={confirmationDialog} className="private-preview-dialog application-submit-dialog" aria-labelledby="screening-confirm-title">
