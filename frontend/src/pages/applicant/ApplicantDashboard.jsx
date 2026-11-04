@@ -50,7 +50,7 @@ export default function ApplicantDashboard() {
 
       {!["ACCEPTED", "ADMITTED", "REJECTED", "RETURNED"].includes(application.status) && <ScreeningProgress />}
       <section className="portal-progress-card">
-        <div><span>Application progress</span><strong>{progress}%</strong></div>
+        <div><span>Application submission progress</span><strong>{progress}%</strong></div>
         <div className="portal-progress"><span style={{ width: `${progress}%` }} /></div>
         <p>{submitted ? "Your form and supporting documents have been submitted." : "Complete your form and required uploads before final submission."}</p>
       </section>
