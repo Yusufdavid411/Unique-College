@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
+import { ArrowLeft, ArrowRight, CheckCircle2, MailCheck } from "lucide-react";
 import { api, apiErrorMessage } from "../api/client.js";
 import { portalPath } from "../api/portalLinks.js";
 import PasswordInput from "./PasswordInput.jsx";
@@ -52,5 +53,28 @@ export default function PasswordRecovery({ reset = false, scope = "applicant" })
       event.target.reset();
     } catch {} finally { setBusy(false); }
   }
-  return <main className="login-screen"><Seo title={reset ? "Reset password" : "Forgot password"} description="Secure Unique College account recovery." /><section className="login-panel"><span className="eyebrow">Account recovery</span><h1>{reset ? "Choose a new password" : "Forgot password?"}</h1>{!done && <form onSubmit={submit}>{reset ? <><p>Use at least 12 characters with uppercase, lowercase and a number.</p><label>New password<PasswordInput name="password" autoComplete="new-password" minLength={12} maxLength={72} required /></label><label>Confirm password<PasswordInput name="confirmation" autoComplete="new-password" minLength={12} maxLength={72} required /></label></> : <><p>Enter your registered email. We’ll email you a secure reset link.</p><label>Email address<input name="email" type="email" autoComplete="email" required maxLength={254} /></label></>}<LoadingButton type="submit" loading={busy}>{reset ? "Reset password" : "Send reset link"}</LoadingButton></form>}{notice && <p role="status">{notice}</p>}<Link to={login}>Back to sign in</Link>{reset && <Link to={portalPath(`/${scope}/forgot-password`)}>Request a new reset link</Link>}</section></main>;
+  return <main className="login-screen">
+    <Seo title={reset ? "Reset password" : "Forgot password"} description="Secure Unique College account recovery." />
+    <section className="login-panel password-recovery-panel">
+      <span className="eyebrow">Unique College · Account recovery</span>
+      {done && <span className="password-recovery-success" aria-hidden="true">{reset ? <CheckCircle2 size={28} /> : <MailCheck size={28} />}</span>}
+      <h1>{done ? reset ? "Password updated" : "Check your email" : reset ? "Choose a new password" : "Forgot password?"}</h1>
+      {!done && <form onSubmit={submit}>
+        {reset ? <>
+          <p>Use at least 12 characters with uppercase, lowercase and a number.</p>
+          <label>New password<PasswordInput name="password" autoComplete="new-password" minLength={12} maxLength={72} required /></label>
+          <label>Confirm password<PasswordInput name="confirmation" autoComplete="new-password" minLength={12} maxLength={72} required /></label>
+        </> : <>
+          <p>Enter your registered email. We’ll email you a secure reset link.</p>
+          <label>Email address<input name="email" type="email" autoComplete="email" required maxLength={254} /></label>
+        </>}
+        <LoadingButton type="submit" loading={busy}>{reset ? "Reset password" : "Send reset link"}</LoadingButton>
+      </form>}
+      {notice && <p role="status" className="password-recovery-notice">{done && reset ? "Your password has been changed. Sign in with your new password to continue." : notice}</p>}
+      <div className="password-recovery-actions">
+        <Link className={done ? "button primary" : "button secondary"} to={login}>{done ? <>Sign in <ArrowRight size={18} aria-hidden="true" /></> : <><ArrowLeft size={18} aria-hidden="true" />Back to sign in</>}</Link>
+        {reset && !done && <Link className="button secondary" to={portalPath(`/${scope}/forgot-password`)}>Request a new reset link</Link>}
+      </div>
+    </section>
+  </main>;
 }

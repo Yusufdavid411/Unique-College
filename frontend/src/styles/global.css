@@ -4341,6 +4341,14 @@ th {
 }
 
 .applicant-form-card label,
+.password-recovery-panel h1 { margin: 0; font-size: clamp(1.65rem, 5vw, 2rem); line-height: 1.2; }
+.password-recovery-panel form { display: grid; gap: 1rem; min-width: 0; }
+.password-recovery-panel form p, .password-recovery-notice { margin: 0; }
+.password-recovery-panel label { display: grid; gap: .4rem; }
+.password-recovery-success { display: grid; place-items: center; width: 56px; height: 56px; color: #17623f; background: #e9f8ef; border-radius: 50%; }
+.password-recovery-actions { display: grid; gap: .75rem; padding-top: .5rem; }
+.password-recovery-actions .button { width: 100%; min-height: 46px; white-space: normal; text-align: center; }
+
 .application-review-form .application-status-submit {
   justify-self: start;
   width: fit-content;
