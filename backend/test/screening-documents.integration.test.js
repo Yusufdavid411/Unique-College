@@ -57,8 +57,18 @@ test("PostgreSQL screening, automatic letter and completed-form downloads", { sk
     assert.ok(statusEmailContent(invitation).text.includes(invitation.notificationText));
     await prisma.application.update({ where: { id: application.id }, data: { email: applicant.email } });
     assert.equal((await (await call("/screening/schedule", "POST", schedule, admin)).json()).data.scheduled, 0);
+    assert.equal((await call(`/screening/${application.id}/result`, "PATCH", outcome, admin)).status, 409);
+    const replacement = { ...schedule, date: new Date(Date.now() + 172800000).toISOString(), venue: "Replacement fixture hall" };
+    assert.equal((await (await call("/screening/schedule", "POST", replacement, admin)).json()).data.scheduled, 1);
+    const rescheduled = await prisma.application.findUnique({ where: { id: application.id } });
+    assert.equal(rescheduled.screeningAt.toISOString(), replacement.date);
+    assert.equal(rescheduled.screeningVenue, replacement.venue);
+    assert.equal(rescheduled.screeningFeeAmount.toString(), "2000");
+    assert.equal(await prisma.applicationStatusHistory.count({ where: { applicationId: application.id, kind: "SCREENING_SCHEDULE" } }), 2);
+    assert.equal((await (await call("/screening/schedule", "POST", replacement, admin)).json()).data.scheduled, 0);
     await prisma.application.update({ where: { id: application.id }, data: { screeningAt: new Date(Date.now() - 60000) } });
     assert.equal((await call(`/screening/${application.id}/result`, "PATCH", outcome, admin)).status, 200);
+    assert.equal((await call("/screening/schedule", "POST", replacement, admin)).status, 409);
     assert.equal((await call(`/applications/${application.id}/status`, "PATCH", { status: "ACCEPTED" }, admin)).status, 200);
     assert.equal((await call("/applicant/offer-response", "POST", { response: "ACCEPTED" }, applicant)).status, 200);
     const acceptance = await gateway.start(applicant.id, "ACCEPTANCE_FEE");

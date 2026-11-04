@@ -16,7 +16,7 @@ All three fee settings are editable. Changing a policy does not silently change 
 ## Administrative screens
 
 - Admin → Screening & exams: select eligible applicants, review recipients, schedule/reschedule, and inspect email delivery results.
-- Admin → Applications → View status → Entrance exam / screening: publish an individual result.
+- Admin → Screening & exams → Already invited → Record screening result: publish an individual result after the exam. Select scheduled candidates here to reschedule them; published outcomes cannot be reset by scheduling.
 - Admin → Applications → Admission letter release: optional duration override and explicit release after payment.
 - Admin → Settings → School settings → Screening, messages & admission letters: screening fee, session, default duration, effective date, registration window, O-level deadline, lectures date and notification wording.
 - Application download panels in both admin and applicant/student portals use the same authenticated backend PDF endpoints. Receipts remain separate files.
