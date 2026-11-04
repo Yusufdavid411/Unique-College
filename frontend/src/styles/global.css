@@ -2032,6 +2032,10 @@ textarea {
 .student-form label { font-size: 14px; }
 .student-form label input, .student-form label select { margin-top: 8px; }
 .student-form label.check-field input { margin: 0; width: auto; }
+.school-form-submit { display: flex; justify-content: flex-end; }
+@media (max-width: 600px) {
+  .school-form-submit .button { width: 100%; }
+}
 .student-notice-list { display: grid; gap: 16px; }
 .student-notice-list article h2 { margin-top: 10px; }
 .student-notice-list article a { display: inline-flex; align-items: center; gap: 8px; font-size: 14px; }
