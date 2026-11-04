@@ -17,6 +17,12 @@ const statusText = {
   REJECTED: "Not selected"
 };
 
+const screeningStatusText = {
+  APPROVED: "Accepted for screening",
+  PASSED: "Screening successful",
+  FAILED: "Screening not successful"
+};
+
 export default function ApplicantDashboard() {
   const { application, journey, formAccess, loading, error } = useApplicant();
   if (loading) return <div className="portal-loading">Loading your admission record...</div>;
@@ -25,16 +31,18 @@ export default function ApplicantDashboard() {
   const { formComplete, documentsComplete, submitted } = journey;
   const progressItems = [formAccess.unlocked, formComplete, documentsComplete, submitted];
   const progress = Math.round((progressItems.filter(Boolean).length / progressItems.length) * 100);
+  const inReview = ["SUBMITTED", "PENDING", "REVIEWED"].includes(application.status);
+  const screeningLabel = inReview ? screeningStatusText[application.screeningStatus] : null;
 
   return (
     <div className="portal-page">
       <header className="portal-welcome">
         <div><span className="eyebrow">Applicant dashboard</span><h1>Welcome, {application.firstName || application.fullName?.split(" ")[0]}</h1><p>Application ID: <strong>{application.applicationNumber}</strong></p></div>
-        {application.status !== "INTERVIEW_SCHEDULED" && <span className={`portal-status ${application.status.toLowerCase()}`}>{application.screeningStatus === "APPROVED" && application.status === "REVIEWED" ? "Accepted for screening" : statusText[application.status] || application.status}</span>}
+        {application.status !== "INTERVIEW_SCHEDULED" && <span className={`portal-status ${application.status.toLowerCase()}`}>{screeningLabel || statusText[application.status] || application.status}</span>}
       </header>
 
       <ErrorToast message={error} />
-      {["SUBMITTED", "PENDING", "REVIEWED"].includes(application.status) && application.screeningStatus !== "APPROVED" && <section className="review-status-card" role="status"><span className="eyebrow">Application status</span><h2>Under review</h2><p>Your application has been submitted successfully. Please check back later for the admissions decision.</p></section>}
+      {inReview && !screeningLabel && <section className="review-status-card" role="status"><span className="eyebrow">Application status</span><h2>Under review</h2><p>Your application has been submitted successfully. Please check back later for the admissions decision.</p></section>}
       {application.status === "RETURNED" && <section className="review-status-card" role="status"><h2>Corrections required</h2><p>Update your form or any flagged documents, then submit again from Documents.</p></section>}
       <AdmissionOffer />
       {["DRAFT", "RETURNED"].includes(application.status) && <section className="registration-resume student-next-step"><span className="eyebrow">Your next step</span><h2>{application.status === "RETURNED" ? "Continue your corrections" : "Complete your registration"}</h2><p>{!journey.paid ? "Confirm your application payment to unlock the form." : !formComplete ? "Complete and save your application form, then continue to Documents." : !documentsComplete ? "Your form is saved. Upload the remaining required documents." : "Your form and required documents are ready. Open Documents to check them and submit for review."}</p><Link className="button" to={portalPath(journey.path)}>Complete registration<ArrowRight size={18} /></Link></section>}
