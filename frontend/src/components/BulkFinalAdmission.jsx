@@ -43,7 +43,7 @@ export default function BulkFinalAdmission({ applications, refresh }) {
   return <details className="settings-panel">
     <summary>Bulk final admission ({eligible.length} ready)</summary>
     <form className="form-panel" onSubmit={admit}>
-      <p>Only applicants with verified documents, completed clearance and a released letter can be selected. Select up to {batchLimit} at a time.</p>
+      <p>Only applicants with verified documents and completed clearance can be selected. Final admission also releases each admission letter. Incomplete letter settings block admission. Select up to {batchLimit} at a time.</p>
       {eligible.length > 0 && <fieldset className="bulk-notice-recipients" disabled={busy}>
         <legend>Ready applicants in these results</legend>
         {eligible.map(({ id, fullName, applicationNumber }) => <label className="check-field" key={id}>

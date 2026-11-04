@@ -11,9 +11,10 @@ import { readyForReview } from "../services/applicationReview.js";
 import { attemptStatusEmail, statusEmailConfigured } from "../services/statusEmail.js";
 import { acceptancePolicy, admissionProgressFor, admissionFailure } from "../services/acceptance.js";
 import { studentProfileData } from "../services/studentRecords.js";
-import { screened, documentsPolicy, renderAdmissionMessage, screeningPolicy, screeningProgress } from "../services/admissionDocuments.js";
+import { screened, documentsPolicy, validateLetterPolicy, renderAdmissionMessage, screeningPolicy, screeningProgress } from "../services/admissionDocuments.js";
 import { feeVerified } from "../services/paymentEligibility.js";
 import { notificationAudience } from "../services/applicationBulkNotifications.js";
+import { releaseAdmissionLetterInTransaction } from "../services/admissionLetters.js";
 
 const applicationDetails = {
   applicant: { select: { id: true, name: true, email: true, role: true, isActive: true, portalUsername: true, officialEmail: true } },
@@ -97,15 +98,20 @@ async function reviewResponse(application) {
   const screeningPaid = screeningProgress(application, screeningFee).paid;
   const admissionDocumentsReady = Boolean(application.applicant && application.declarationAccepted && hasVerifiedAdmissionDocuments(application.documents || []));
   const acceptancePaymentRecorded = application.status === "ACCEPTED" && application.payments.some((payment) => payment.type === "ACCEPTANCE_FEE" && ["PENDING", "VERIFIED"].includes(payment.status));
+  let letterSetupBlocker = null;
+  if (application.status === "ACCEPTED" && !application.admissionLetters?.length) {
+    try { validateLetterPolicy(await documentsPolicy(prisma)); }
+    catch (error) { if (error.statusCode !== 422) throw error; letterSetupBlocker = error.message; }
+  }
   const allowedStatuses = reviewStatusesFor(application.status).filter((status) => {
     if (status === application.status) return true;
     if (acceptancePaymentRecorded && ["RETURNED", "REJECTED"].includes(status)) return false;
     if (status === "SCREENING_APPROVED") return (application.screeningStatus || "NOT_SCHEDULED") === "NOT_SCHEDULED";
     if (status === "ACCEPTED") return screened(application) && !admissionPaymentBlocker;
-    if (status === "ADMITTED") return !admissionFailure(application) && !admissionPaymentBlocker;
+    if (status === "ADMITTED") return !admissionFailure(application) && !admissionPaymentBlocker && !letterSetupBlocker;
     return true;
   });
-  return { ...application, admission: admissionProgressFor(application), reviewReady, paymentConfirmed, screeningPaid, admissionPaymentBlocker, admissionDocumentsReady, acceptancePaymentRecorded, allowedStatuses, emailConfigured: statusEmailConfigured() };
+  return { ...application, admission: admissionProgressFor(application), reviewReady, paymentConfirmed, screeningPaid, admissionPaymentBlocker, letterSetupBlocker, admissionDocumentsReady, acceptancePaymentRecorded, allowedStatuses, emailConfigured: statusEmailConfigured() };
 }
 
 export const getApplication = asyncHandler(async (req, res) => {
@@ -184,6 +190,7 @@ export const updateApplicationStatus = asyncHandler(async (req, res) => {
       data.clearedAt = null;
     }
     if (credentials) {
+      await releaseAdmissionLetterInTransaction(transaction, current.id, req.user);
       await transaction.studentProfile.upsert({ where: { userId: current.applicant.id }, update: {}, create: studentProfileData(latest) });
       await transaction.user.update({
         where: { id: current.applicant.id },
@@ -214,7 +221,7 @@ export const updateApplicationStatus = asyncHandler(async (req, res) => {
       }
     });
     return { updated: await transaction.application.findUnique({ where: { id: req.params.id }, include: applicationDetails }), historyId: approveScreening || current.status !== data.status ? history?.id : null };
-  }, { isolationLevel: "Serializable", timeout: 15000 });
+  }, { isolationLevel: "Serializable", timeout: 25000 });
 
   const email = await attemptStatusEmail(application.historyId);
   const refreshed = await prisma.application.findUnique({ where: { id: current.id }, include: applicationDetails });

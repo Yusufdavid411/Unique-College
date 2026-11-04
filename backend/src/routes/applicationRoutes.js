@@ -8,6 +8,7 @@ import { ok } from "../utils/apiResponse.js";
 import { requestPasswordReset } from "../services/passwordReset.js";
 import { attemptStatusEmail, statusEmailConfigured } from "../services/statusEmail.js";
 import { createApplicationReminder } from "../services/applicationReminder.js";
+import { verifyReviewedDocuments } from "../services/bulkDocumentReview.js";
 import { bulkAudiences, bulkLimit, bulkNotificationPreview, sendBulkApplicationNotification } from "../services/applicationBulkNotifications.js";
 import { updateClearance } from "../controllers/handoverController.js";
 import {
@@ -67,6 +68,10 @@ router.patch("/:id/status", requireAuth, requirePermission("applications.review"
 router.patch("/:id/clearance", requireAuth, requirePermission("applications.admit"), validate(idParamSchema), updateClearance);
 router.post("/:id/notifications/retry", requireAuth, requirePermission("applications.review"), validate(idParamSchema), retryApplicationNotification);
 router.patch("/:id/documents/:documentId", requireAuth, requirePermission("applications.review"), validate(documentReviewSchema), reviewApplicationDocument);
+router.post("/:id/documents/verify-all", requireAuth, requirePermission("applications.review"), validate(idParamSchema), asyncHandler(async (req, res) => {
+  const input = z.object({ reviewed: z.literal(true), documents: z.array(z.object({ id: z.string().uuid(), updatedAt: z.string().datetime() }).strict()).min(1).max(50) }).strict().parse(req.body);
+  ok(res, await verifyReviewedDocuments(prisma, req.params.id, input.documents, req.user), "Reviewed documents verified.");
+}));
 router.patch("/:id/payments/:paymentId", requireAuth, requirePermission("payments.verify"), validate(paymentReviewSchema), reviewApplicationPayment);
 router.delete("/:id", requireAuth, requirePermission("applications.admit"), validate(idParamSchema), deleteApplication);
 

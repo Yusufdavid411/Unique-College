@@ -31,7 +31,9 @@ function applicationNextStep(application, allowed, canAdmit) {
   const { status, screeningStatus, admission, admissionPaymentBlocker, admissionDocumentsReady } = application;
   if (status === "RETURNED") return { message: "Wait for the applicant to correct and resubmit the application. No further review action is needed yet." };
   if (!application.reviewReady) return { message: application.paymentConfirmed ? "Wait for the applicant to submit their completed form and documents." : "Wait for the application fee and completed submission." };
-  if (status === "ADMITTED") return { message: "Admission is final. Manage this record under Students." };
+  if (status === "ADMITTED") return application.admissionLetters?.length
+    ? { message: "Admission is final. Manage this record under Students." }
+    : { message: "This older admitted record has no released letter. Complete its letter release; future admissions release it automatically.", letter: canAdmit };
   if (status === "REJECTED") return { message: "Application rejected. Request corrections only if the applicant should be allowed to resubmit." };
   if (status === "ACCEPTED") {
     if (admission?.response === "DECLINED") return { message: "The applicant declined the offer." };
@@ -40,9 +42,9 @@ function applicationNextStep(application, allowed, canAdmit) {
     if (admissionPaymentBlocker) return { message: admissionPaymentBlocker };
     if (application.requiresAcceptanceForm && !application.schoolForms?.some((form) => form.kind === "ACCEPTANCE" && form.status === "SUBMITTED")) return { message: "Wait for the applicant to submit the acceptance form." };
     if (!admissionDocumentsReady) return { message: "Verify the required documents before completing admission.", documents: true };
-    if (!application.admissionLetters?.length) return { message: "Release the admission letter before confirming final admission.", letter: canAdmit };
+    if (application.letterSetupBlocker) return { message: application.letterSetupBlocker, settings: true };
     if (admission.clearanceStatus !== "CLEARED") return { message: "Review the applicant’s record and complete clearance.", clearance: canAdmit };
-    if (allowed.includes("ADMITTED")) return { message: "Clearance is complete. Confirm final admission to enable student access.", status: canAdmit ? "ADMITTED" : null, label: "Confirm final admission" };
+    if (allowed.includes("ADMITTED")) return { message: "Confirm final admission to release the admission letter and enable student access together.", status: canAdmit ? "ADMITTED" : null, label: "Admit & release letter" };
     return { message: "Check the offer and clearance details below before confirming final admission." };
   }
   if (allowed.includes("SCREENING_APPROVED")) return { message: "Review the submitted form and documents before accepting this applicant for screening.", status: "SCREENING_APPROVED", label: "Accept for screening" };
@@ -132,6 +134,17 @@ export default function AdminApplications() {
       await api.patch(`/applications/${selectedApplication.id}/documents/${documentId}`, { reviewStatus });
       await openApplication(selectedApplication.id);
     } catch (error) { setFeedback(apiErrorMessage(error, "Unable to review this document.")); }
+    finally { setSaving(false); }
+  }
+
+  async function verifyAllDocuments() {
+    if (saving || !selectedApplication) return;
+    setSaving(true);
+    try {
+      if (!await confirmAction({ title: "Verify all reviewed documents?", message: "Confirm you have opened and checked every current document for this applicant. This does not approve payments or grant admission.", confirmLabel: "I reviewed them — verify all" })) return;
+      await api.post(`/applications/${selectedApplication.id}/documents/verify-all`, { reviewed: true, documents: selectedApplication.documents.map(({ id, updatedAt }) => ({ id, updatedAt })) });
+      await openApplication(selectedApplication.id);
+    } catch (error) { setFeedback(apiErrorMessage(error)); }
     finally { setSaving(false); }
   }
 
@@ -258,6 +271,7 @@ export default function AdminApplications() {
               {nextStep.screening && <Link className="button primary" to={screeningLink}>{selectedApplication.status === "INTERVIEW_SCHEDULED" ? "Open screening record" : "Schedule screening"}</Link>}
               {nextStep.documents && <button type="button" className="button primary" onClick={() => { if (documentsPanel.current) { documentsPanel.current.open = true; documentsPanel.current.querySelector("summary")?.focus(); } }}>Review supporting documents</button>}
               {nextStep.letter && <button type="button" className="button primary" onClick={() => { if (letterPanel.current) { letterPanel.current.open = true; letterPanel.current.querySelector("summary")?.focus(); } }}>Open admission letter release</button>}
+              {nextStep.settings && <Link className="button primary" to={portalPath("/admin/settings") + "#admission-letter-settings"}>Complete admission letter settings</Link>}
               {nextStep.clearance && <button type="button" className="button primary" disabled={saving} onClick={() => saveClearance("CLEARED", "")}>Complete clearance</button>}
             </section>}
             {ready && canReview && (allowedStatuses.includes("RETURNED") || allowedStatuses.includes("REJECTED")) && <div className="application-exceptions">
@@ -290,6 +304,7 @@ export default function AdminApplications() {
             <ScreeningReview application={selectedApplication} refresh={openApplication} letterPanel={letterPanel} />
             <details className="review-disclosure"><summary>View submitted application</summary><ApplicationRecord application={selectedApplication} /></details>
             <details ref={documentsPanel} className="review-disclosure"><summary>Review supporting documents</summary>
+              {canReview && selectedApplication.status !== "ADMITTED" && selectedApplication.documents?.length > 0 && <button className="button secondary" type="button" disabled={saving} onClick={verifyAllDocuments}>Verify all reviewed documents</button>}
               <div className="supporting-documents">
                 {selectedApplication.documents?.length ? selectedApplication.documents.map((document) => <article key={document.id} className="supporting-document">
                   <div className="supporting-document-info"><strong>{readableStatus(document.type)}</strong><PrivateFilePreview path={document.path} label={readableStatus(document.type)} buttonText="View document" allowDownload /></div>

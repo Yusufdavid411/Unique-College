@@ -19,13 +19,14 @@ test("review and form downloads require confirmed payment and a submitted form",
 });
 
 test("review API hides unsubmitted details and rejects premature decisions", async () => {
-  const original = { user: prisma.user.findUnique, application: prisma.application.findUnique, list: prisma.application.findMany, transaction: prisma.$transaction };
+  const original = { user: prisma.user.findUnique, application: prisma.application.findUnique, list: prisma.application.findMany, transaction: prisma.$transaction, setting: prisma.siteSetting.findUnique };
   const application = { id: "11111111-1111-4111-8111-111111111111", fullName: "Test Applicant", email: "test@example.invalid", status: "DRAFT", formFeeAmount: 0, payments: [], educationRecords: [{ subject: "Private draft" }], documents: [], guardianName: "Private draft guardian" };
   const server = app.listen(0, "127.0.0.1");
   await new Promise((resolve) => server.once("listening", resolve));
   const headers = { "Content-Type": "application/json", Authorization: "Bearer " + jwt.sign({ sub: "admin", version: 0 }, env.jwtSecret) };
   const base = `http://127.0.0.1:${server.address().port}/api/applications/${application.id}`;
   try {
+    prisma.siteSetting.findUnique = async () => null;
     prisma.user.findUnique = async () => ({ id: "admin", name: "Reviewer", role: "ADMIN", isActive: true, sessionVersion: 0 });
     prisma.application.findUnique = async () => structuredClone(application);
     const draft = await (await fetch(base, { headers })).json();
@@ -75,6 +76,7 @@ test("review API hides unsubmitted details and rejects premature decisions", asy
     prisma.$transaction = async (callback) => callback({
       user: { update: async ({ data }) => { Object.assign(application.applicant, data); } },
       studentProfile: { upsert: async () => ({ id: "student-profile" }) },
+      admissionLetter: { findFirst: async () => ({ id: "issued" }) },
       application: { updateMany: async ({ data }) => { Object.assign(application, data); return { count: 1 }; }, findUnique: async () => application },
       applicationStatusHistory: { create: async ({ data }) => { history.push(data); return {}; } },
       auditLog: { create: async () => ({}) }
@@ -94,6 +96,7 @@ test("review API hides unsubmitted details and rejects premature decisions", asy
     prisma.application.findUnique = original.application;
     prisma.application.findMany = original.list;
     prisma.$transaction = original.transaction;
+    prisma.siteSetting.findUnique = original.setting;
     await new Promise((resolve) => server.close(resolve));
   }
 });

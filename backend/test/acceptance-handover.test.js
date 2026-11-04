@@ -17,7 +17,7 @@ test("acceptance requires an explicit quote, exact fee, correct purpose and matc
   const payment = { type: "ACCEPTANCE_FEE", amount: 5000, currency: "NGN", status: "VERIFIED", isTest: true };
   for (const change of [{ amount: 4999 }, { amount: 5001 }, { currency: "USD" }, { type: "APPLICATION_FEE" }, { status: "PENDING" }, { isTest: false }]) assert.equal(admissionProgressFor({ ...record, payments: [{ ...payment, ...change }] }).paid, false);
   assert.equal(admissionProgressFor({ ...record, payments: [payment] }).canAdmit, true);
-  assert.match(admissionFailure({ ...record, payments: [payment] }), /Release the admission letter/);
+  assert.equal(admissionFailure({ ...record, payments: [payment] }), null);
   assert.equal(admissionFailure({ ...record, payments: [payment], admissionLetters: [{ id: "issued" }] }), null);
   for (const response of ["PENDING", "DECLINED"]) assert.match(admissionFailure({ ...record, offerResponse: response, payments: [payment] }), /accept the offer/);
   for (const amount of [-1, 5000.001, null, "5000", Infinity]) assert.equal(acceptancePolicySchema.safeParse({ amount }).success, false);
@@ -33,7 +33,12 @@ test("offer, editable future pricing, automatic acceptance payment, clearance an
   let histories = [];
   let audits = [];
   let providerAmount = 5000;
+  let letterPolicy = null;
   const model = {
+    admissionLetter: {
+      findFirst: async () => application.admissionLetters?.[0] || null,
+      create: async ({ data }) => { const letter = { id: "issued", ...data }; application.admissionLetters = [letter]; return letter; }
+    },
     studentProfile: {
       upsert: async ({ create }) => ({ id: "student-profile", ...create }),
       findUnique: async () => ({ application: { status: application.status, applicantId: owner.id } })
@@ -63,7 +68,7 @@ test("offer, editable future pricing, automatic acceptance payment, clearance an
       update: async ({ where, data }) => { const document = documents.find((item) => item.id === where.id); Object.assign(document, data); return document; }
     },
     siteSetting: {
-      findUnique: async ({ where }) => where.key === "acceptance_fee_policy" ? { value: JSON.stringify(policy) } : null,
+      findUnique: async ({ where }) => where.key === "acceptance_fee_policy" ? { value: JSON.stringify(policy) } : where.key === "admissions_documents_policy" && letterPolicy ? { value: JSON.stringify(letterPolicy) } : null,
       upsert: async ({ update }) => { policy = JSON.parse(update.value); return { id: "policy", value: update.value }; }
     },
     applicationStatusHistory: { create: async ({ data }) => { const row = { id: crypto.randomUUID(), ...data }; histories.push(row); return row; } },
@@ -138,16 +143,19 @@ test("offer, editable future pricing, automatic acceptance payment, clearance an
     assert.equal((await call(`/applications/${application.id}/documents/${documents[0].id}`, "PATCH", { reviewStatus: "VERIFIED" })).status, 200);
     assert.equal((await clearance("CLEARED")).status, 200);
     const blocked = await decision("ADMITTED");
-    assert.equal(blocked.status, 409);
-    assert.match((await blocked.json()).message, /Release the admission letter/);
-    assert.equal((await (await call("/applications")).json()).data[0].finalAdmissionReady, false);
-    application.admissionLetters = [{ id: "issued" }];
+    assert.equal(blocked.status, 422);
+    assert.match((await blocked.json()).message, /registrar|session|appendix/i);
+    assert.equal(owner.role, "APPLICANT");
+    application.courseOfInterest = "Community Health";
+    letterPolicy = { feeScheduleApproved: true, session: "2035/2036", duration: "Two years", effectiveDate: "2035-09-01", registrationOpen: "2035-08-01", registrationDeadline: "2035-09-30", resultDeadline: "2035-09-30", lecturesStart: "2035-09-01", screeningMessage: "Screening invitation", passedMessage: "Screening passed", failedMessage: "Screening failed", offerMessage: "Admission offered" };
     const ready = (await (await call("/applications")).json()).data[0];
     assert.equal(ready.finalAdmissionReady, true);
     assert.equal(ready.admissionLetters, undefined);
     assert.equal(ready.documents, undefined);
     const admitted = await decision("ADMITTED");
     assert.equal(admitted.status, 200);
+    assert.equal(application.admissionLetters.length, 1);
+    assert.ok(histories.some((event) => event.kind === "LETTER_READY"));
     const result = (await admitted.json()).data;
     assert.equal(result.credentials.temporaryPassword, undefined);
     assert.equal(result.application.applicant.passwordHash, undefined);

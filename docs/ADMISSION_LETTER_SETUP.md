@@ -20,6 +20,15 @@ and the fee appendix in Settings before issuing official letters.
 
 ## Final admission
 
+Final admission now generates or reuses the admission letter inside the same
+database transaction as the student-role transition. Missing or invalid letter
+settings roll back the transition. The dashboard links directly to the missing
+settings instead of leaving the admin to discover a separate release task.
+
+The document-review panel offers a single audited confirmation for all current
+files the admin has reviewed. Changed file versions require a fresh review.
+Group notifications never verify documents or payments.
+
 The [Federal School of Surveying's admissions guide](https://www.fss-oyo.edu.ng/DOCUMENTS/Step-by-Step%20Guide%20for%20Newly%20Admitted%20Students.pdf)
 separates submission of clearance documents, staff verification and access to
 student records. In Unique College, the separate bulk final-admission action is
