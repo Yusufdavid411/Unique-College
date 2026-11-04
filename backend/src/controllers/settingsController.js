@@ -1,7 +1,7 @@
 import { prisma } from "../config/prisma.js";
 import { ok } from "../utils/apiResponse.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
-import { admissionsPolicyKey, getAdmissionsPolicy } from "../services/admissionsPolicy.js";
+import { admissionsPolicyKey, getAdmissionsPolicy, applicationClosingDateSchema } from "../services/admissionsPolicy.js";
 import { z } from "zod";
 import { acceptancePolicy, acceptancePolicyKey, acceptancePolicySchema } from "../services/acceptance.js";
 import { auditedMutation } from "../services/audit.js";
@@ -46,9 +46,10 @@ export const readAdmissionsPolicy = asyncHandler(async (req, res) => {
 });
 
 export const saveAdmissionsPolicy = asyncHandler(async (req, res) => {
-  const policy = z.object({ open: z.boolean(), message: z.string().trim().min(5).max(500), applicationFee: z.number().finite().min(0).max(10000000).multipleOf(0.01).nullable().default(null) })
+  const policy = z.object({ open: z.boolean(), message: z.string().trim().min(5).max(500), closingDate: applicationClosingDateSchema.optional(), applicationFee: z.number().finite().min(0).max(10000000).multipleOf(0.01).nullable().default(null) })
     .refine((value) => !value.open || value.applicationFee !== null, { message: "Set the approved application fee before opening admissions", path: ["applicationFee"] })
     .parse(req.body);
+  if (policy.closingDate === undefined) policy.closingDate = (await getAdmissionsPolicy()).closingDate;
   await auditedMutation(prisma, { actorId: req.user.id, action: policy.open ? "admissions.opened" : "admissions.closed", targetType: "setting" }, (transaction) => transaction.siteSetting.upsert({
     where: { key: admissionsPolicyKey },
     update: { value: JSON.stringify(policy), group: "admissions" },

@@ -1,5 +1,11 @@
 # After screening is scheduled
 
+## Reminding applicants before submission
+
+Set the **Application submission deadline (WAT)** under **Settings → Admissions availability**. In **Applications**, open an active applicant whose application is **Awaiting submission**, then choose **Send application reminder**. The portal notification and registered-email message include the saved deadline and a link to resume. Sending does not change application status or close admissions automatically. A reminder can be sent once per applicant every 24 hours; use the existing email retry action if delivery fails.
+
+## Screening and admission
+
 1. The applicant attends the scheduled examination/screening. Scheduling alone does not mean they have passed or received an admission offer.
 2. Admin opens **Screening & exams → Already invited → Record screening result** on the applicant's card. Results are entered here, not under Applications.
 3. With the screening payment confirmed, an authorised admissions administrator publishes **Passed** or **Not successful**, optionally adding a score and note. Before the scheduled exam time, tick **Publish before exam date** and confirm the explicit early-publication warning. This requires `screening.results.publish_early` as well as `applications.admit`; administrators have both by default. The early override, operator and scheduled date are retained in audit/history. The portal and email receive the outcome normally. Other staff can publish after the exam with their usual result permission.

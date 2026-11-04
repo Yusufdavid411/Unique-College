@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Check, X } from "lucide-react";
+import { Bell, Check, X } from "lucide-react";
 import { Link, useSearchParams } from "react-router-dom";
 import { portalPath } from "../../api/portalLinks.js";
 import { api, apiErrorMessage } from "../../api/client.js";
@@ -87,6 +87,20 @@ export default function AdminApplications() {
     finally { setSaving(false); }
   }
 
+  async function sendReminder() {
+    if (!selectedApplication || saving) return;
+    setSaving(true);
+    setFeedback("");
+    const endpoint = `/applications/${selectedApplication.id}`;
+    try {
+      const { data } = await api.post(`${endpoint}/reminder`);
+      setFeedback(data.message);
+      const response = await api.get(endpoint, { notifyOnError: false }).catch(() => null);
+      if (response) setSelectedApplication(response.data.data);
+    } catch (error) { setFeedback(error.response?.status === 429 && error.response.data?.message ? error.response.data.message : apiErrorMessage(error, "Unable to send the reminder.")); }
+    finally { setSaving(false); }
+  }
+
   async function retryEmail() {
     setSaving(true);
     try {
@@ -144,6 +158,7 @@ export default function AdminApplications() {
   }
 
   const ready = selectedApplication?.reviewReady;
+  const canRemind = selectedApplication?.applicant?.isActive && selectedApplication.applicant.role === "APPLICANT" && !selectedApplication.submittedAt && ["DRAFT", "PENDING"].includes(selectedApplication.status) && (user?.role === "ADMIN" || user?.permissions?.includes("applications.review"));
   const notification = selectedApplication?.statusHistory?.find((event) => event.emailStatus !== "NOT_REQUIRED" && event.emailRecipient);
 
   return <div className="admin-page">
@@ -163,7 +178,11 @@ export default function AdminApplications() {
         <header className="application-review-panel__header"><div><span className="eyebrow">Application status</span><h2 id="application-review-title">{selectedApplication.fullName}</h2><p>{selectedApplication.applicationNumber}</p></div><button className="icon-button" type="button" disabled={saving} onClick={() => setSelectedApplication(null)} aria-label="Close application"><X size={20} /></button></header>
         <div className="application-review-panel__content">
           <section className="review-status-card"><span className="eyebrow">Current status</span><h3>{ready || selectedApplication.status === "RETURNED" ? selectedApplication.screeningStatus === "APPROVED" && selectedApplication.status === "REVIEWED" ? "Accepted for screening" : readableStatus(selectedApplication.status) : "Awaiting submission"}</h3><p>{ready ? `Submitted ${formatDate(selectedApplication.submittedAt)}. Review the form and documents below before updating the status.` : selectedApplication.status === "RETURNED" ? "Waiting for the applicant to correct and resubmit their form." : selectedApplication.paymentConfirmed ? "Payment confirmed. The applicant has not submitted their form for review yet." : "Waiting for successful payment and a submitted application. No form is available for review yet."}</p>
-            <section aria-label="Admissions roadmap">
+            {canRemind && <div>
+              <button className="button primary" type="button" disabled={saving} onClick={sendReminder}><Bell size={18} aria-hidden="true" />Send application reminder</button>
+              <p>Sends the deadline and a link to continue by email and portal notification. Set the date under <Link to={portalPath("/admin/settings") + "#admissions-availability"}>Admissions availability</Link>.</p>
+            </div>}
+            {ready && <section aria-label="Admissions roadmap">
               <strong>Admissions roadmap</strong>
               <ul>
                 <li>Under review → <strong>Accept for screening</strong> → Screening fee verified → Screening scheduled</li>
@@ -172,7 +191,7 @@ export default function AdminApplications() {
                 <li>Under review → <strong>Reject</strong>, or choose <strong>Corrections required</strong> to let the applicant edit and resubmit.</li>
               </ul>
               {selectedApplication.screeningStatus === "APPROVED" && selectedApplication.status === "REVIEWED" && (selectedApplication.screeningPaid ? <Link className="button secondary" to={portalPath("/admin/screening")}>Go to Screening &amp; exams</Link> : <p>Next: Wait for the applicant’s screening fee to be verified.</p>)}
-            </section>
+            </section>}
             {!ready && selectedApplication.reviewNote && <p>{selectedApplication.reviewNote}</p>}
             {ready && <form key={`${selectedApplication.id}-${selectedApplication.status}`} className="application-review-form" onSubmit={updateApplicationStatus}>
               <label>Update status<select name="status" defaultValue={selectedApplication.status} onChange={(event) => setStatusChoice(event.target.value)} disabled={saving}>{(selectedApplication.allowedStatuses || [selectedApplication.status]).map((status) => <option key={status} value={status}>{readableStatus(status)}</option>)}</select></label>
@@ -202,7 +221,7 @@ export default function AdminApplications() {
           {(ready || notification) && <details className="review-disclosure"><summary>Status history and email notifications</summary>
             <p>{notification?.emailStatus === "SENT" ? "Latest notification accepted by the email provider." : selectedApplication.emailConfigured ? "Notifications are queued or awaiting retry." : "Email sending is not configured. Status updates are still visible in the applicant portal."}</p>
             {notification && notification.emailStatus !== "SENT" && <button type="button" className="button secondary" disabled={saving || !selectedApplication.emailConfigured} onClick={retryEmail}>Retry email notification</button>}
-            <ol className="review-history">{selectedApplication.statusHistory?.map((event) => <li key={event.id}><strong>{event.kind === "SCREENING_APPROVAL" ? "Accepted for screening" : readableStatus(event.toStatus)}</strong><span>{formatDate(event.createdAt)}</span>{event.note && <p>{event.note}</p>}</li>)}</ol>
+            <ol className="review-history">{selectedApplication.statusHistory?.map((event) => <li key={event.id}><strong>{event.kind === "APPLICATION_REMINDER" ? "Application reminder" : event.kind === "SCREENING_APPROVAL" ? "Accepted for screening" : readableStatus(event.toStatus)}</strong><span>{formatDate(event.createdAt)}</span>{event.note && <p>{event.note}</p>}</li>)}</ol>
           </details>}
           {credentials && <div className="admission-credentials"><strong>Student account assigned</strong><span>Username: {credentials.portalUsername}</span><small>The student keeps their existing applicant login and must change their password at the next sign-in to activate student access. No separate password is issued.</small></div>}
         </div>

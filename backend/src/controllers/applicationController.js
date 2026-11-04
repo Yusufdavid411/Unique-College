@@ -14,7 +14,7 @@ import { studentProfileData } from "../services/studentRecords.js";
 import { screened, documentsPolicy, renderAdmissionMessage, screeningPolicy, screeningProgress, feeVerified } from "../services/admissionDocuments.js";
 
 const applicationDetails = {
-  applicant: { select: { id: true, name: true, email: true, role: true, portalUsername: true, officialEmail: true } },
+  applicant: { select: { id: true, name: true, email: true, role: true, isActive: true, portalUsername: true, officialEmail: true } },
   documents: { where: { supersededAt: null }, orderBy: { createdAt: "desc" } },
   payments: { orderBy: { createdAt: "desc" } },
   statusHistory: { orderBy: { createdAt: "desc" } }, schoolForms: true, admissionLetters: { orderBy: { version: "desc" }, take: 1 }

@@ -5,7 +5,8 @@ import { prisma } from "../config/prisma.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
 import { ok } from "../utils/apiResponse.js";
 import { requestPasswordReset } from "../services/passwordReset.js";
-import { statusEmailConfigured } from "../services/statusEmail.js";
+import { attemptStatusEmail, statusEmailConfigured } from "../services/statusEmail.js";
+import { createApplicationReminder } from "../services/applicationReminder.js";
 import { updateClearance } from "../controllers/handoverController.js";
 import {
   deleteApplication,
@@ -26,6 +27,12 @@ const router = Router();
 router.post("/", (req, res) => res.status(410).json({ success: false, message: "Create an applicant account to purchase and complete your application form" }));
 router.get("/", requireAuth, requirePermission("applications.read"), listApplications);
 router.get("/:id", requireAuth, requirePermission("applications.read"), validate(idParamSchema), getApplication);
+router.post("/:id/reminder", requireAuth, requirePermission("applications.read"), requirePermission("applications.review"), rateLimit({ windowMs: 15 * 60000, limit: 30, standardHeaders: "draft-8", legacyHeaders: false }), validate(idParamSchema), asyncHandler(async (req, res) => {
+  res.set("Cache-Control", "no-store");
+  const event = await createApplicationReminder(prisma, req.params.id, req.user);
+  const email = await attemptStatusEmail(event.id);
+  ok(res, { email }, email.status === "SENT" ? "Reminder saved in the applicant portal and accepted by the email provider." : "Reminder saved in the applicant portal. Email delivery is pending and will be retried.");
+}));
 router.post("/:id/account/reset-link", requireAuth, requirePermission("applications.read"), requirePermission("users.manage"), rateLimit({ windowMs: 15 * 60000, limit: 10, standardHeaders: "draft-8", legacyHeaders: false }), validate(idParamSchema), asyncHandler(async (req, res) => {
   res.set("Cache-Control", "no-store");
   const application = await prisma.application.findUnique({ where: { id: req.params.id }, select: { applicant: { select: { id: true, role: true, isActive: true } } } });

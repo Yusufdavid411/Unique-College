@@ -51,7 +51,7 @@ function SchoolSettings() {
     setSaving("admissions");
     setNotice({ type: "", message: "" });
     try {
-      const { data } = await api.put("/settings/admissions", { open: admissions.open, message: admissions.message, applicationFee: admissions.applicationFee });
+      const { data } = await api.put("/settings/admissions", { open: admissions.open, message: admissions.message, applicationFee: admissions.applicationFee, closingDate: admissions.closingDate || "" });
       setAdmissions(data.data);
       setNotice({ type: "success", message: "Admissions settings saved." });
       refreshAdmissions();
@@ -92,12 +92,13 @@ function SchoolSettings() {
     <PlatformReadiness />
     <AdminNotice type={notice.type}>{notice.message}</AdminNotice>
     {loading ? <p role="status">Loading school settings…</p> : failed ? <div className="empty-state"><p>Settings could not load.</p><button type="button" className="button" onClick={() => setRevision((value) => value + 1)}>Try again</button></div> : <>
-      {admissions && <form className="form-panel" onSubmit={saveAdmissions}>
+      {admissions && <form className="form-panel" id="admissions-availability" onSubmit={saveAdmissions}>
         <h2>Admissions availability</h2>
         <div className="settings-field-grid">
           <label>Status<select disabled={Boolean(saving)} value={String(admissions.open)} onChange={(event) => setAdmissions({ ...admissions, open: event.target.value === "true" })}><option value="false">Admissions closed</option><option value="true">Admissions open</option></select></label>
           <label>Application form price (NGN)<input disabled={Boolean(saving)} type="number" min="0" max="10000000" step="0.01" value={admissions.applicationFee ?? ""} onChange={(event) => setAdmissions({ ...admissions, applicationFee: event.target.value === "" ? null : Number(event.target.value) })} /></label>
           <label className="settings-full-width">Public admissions message<textarea disabled={Boolean(saving)} required minLength={5} maxLength={500} rows={3} value={admissions.message} onChange={(event) => setAdmissions({ ...admissions, message: event.target.value })} /></label>
+          <label>Application submission deadline (WAT)<input type="date" disabled={Boolean(saving)} value={admissions.closingDate || ""} onChange={(event) => setAdmissions({ ...admissions, closingDate: event.target.value })} /><small>Used in completion reminders; the deadline is 11:59 pm on this date. This does not automatically close admissions or block existing applicants.</small></label>
         </div>
         <details className="settings-help"><summary>How these controls work</summary><p>New applicants keep the form price quoted when they register. Closing admissions stops new registrations without removing existing applicants' access. Payments use the configured online checkout; bank instructions are no longer needed here.</p></details>
         <LoadingButton type="submit" disabled={Boolean(saving)} loading={saving === "admissions"} loadingText="Saving…">Save admissions settings</LoadingButton>
