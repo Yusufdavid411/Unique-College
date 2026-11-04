@@ -4925,6 +4925,14 @@ th {
 .application-submit-dialog .document-page-actions { justify-content: flex-end; }
 .applicant-header-actions { display: flex; align-items: center; gap: .65rem; min-width: 0; margin-left: auto; }
 .screening-selection-actions { display: flex; flex-wrap: wrap; gap: .65rem; align-items: center; }
+.application-next-action { padding: 1rem; margin-top: 1rem; border: 1px solid var(--line-strong); border-radius: 10px; background: white; }
+.application-next-action h4 { margin: 0; color: var(--blue-900); }
+.application-next-action p:last-child { margin-bottom: 0; }
+.application-exceptions { display: grid; gap: 1rem; margin-top: 1rem; }
+.application-exception-buttons { display: flex; flex-wrap: wrap; gap: .75rem; }
+.application-exception-buttons .button { min-height: 44px; white-space: normal; }
+.application-exception-buttons .button.secondary { background: white; border: 1px solid var(--line-strong); }
+.application-exception-buttons .button.danger-button { border: 1px solid #d78e8e; }
 .screening-invited-records { display: grid; gap: 1rem; min-width: 0; }
 .screening-invited-card { padding: 1rem; border: 1px solid var(--line); border-radius: 12px; min-width: 0; }
 .screening-invited-card .check-field { grid-template-columns: 24px minmax(0, 1fr); cursor: pointer; }

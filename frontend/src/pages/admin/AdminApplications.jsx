@@ -61,9 +61,11 @@ export default function AdminApplications() {
   const [credentials, setCredentials] = useState(null);
   const [filter, setFilter] = useState("all");
   const [search, setSearch] = useState("");
+  const [rejecting, setRejecting] = useState(false);
   const dialog = useRef(null);
   const documentsPanel = useRef(null);
   const nextAction = useRef(null);
+  const rejectButton = useRef(null);
 
   const loadApplications = useCallback(async () => {
     setLoading(true);
@@ -87,6 +89,7 @@ export default function AdminApplications() {
   async function openApplication(applicationId) {
     setFeedback("");
     setCredentials(null);
+    setRejecting(false);
     try {
       const { data } = await api.get(`/applications/${applicationId}`);
       setSelectedApplication(data.data);
@@ -104,6 +107,7 @@ export default function AdminApplications() {
     try {
       const { data } = await api.patch(`/applications/${selectedApplication.id}/status`, { status, ...(status === "REJECTED" ? { reviewNote } : {}) });
       setSelectedApplication(data.data.application);
+      setRejecting(false);
       setCredentials(data.data.credentials || null);
       setFeedback(data.data.email?.status === "SENT" ? "Status updated. Notification submitted to the email provider." : "Status updated. Check email notification status below.");
       nextAction.current?.focus();
@@ -223,21 +227,27 @@ export default function AdminApplications() {
             </div>}
             {!ready && selectedApplication.reviewNote && <p>{selectedApplication.reviewNote}</p>}
             {feedback && <p className="admin-feedback" role="status">{feedback}</p>}
-            {nextStep && <section ref={nextAction} tabIndex={-1} aria-label="Next action">
-              <p><strong>Next:</strong> {nextStep.message}</p>
+            {nextStep && <section ref={nextAction} tabIndex={-1} className="application-next-action" aria-label="Next action">
+              <h4>Next step</h4>
+              <p>{nextStep.message}</p>
               {nextStep.status && canReview && <button type="button" className="button primary" disabled={saving} onClick={() => updateApplicationStatus(nextStep.status)}>{nextStep.label}</button>}
               {nextStep.screening && <Link className="button primary" to={screeningLink}>{selectedApplication.status === "INTERVIEW_SCHEDULED" ? "Open screening record" : "Schedule screening"}</Link>}
               {nextStep.documents && <button type="button" className="button primary" onClick={() => { if (documentsPanel.current) { documentsPanel.current.open = true; documentsPanel.current.querySelector("summary")?.focus(); } }}>Review supporting documents</button>}
               {nextStep.clearance && <button type="button" className="button primary" disabled={saving} onClick={() => saveClearance("CLEARED", "")}>Complete clearance</button>}
             </section>}
-            {ready && canReview && (allowedStatuses.includes("RETURNED") || allowedStatuses.includes("REJECTED")) && <details className="review-disclosure" key={selectedApplication.id + selectedApplication.status}>
-              <summary>{allowedStatuses.includes("REJECTED") ? allowedStatuses.includes("RETURNED") ? "Reject application or request corrections" : "Reject application" : "Request corrections"}</summary>
-              {allowedStatuses.includes("RETURNED") && <button type="button" className="button secondary" disabled={saving} onClick={() => updateApplicationStatus("RETURNED")}>Request corrections</button>}
-              {allowedStatuses.includes("REJECTED") && <form className="application-review-form" onSubmit={(event) => { event.preventDefault(); updateApplicationStatus("REJECTED", new FormData(event.currentTarget).get("reviewNote")); }}>
+            {ready && canReview && (allowedStatuses.includes("RETURNED") || allowedStatuses.includes("REJECTED")) && <div className="application-exceptions">
+              <div className="application-exception-buttons">
+                {allowedStatuses.includes("RETURNED") && <button type="button" className="button secondary" disabled={saving} onClick={() => updateApplicationStatus("RETURNED")}>Request corrections</button>}
+                {allowedStatuses.includes("REJECTED") && <button ref={rejectButton} type="button" className="button danger-button" aria-expanded={rejecting} aria-controls={rejecting ? "application-rejection" : undefined} disabled={saving} onClick={() => setRejecting((current) => !current)}>Reject application</button>}
+              </div>
+              {rejecting && allowedStatuses.includes("REJECTED") && <form id="application-rejection" className="application-review-form" onSubmit={(event) => { event.preventDefault(); updateApplicationStatus("REJECTED", new FormData(event.currentTarget).get("reviewNote")); }}>
                 <label>Reason for rejection<textarea name="reviewNote" rows={3} maxLength={2000} required placeholder="Explain why the applicant is disqualified." disabled={saving} /></label>
-                <button type="submit" className="danger-button" disabled={saving}>Confirm rejection</button>
+                <div className="application-exception-buttons">
+                  <button type="button" className="button secondary" disabled={saving} onClick={() => { setRejecting(false); rejectButton.current?.focus(); }}>Cancel</button>
+                  <button type="submit" className="button danger-button" disabled={saving}>Confirm rejection</button>
+                </div>
               </form>}
-            </details>}
+            </div>}
             {selectedApplication.acceptancePaymentRecorded && <p>To withdraw this offer, resolve the recorded acceptance payment with Admissions first.</p>}
           </section>
           {user?.role === "ADMIN" && selectedApplication.applicant?.role === "APPLICANT" && selectedApplication.status !== "ADMITTED" && <details className="review-disclosure" key={selectedApplication.id}><summary>Delete applicant account</summary>
