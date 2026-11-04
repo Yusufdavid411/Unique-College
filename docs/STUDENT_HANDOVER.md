@@ -41,8 +41,8 @@ deadline or additional programme-specific clearance requirement has been invente
 - The existing admission action already requires the admissions permission, a paid
   submitted application, declaration and verified required documents. It atomically
   changes the linked user to STUDENT, assigns a student number/portal username,
-  preserves their existing password, requires a password change on the next sign-in
-  to activate student access, and revokes old sessions. No duplicate account or
+  preserves their existing password and applicant session. The applicant dashboard
+  links to student sign-in with the same email and password. No duplicate account or
   plaintext student password is created. History, receipts and the application remain.
 - Students lists only ADMITTED applications linked to a STUDENT user. ACCEPTED
   applications are not included. Preview records are separate and excluded by default.
@@ -75,9 +75,9 @@ rechecks the requirements inside a serializable transaction; the earlier direct
 review-to-admitted shortcut is blocked. Offers with pending/verified acceptance
 payments cannot be casually withdrawn or deleted. Final student records are retained.
 
-The Students register shows Activation pending until the student changes their
-password using their existing login. Students retain access to their admissions
-records; academic enrolment/course registration is not implied by admission.
+Students retain access to their admissions records and may change their password
+from account security when they choose. Academic enrolment/course registration
+is not implied by admission.
 
 The current officialEmail field reserves an address; it does not provision a mailbox.
 Resend delivery and the full student portal are not activated by this register.

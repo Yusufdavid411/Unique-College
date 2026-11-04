@@ -33,7 +33,10 @@ test("offer, editable future pricing, automatic acceptance payment, clearance an
   let audits = [];
   let providerAmount = 5000;
   const model = {
-    studentProfile: { upsert: async ({ create }) => ({ id: "student-profile", ...create }) },
+    studentProfile: {
+      upsert: async ({ create }) => ({ id: "student-profile", ...create }),
+      findUnique: async () => ({ application: { status: application.status, applicantId: owner.id } })
+    },
     user: {
       findUnique: async ({ where }) => where.id === "admin" ? { id: "admin", name: "Registrar", role: "ADMIN", isActive: true, sessionVersion: 0 } : where.id === owner.id ? owner : { id: where.id, name: "Other applicant", role: "APPLICANT", isActive: true, sessionVersion: 0 },
       findFirst: async ({ where }) => where.OR.some((entry) => Object.entries(entry).some(([key, value]) => owner[key] === value)) ? owner : null,
@@ -137,12 +140,16 @@ test("offer, editable future pricing, automatic acceptance payment, clearance an
     assert.equal(result.application.applicant.passwordHash, undefined);
     assert.equal(owner.passwordHash, originalHash);
     assert.equal(owner.role, "STUDENT");
-    assert.equal(owner.mustChangePassword, true);
-    assert.equal((await call("/applicant/dashboard", "GET", undefined, token("owner"))).status, 401);
+    assert.equal(owner.mustChangePassword, false);
+    assert.equal((await call("/applicant/dashboard", "GET", undefined, token("owner"))).status, 200);
+    owner.mustChangePassword = true;
     const signIn = await call("/auth/applicant/login", "POST", { identifier: owner.email, password: "ExistingApplicant123" }, "");
     assert.equal(signIn.status, 200);
     const studentToken = (await signIn.json()).data.token;
-    assert.equal((await call("/applicant/dashboard", "GET", undefined, studentToken)).status, 403);
+    assert.equal((await call("/applicant/dashboard", "GET", undefined, studentToken)).status, 200);
+    const portalLogin = await call("/auth/student/login", "POST", { identifier: owner.email, password: "ExistingApplicant123" }, "");
+    assert.equal(portalLogin.status, 200);
+    assert.equal((await portalLogin.json()).data.user.mustChangePassword, false);
     assert.equal((await call("/auth/password", "POST", { currentPassword: "ExistingApplicant123", password: "NewStudentPassword123" }, studentToken)).status, 200);
     assert.equal(owner.mustChangePassword, false);
     assert.equal((await call("/applicant/dashboard", "GET", undefined, studentToken)).status, 401);

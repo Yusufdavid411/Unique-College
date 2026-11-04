@@ -13,7 +13,7 @@ export function statusEmailContent(event) {
   const labels = { SUBMITTED: "Under review", REVIEWED: "Under review", RETURNED: "Corrections required", ACCEPTED: "Application accepted", ADMITTED: "Admitted", REJECTED: "Application rejected", INTERVIEW_SCHEDULED: "Screening scheduled" };
   const status = event.kind === "OFFER_RESPONSE" ? "Offer response recorded" : event.kind === "CLEARANCE" ? "Clearance updated" : labels[event.toStatus] || "Application status updated";
   const instructions = ["OFFER_RESPONSE", "CLEARANCE"].includes(event.kind) ? "Sign in to see your offer response, acceptance payment and clearance progress."
-    : event.toStatus === "ADMITTED" ? "Sign in using your existing applicant email and password. You must change your password to activate student access. Your account and admission records are preserved."
+    : event.toStatus === "ADMITTED" ? "Sign in at https://portal.uniquecollegekwali.com/ using your existing email and password. Your application and admission documents remain available in the applicant portal."
     : event.toStatus === "REJECTED"
     ? "Sign in to read the reason from admissions. Contact admissions if you need to correct and resubmit your application."
     : event.toStatus === "RETURNED" || event.toStatus === "INTERVIEW_SCHEDULED"

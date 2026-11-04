@@ -3,7 +3,8 @@ import { lazy, Suspense, useEffect } from "react";
 import PublicLayout from "./components/PublicLayout.jsx";
 import ProtectedRoute from "./components/ProtectedRoute.jsx";
 import AdminLayout from "./components/AdminLayout.jsx";
-import { ApplicantTransition, StudentContinuation } from "./components/StudentTransfer.jsx";
+import { StudentContinuation } from "./components/StudentTransfer.jsx";
+import ApplicantLayout from "./components/ApplicantLayout.jsx";
 import Home from "./pages/public/Home.jsx";
 import About from "./pages/public/About.jsx";
 import Leadership from "./pages/public/Leadership.jsx";
@@ -91,7 +92,7 @@ export default function App() {
       {scope !== "applicant" && <Route path="/applicant/register" element={<ApplicantAccess />} />}
       <Route
         path={portalPath("/applicant")}
-        element={<ProtectedRoute roles={["APPLICANT", "STUDENT"]} transferStudent redirectTo="/applicant/login" entry={scope === "applicant" ? <ApplicantAccess /> : null}><ApplicantTransition /></ProtectedRoute>}
+        element={<ProtectedRoute roles={["APPLICANT", "STUDENT"]} redirectTo="/applicant/login" entry={scope === "applicant" ? <ApplicantAccess /> : null}><ApplicantLayout /></ProtectedRoute>}
       >
         <Route index element={<ApplicantDashboard />} />
         <Route path="application" element={<ApplicantApplicationForm />} />

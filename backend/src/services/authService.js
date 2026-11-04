@@ -4,6 +4,10 @@ import { env } from "../config/env.js";
 import { prisma } from "../config/prisma.js";
 import { permissionsFor, roleInclude } from "./permissions.js";
 
+export function requiresPasswordChange(user) {
+  return Boolean(user.mustChangePassword && !["STAFF", "STUDENT"].includes(user.role));
+}
+
 function publicUser(user) {
   return {
     id: user.id,
@@ -12,7 +16,7 @@ function publicUser(user) {
     role: user.role,
     portalUsername: user.portalUsername,
     officialEmail: user.officialEmail,
-    mustChangePassword: user.mustChangePassword && user.role !== "STAFF",
+    mustChangePassword: requiresPasswordChange(user),
     permissions: permissionsFor(user),
     assignedRoles: (user.roleAssignments || []).map((assignment) => assignment.role.name)
   };

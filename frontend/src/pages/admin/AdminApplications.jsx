@@ -300,7 +300,7 @@ export default function AdminApplications() {
             {notification && notification.emailStatus !== "SENT" && <button type="button" className="button secondary" disabled={saving || !selectedApplication.emailConfigured} onClick={retryEmail}>Retry email notification</button>}
             <ol className="review-history">{selectedApplication.statusHistory?.map((event) => <li key={event.id}><strong>{event.kind?.startsWith("BULK_") ? event.notificationSubject : event.kind === "SCREENING_RESULT" ? event.notificationSubject || "Screening result published" : event.kind === "APPLICATION_REMINDER" ? "Application reminder" : event.kind === "SCREENING_APPROVAL" ? "Accepted for screening" : readableStatus(event.toStatus)}</strong><span>{formatDate(event.createdAt)}</span>{event.note && <p>{event.note}</p>}</li>)}</ol>
           </details>}
-          {credentials && <div className="admission-credentials"><strong>Student account assigned</strong><span>Username: {credentials.portalUsername}</span><small>The student keeps their existing applicant login and must change their password at the next sign-in to activate student access. No separate password is issued.</small></div>}
+          {credentials && <div className="admission-credentials"><strong>Student account assigned</strong><span>Username: {credentials.portalUsername}</span><small>The student can use the same email and password in both portals. No separate password is issued.</small></div>}
         </div>
       </section>
     </div>}

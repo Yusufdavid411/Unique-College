@@ -3,7 +3,7 @@ import { useAuth } from "../context/AuthContext.jsx";
 import ChangePassword from "./ChangePassword.jsx";
 import { portalPath } from "../api/portalLinks.js";
 
-export default function ProtectedRoute({ children, roles = [], redirectTo = "/admin/login", entry = null, transferStudent = false }) {
+export default function ProtectedRoute({ children, roles = [], redirectTo = "/admin/login", entry = null }) {
   const { user, loading } = useAuth();
   const { pathname } = useLocation();
 
@@ -13,5 +13,5 @@ export default function ProtectedRoute({ children, roles = [], redirectTo = "/ad
     return <Navigate to={portalPath(redirectTo)} replace />;
   }
 
-  return user.mustChangePassword && user.role !== "STAFF" && !(transferStudent && user.role === "STUDENT") ? <ChangePassword /> : children;
+  return user.mustChangePassword && !["STAFF", "STUDENT"].includes(user.role) ? <ChangePassword /> : children;
 }

@@ -182,8 +182,7 @@ export const updateApplicationStatus = asyncHandler(async (req, res) => {
           role: "STUDENT",
           portalUsername: credentials.portalUsername,
           officialEmail: credentials.officialEmail,
-          mustChangePassword: true,
-          sessionVersion: { increment: 1 }
+          mustChangePassword: false
         }
       });
     }

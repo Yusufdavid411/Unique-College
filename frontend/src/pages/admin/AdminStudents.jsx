@@ -36,7 +36,7 @@ export default function AdminStudents() {
           <td data-label="Student"><Link to={portalPath(`/admin/students/${student.id}`)}><strong>{student.fullName}</strong></Link><small>{student.email}</small><small>{student.applicationNumber}</small></td>
           <td data-label="Student number">{student.studentNumber || "Not assigned"}</td>
           <td data-label="Programme">{student.courseOfInterest || "Not assigned"}</td>
-          <td data-label="Account"><strong>{student.applicant.portalUsername || "Not assigned"}</strong><small>{!student.applicant.isActive ? "Inactive" : student.applicant.mustChangePassword ? "Activation pending" : "Active"}</small></td>
+          <td data-label="Account"><strong>{student.applicant.portalUsername || "Not assigned"}</strong><small>{student.applicant.isActive ? "Active" : "Inactive"}</small></td>
           <td data-label="Admitted">{student.admittedAt ? new Date(student.admittedAt).toLocaleDateString("en-NG") : "Not recorded"}</td>
         </tr>) : <tr><td colSpan={5}>{query.search ? "No admitted students match your search." : "No admitted students yet. Complete admission under Applications to add a student."}</td></tr>}</tbody>
       </table></div></div>

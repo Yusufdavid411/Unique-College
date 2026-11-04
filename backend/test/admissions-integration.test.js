@@ -177,12 +177,12 @@ test("applicant purchase, closure and admission approval enforce the full accoun
     assert.equal((await prisma.user.findUnique({ where: { id: applicant.id } })).passwordHash, beforeAdmission.passwordHash);
     assert.equal(admitted.application.applicant.role, "STUDENT");
     assert.equal(admitted.application.applicant.passwordHash, undefined);
-    assert.equal((await call("/applicant/dashboard", "GET", undefined, session.token)).status, 401);
-    const studentLogin = await call("/auth/applicant/login", "POST", { identifier: admitted.credentials.portalUsername, password: "IsolatedTestPassword123" });
+    assert.equal((await call("/applicant/dashboard", "GET", undefined, session.token)).status, 200);
+    const studentLogin = await call("/auth/student/login", "POST", { identifier: applicant.email, password: "IsolatedTestPassword123" });
     assert.equal(studentLogin.status, 200);
     const studentSession = (await studentLogin.json()).data;
-    assert.equal(studentSession.user.mustChangePassword, true);
-    assert.equal((await call("/applicant/dashboard", "GET", undefined, studentSession.token)).status, 403);
+    assert.equal(studentSession.user.mustChangePassword, false);
+    assert.equal((await call("/applicant/dashboard", "GET", undefined, studentSession.token)).status, 200);
     assert.equal((await call("/auth/password", "POST", { currentPassword: "IsolatedTestPassword123", password: "ActivatedStudentPassword456" }, studentSession.token)).status, 200);
     const activated = (await (await call("/auth/applicant/login", "POST", { identifier: applicant.email, password: "ActivatedStudentPassword456" })).json()).data;
     assert.equal(activated.user.mustChangePassword, false);

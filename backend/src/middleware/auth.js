@@ -2,6 +2,7 @@ import jwt from "jsonwebtoken";
 import { env } from "../config/env.js";
 import { prisma } from "../config/prisma.js";
 import { hasPermission, roleInclude } from "../services/permissions.js";
+import { requiresPasswordChange } from "../services/authService.js";
 
 export async function requireAuth(req, res, next) {
   try {
@@ -20,7 +21,7 @@ export async function requireAuth(req, res, next) {
     }
 
     req.user = user;
-    if (user.mustChangePassword && user.role !== "STAFF" && !((req.baseUrl === "/api/auth" && ["/me", "/password"].includes(req.path)) || (req.baseUrl === "/api/auth/student" && req.path === "/handoff"))) {
+    if (requiresPasswordChange(user) && !(req.baseUrl === "/api/auth" && ["/me", "/password"].includes(req.path))) {
       return res.status(403).json({ success: false, code: "PASSWORD_CHANGE_REQUIRED", message: "Change your temporary password before continuing" });
     }
     next();

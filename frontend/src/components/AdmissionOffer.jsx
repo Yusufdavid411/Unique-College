@@ -1,7 +1,7 @@
 import { useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { api, apiErrorMessage } from "../api/client.js";
-import { portalPath } from "../api/portalLinks.js";
+import { portalPath, studentPortalHref } from "../api/portalLinks.js";
 import { useApplicant } from "../context/ApplicantContext.jsx";
 import { ErrorToast } from "./ToastNotifications.jsx";
 import { useConfirmation } from "../context/ConfirmationContext.jsx";
@@ -47,7 +47,7 @@ export default function AdmissionOffer() {
       {admission.clearanceStatus === "CORRECTIONS_REQUIRED" && <Link className="button secondary" to={portalPath("/applicant/documents")}>Update clearance documents</Link>}
       <button className="button secondary" type="button" disabled={busy} onClick={refresh}>Refresh status</button>
     </>}
-    {admitted && <><p>Student number: <strong>{application.studentNumber}</strong></p><p>Username: <strong>{application.applicant?.portalUsername}</strong></p><p>Keep using your existing login. At your first sign-in after admission, change your password when prompted to activate student access.</p></>}
+    {admitted && <><p>Student number: <strong>{application.studentNumber}</strong></p><p>Sign in to the student portal with the same email and password you use here.</p><div className="document-page-actions"><a className="button primary" href={studentPortalHref()}>Sign in to student portal</a></div></>}
     <Link to={portalPath("/applicant/print")}>Download application and separate payment receipts</Link>
     <ErrorToast message={error} />
   </section>;
