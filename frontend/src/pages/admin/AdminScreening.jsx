@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import { ListChecks, Send, X } from "lucide-react";
 import { api, apiErrorMessage } from "../../api/client.js";
 import { notify } from "../../api/notifications.js";
@@ -8,11 +9,12 @@ import { useAuth } from "../../context/AuthContext.jsx";
 import AdminDirectorySearch, { matchesDirectorySearch } from "../../components/AdminDirectorySearch.jsx";
 export default function AdminScreening() {
   const { user } = useAuth();
+  const [searchParams] = useSearchParams();
   const canPublish = user?.role === "ADMIN" || user?.permissions?.includes("applications.admit");
   const [records, setRecords] = useState([]);
   const [selected, setSelected] = useState([]);
-  const [list, setList] = useState("awaiting");
-  const [search, setSearch] = useState("");
+  const [list, setList] = useState(() => searchParams.get("tab") === "invited" ? "invited" : "awaiting");
+  const [search, setSearch] = useState(() => (searchParams.get("search") || "").slice(0, 100));
   const [revision, setRevision] = useState(0);
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);

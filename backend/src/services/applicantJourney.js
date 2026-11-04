@@ -25,12 +25,13 @@ export function applicantJourney(application) {
   const formComplete = formMissing.length === 0;
   const documentsComplete = documentsMissing.length === 0;
   const current = submitted ? "review" : !paid ? "payment" : !formComplete ? "application" : "documents";
+  const reviewTitle = { APPROVED: "Accepted for screening", SCHEDULED: "Screening scheduled", PASSED: "Screening passed", FAILED: "Screening result" }[application.screeningStatus] || "Under review";
   const path = { payment: "/applicant/payments", application: "/applicant/application", documents: "/applicant/documents", review: "/applicant" }[current];
   return { current, path, paid, formComplete, documentsComplete, submitted, canSubmit: paid && formComplete && documentsComplete && !submitted && ["DRAFT", "RETURNED"].includes(application.status), formMissing, documentsMissing,
     steps: [
       { id: "payment", title: "Payment", path: "/applicant/payments", complete: paid, locked: false },
       { id: "application", title: "Application form", path: "/applicant/application", complete: paid && (formComplete || submitted), locked: !paid },
       { id: "documents", title: "Documents", path: "/applicant/documents", complete: paid && documentsComplete, locked: !paid || (!formComplete && !submitted) },
-      { id: "review", title: submitted && ["SUBMITTED", "PENDING", "REVIEWED"].includes(application.status) ? "Under review" : "Review", path: "/applicant", complete: ["ACCEPTED", "ADMITTED"].includes(application.status), locked: !submitted }
+      { id: "review", title: submitted && ["SUBMITTED", "PENDING", "REVIEWED", "INTERVIEW_SCHEDULED"].includes(application.status) ? reviewTitle : "Review", path: "/applicant", complete: ["ACCEPTED", "ADMITTED"].includes(application.status), locked: !submitted }
     ] };
 }

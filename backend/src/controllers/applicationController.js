@@ -72,7 +72,7 @@ function officialPaymentBlocker(application) {
   return null;
 }
 
-function reviewResponse(application) {
+async function reviewResponse(application) {
   const reviewReady = readyForReview(application);
   const paymentConfirmed = formAccessFor(application).unlocked;
   if (!reviewReady) return {
@@ -82,6 +82,8 @@ function reviewResponse(application) {
     payments: application.payments.filter((payment) => payment.status === "VERIFIED"), allowedStatuses: []
   };
   const admissionPaymentBlocker = officialPaymentBlocker(application);
+  const screeningFee = application.screeningFeeAmount == null && application.screeningStatus === "APPROVED" ? (await screeningPolicy(prisma)).amount : undefined;
+  const screeningPaid = screeningProgress(application, screeningFee).paid;
   const admissionDocumentsReady = Boolean(application.applicant && application.declarationAccepted && hasVerifiedAdmissionDocuments(application.documents || []));
   const acceptancePaymentRecorded = application.status === "ACCEPTED" && application.payments.some((payment) => payment.type === "ACCEPTANCE_FEE" && ["PENDING", "VERIFIED"].includes(payment.status));
   const allowedStatuses = reviewStatusesFor(application.status).filter((status) => {
@@ -92,7 +94,7 @@ function reviewResponse(application) {
     if (status === "ADMITTED") return !admissionFailure(application) && !admissionPaymentBlocker;
     return true;
   });
-  return { ...application, admission: admissionProgressFor(application), reviewReady, paymentConfirmed, admissionPaymentBlocker, admissionDocumentsReady, acceptancePaymentRecorded, allowedStatuses, emailConfigured: statusEmailConfigured() };
+  return { ...application, admission: admissionProgressFor(application), reviewReady, paymentConfirmed, screeningPaid, admissionPaymentBlocker, admissionDocumentsReady, acceptancePaymentRecorded, allowedStatuses, emailConfigured: statusEmailConfigured() };
 }
 
 export const getApplication = asyncHandler(async (req, res) => {
@@ -100,7 +102,7 @@ export const getApplication = asyncHandler(async (req, res) => {
   if (!application) {
     return res.status(404).json({ success: false, message: "Application not found" });
   }
-  ok(res, reviewResponse(application));
+  ok(res, await reviewResponse(application));
 });
 
 export const updateApplicationStatus = asyncHandler(async (req, res) => {
@@ -206,7 +208,7 @@ export const updateApplicationStatus = asyncHandler(async (req, res) => {
 
   const email = await attemptStatusEmail(application.historyId);
   const refreshed = await prisma.application.findUnique({ where: { id: current.id }, include: applicationDetails });
-  ok(res, { application: reviewResponse(refreshed), credentials, email }, credentials ? "Applicant admitted and student credentials created" : "Application status updated");
+  ok(res, { application: await reviewResponse(refreshed), credentials, email }, credentials ? "Applicant admitted and student credentials created" : "Application status updated");
 });
 
 export const retryApplicationNotification = asyncHandler(async (req, res) => {

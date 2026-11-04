@@ -42,8 +42,12 @@ test("application lists ignore the retired preview filter", async () => {
       assert.equal(response.status, 200);
       const { data } = await response.json();
       assert.equal(data.allowedStatuses.includes("ACCEPTED"), !isTest);
+      assert.equal(data.screeningPaid, !isTest);
       if (isTest) assert.match(data.admissionPaymentBlocker, /official screening fee/);
     }
+    prisma.application.findUnique = async () => ({ id, status: "REVIEWED", screeningStatus: "APPROVED", submittedAt: new Date(), formFeeAmount: 0, screeningFeeAmount: 2000, payments: [{ ...screeningPayment, isTest: false }] });
+    const approved = await (await fetch(base + "/" + id, { headers })).json();
+    assert.equal(approved.data.screeningPaid, true);
   } finally {
     prisma.user.findUnique = original.user;
     prisma.application.findMany = original.list;

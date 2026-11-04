@@ -22,6 +22,8 @@ const applicationStatusLabel = (application) => {
 
 function applicationNextStep(application, allowed, canAdmit) {
   const { status, screeningStatus, admission, admissionPaymentBlocker, admissionDocumentsReady } = application;
+  if (status === "RETURNED") return { message: "Wait for the applicant to correct and resubmit the application. No further review action is needed yet." };
+  if (!application.reviewReady) return { message: application.paymentConfirmed ? "Wait for the applicant to submit their completed form and documents." : "Wait for the application fee and completed submission." };
   if (status === "ADMITTED") return { message: "Admission is final. Manage this record under Students." };
   if (status === "REJECTED") return { message: "Application rejected. Request corrections only if the applicant should be allowed to resubmit." };
   if (status === "ACCEPTED") {
@@ -33,7 +35,7 @@ function applicationNextStep(application, allowed, canAdmit) {
     if (!admissionDocumentsReady) return { message: "Verify the required documents before completing admission.", documents: true };
     if (admission.clearanceStatus !== "CLEARED") return { message: "Review the applicant’s record and complete clearance.", clearance: canAdmit };
     if (allowed.includes("ADMITTED")) return { message: "Clearance is complete. Confirm final admission to enable student access.", status: canAdmit ? "ADMITTED" : null, label: "Confirm final admission" };
-    return null;
+    return { message: "Check the offer and clearance details below before confirming final admission." };
   }
   if (allowed.includes("SCREENING_APPROVED")) return { message: "Review the submitted form and documents before accepting this applicant for screening.", status: "SCREENING_APPROVED", label: "Accept for screening" };
   if (status === "INTERVIEW_SCHEDULED") return { message: "Record the outcome on the Screening & exams page.", screening: true };
@@ -42,9 +44,9 @@ function applicationNextStep(application, allowed, canAdmit) {
   if (["PASSED", "EXEMPT"].includes(screeningStatus) && status === "REVIEWED") {
     if (admissionPaymentBlocker) return { message: admissionPaymentBlocker };
     if (!admissionDocumentsReady) return { message: "Verify the required documents before issuing a provisional offer.", documents: true };
-    if (allowed.includes("ACCEPTED")) return { message: "Issue the provisional offer so the applicant can accept it and pay the acceptance fee.", status: canAdmit ? "ACCEPTED" : null, label: "Issue provisional offer" };
+    if (allowed.includes("ACCEPTED")) return { message: canAdmit ? "Issue the provisional offer so the applicant can accept it and pay the acceptance fee." : "An authorised admissions administrator can issue the provisional offer.", status: canAdmit ? "ACCEPTED" : null, label: "Issue provisional offer" };
   }
-  return null;
+  return { message: "There is no forward action available for this record. Check the application and screening history below." };
 }
 
 export default function AdminApplications() {
@@ -61,6 +63,7 @@ export default function AdminApplications() {
   const [search, setSearch] = useState("");
   const dialog = useRef(null);
   const documentsPanel = useRef(null);
+  const nextAction = useRef(null);
 
   const loadApplications = useCallback(async () => {
     setLoading(true);
@@ -103,6 +106,7 @@ export default function AdminApplications() {
       setSelectedApplication(data.data.application);
       setCredentials(data.data.credentials || null);
       setFeedback(data.data.email?.status === "SENT" ? "Status updated. Notification submitted to the email provider." : "Status updated. Check email notification status below.");
+      nextAction.current?.focus();
       loadApplications();
     } catch (error) { setFeedback(apiErrorMessage(error, "Unable to save the review.")); }
     finally { setSaving(false); }
@@ -150,6 +154,7 @@ export default function AdminApplications() {
       const { data } = await api.patch(`/applications/${selectedApplication.id}/clearance`, { status, note });
       await openApplication(selectedApplication.id);
       setFeedback(data.message);
+      nextAction.current?.focus();
     } catch (error) { setFeedback(apiErrorMessage(error, "Clearance could not be updated.")); }
     finally { setSaving(false); }
   }
@@ -189,7 +194,8 @@ export default function AdminApplications() {
   const canReview = user?.role === "ADMIN" || user?.permissions?.includes("applications.review");
   const canAdmit = user?.role === "ADMIN" || user?.permissions?.includes("applications.admit");
   const allowedStatuses = selectedApplication?.allowedStatuses || [];
-  const nextStep = ready ? applicationNextStep(selectedApplication, allowedStatuses, canAdmit) : null;
+  const nextStep = selectedApplication ? applicationNextStep(selectedApplication, allowedStatuses, canAdmit) : null;
+  const screeningLink = selectedApplication && portalPath("/admin/screening") + "?" + new URLSearchParams({ tab: selectedApplication.status === "INTERVIEW_SCHEDULED" ? "invited" : "awaiting", search: selectedApplication.applicationNumber || selectedApplication.fullName });
   const canRemind = selectedApplication?.applicant?.isActive && selectedApplication.applicant.role === "APPLICANT" && !selectedApplication.submittedAt && ["DRAFT", "PENDING"].includes(selectedApplication.status) && (user?.role === "ADMIN" || user?.permissions?.includes("applications.review"));
   const notification = selectedApplication?.statusHistory?.find((event) => event.emailStatus !== "NOT_REQUIRED" && event.emailRecipient);
 
@@ -216,10 +222,11 @@ export default function AdminApplications() {
               <p>Sends the deadline and a link to continue by email and portal notification. Set the date under <Link to={portalPath("/admin/settings") + "#admissions-availability"}>Admissions availability</Link>.</p>
             </div>}
             {!ready && selectedApplication.reviewNote && <p>{selectedApplication.reviewNote}</p>}
-            {ready && nextStep && <section aria-label="Next action">
+            {feedback && <p className="admin-feedback" role="status">{feedback}</p>}
+            {nextStep && <section ref={nextAction} tabIndex={-1} aria-label="Next action">
               <p><strong>Next:</strong> {nextStep.message}</p>
               {nextStep.status && canReview && <button type="button" className="button primary" disabled={saving} onClick={() => updateApplicationStatus(nextStep.status)}>{nextStep.label}</button>}
-              {nextStep.screening && <Link className="button primary" to={portalPath("/admin/screening")}>Go to Screening &amp; exams</Link>}
+              {nextStep.screening && <Link className="button primary" to={screeningLink}>{selectedApplication.status === "INTERVIEW_SCHEDULED" ? "Open screening record" : "Schedule screening"}</Link>}
               {nextStep.documents && <button type="button" className="button primary" onClick={() => { if (documentsPanel.current) { documentsPanel.current.open = true; documentsPanel.current.querySelector("summary")?.focus(); } }}>Review supporting documents</button>}
               {nextStep.clearance && <button type="button" className="button primary" disabled={saving} onClick={() => saveClearance("CLEARED", "")}>Complete clearance</button>}
             </section>}
@@ -244,7 +251,6 @@ export default function AdminApplications() {
             <dl className="admission-summary"><div><dt>Applicant response</dt><dd>{selectedApplication.admission.response.toLowerCase()}</dd></div><div><dt>Quoted acceptance fee</dt><dd>{selectedApplication.admission.amount == null ? "Not quoted" : `NGN ${Number(selectedApplication.admission.amount).toLocaleString("en-NG")}`}</dd></div><div><dt>Payment</dt><dd>{selectedApplication.admission.paid ? "Confirmed" : "Awaiting payment"}</dd></div><div><dt>Clearance</dt><dd>{selectedApplication.admission.clearanceStatus.toLowerCase().replaceAll("_", " ")}</dd></div></dl>
             {selectedApplication.status === "ACCEPTED" && canAdmit && selectedApplication.admission?.paid && selectedApplication.admission.response === "ACCEPTED" && selectedApplication.clearanceStatus !== "CLEARED" && <form className="application-review-form" onSubmit={(event) => { event.preventDefault(); saveClearance("CORRECTIONS_REQUIRED", new FormData(event.currentTarget).get("note")); }}><label>Clearance corrections<textarea name="note" rows={3} minLength={5} maxLength={2000} required defaultValue={selectedApplication.clearanceNote || ""} disabled={saving} /></label><button type="submit" className="button secondary" disabled={saving}>Request clearance corrections</button></form>}
           </details>}
-          {feedback && <p className="admin-feedback" role="status">{feedback}</p>}
           {ready && <>
             <ScreeningReview application={selectedApplication} refresh={openApplication} />
             <details className="review-disclosure"><summary>View submitted application</summary><ApplicationRecord application={selectedApplication} /></details>
