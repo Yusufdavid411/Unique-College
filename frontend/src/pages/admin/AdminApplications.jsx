@@ -12,6 +12,12 @@ import { useAuth } from "../../context/AuthContext.jsx";
 
 const readableStatus = (value) => ({ SCREENING_APPROVED: "Accept for screening", INTERVIEW_SCHEDULED: "Screening scheduled", SUBMITTED: "New submission", PENDING: "Under review", REVIEWED: "Under review", RETURNED: "Corrections required", ACCEPTED: "Admission offered", ADMITTED: "Admitted", DRAFT: "Not submitted" }[value] || value?.replaceAll("_", " ").toLowerCase().replace(/\b\w/g, (letter) => letter.toUpperCase()));
 const formatDate = (value) => value ? new Date(value).toLocaleDateString() : "Not submitted";
+const screeningLabels = { APPROVED: "Accepted for screening", PASSED: "Screening passed", FAILED: "Screening not successful" };
+const applicationStatusLabel = (application) => {
+  if (application.status === "RETURNED") return readableStatus(application.status);
+  if (!application.reviewReady) return "Awaiting submission";
+  return (application.status === "REVIEWED" && screeningLabels[application.screeningStatus]) || readableStatus(application.status);
+};
 
 export default function AdminApplications() {
   const { user } = useAuth();
@@ -170,14 +176,14 @@ export default function AdminApplications() {
       <tbody>{loading ? <tr><td colSpan="4">Loading applications…</td></tr> : visibleApplications.length ? visibleApplications.map((application) => <tr key={application.id}>
         <td data-label="Applicant"><strong>{application.fullName}</strong><small>{application.applicationNumber || application.email}</small></td>
         <td data-label="Programme">{application.courseOfInterest || "Not submitted"}</td><td data-label="Submitted">{formatDate(application.submittedAt)}</td>
-        <td><button className={`review-status-button status-chip--${application.status.toLowerCase()}`} type="button" onClick={() => openApplication(application.id)} aria-label={`View status for ${application.fullName}`}><span>{application.status === "RETURNED" || application.reviewReady ? application.screeningStatus === "APPROVED" && application.status === "REVIEWED" ? "Accepted for screening" : readableStatus(application.status) : "Awaiting submission"}</span>{application.status === "SUBMITTED" && <small>New</small>}<span aria-hidden="true">→</span></button></td>
+        <td><button className={`review-status-button status-chip--${application.status.toLowerCase()}`} type="button" onClick={() => openApplication(application.id)} aria-label={`View status for ${application.fullName}`}><span>{applicationStatusLabel(application)}</span>{application.status === "SUBMITTED" && <small>New</small>}<span aria-hidden="true">→</span></button></td>
       </tr>) : <tr><td colSpan="4">{filter === "submitted" ? "No submitted applications are ready for review." : "No applicants in this queue."}</td></tr>}</tbody>
     </table></div></div>
     {selectedApplication && <div className="application-review-backdrop">
       <section ref={dialog} tabIndex={-1} onKeyDown={dialogKeyDown} className="application-review-panel" role="dialog" aria-modal="true" aria-labelledby="application-review-title">
         <header className="application-review-panel__header"><div><span className="eyebrow">Application status</span><h2 id="application-review-title">{selectedApplication.fullName}</h2><p>{selectedApplication.applicationNumber}</p></div><button className="icon-button" type="button" disabled={saving} onClick={() => setSelectedApplication(null)} aria-label="Close application"><X size={20} /></button></header>
         <div className="application-review-panel__content">
-          <section className="review-status-card"><span className="eyebrow">Current status</span><h3>{ready || selectedApplication.status === "RETURNED" ? selectedApplication.screeningStatus === "APPROVED" && selectedApplication.status === "REVIEWED" ? "Accepted for screening" : readableStatus(selectedApplication.status) : "Awaiting submission"}</h3><p>{ready ? `Submitted ${formatDate(selectedApplication.submittedAt)}. Review the form and documents below before updating the status.` : selectedApplication.status === "RETURNED" ? "Waiting for the applicant to correct and resubmit their form." : selectedApplication.paymentConfirmed ? "Payment confirmed. The applicant has not submitted their form for review yet." : "Waiting for successful payment and a submitted application. No form is available for review yet."}</p>
+          <section className="review-status-card"><span className="eyebrow">Current status</span><h3>{applicationStatusLabel(selectedApplication)}</h3><p>{ready ? `Submitted ${formatDate(selectedApplication.submittedAt)}. Review the form and documents below before updating the status.` : selectedApplication.status === "RETURNED" ? "Waiting for the applicant to correct and resubmit their form." : selectedApplication.paymentConfirmed ? "Payment confirmed. The applicant has not submitted their form for review yet." : "Waiting for successful payment and a submitted application. No form is available for review yet."}</p>
             {canRemind && <div>
               <button className="button primary" type="button" disabled={saving} onClick={sendReminder}><Bell size={18} aria-hidden="true" />Send application reminder</button>
               <p>Sends the deadline and a link to continue by email and portal notification. Set the date under <Link to={portalPath("/admin/settings") + "#admissions-availability"}>Admissions availability</Link>.</p>
@@ -194,7 +200,8 @@ export default function AdminApplications() {
             </section>}
             {!ready && selectedApplication.reviewNote && <p>{selectedApplication.reviewNote}</p>}
             {ready && <form key={`${selectedApplication.id}-${selectedApplication.status}`} className="application-review-form" onSubmit={updateApplicationStatus}>
-              <label>Update status<select name="status" defaultValue={selectedApplication.status} onChange={(event) => setStatusChoice(event.target.value)} disabled={saving}>{(selectedApplication.allowedStatuses || [selectedApplication.status]).map((status) => <option key={status} value={status}>{readableStatus(status)}</option>)}</select></label>
+              {selectedApplication.status === "REVIEWED" && selectedApplication.screeningStatus === "PASSED" && <p><strong>Next:</strong> Verify the supporting documents, then choose Admission offered once the required payments are verified. Admitted becomes available after offer acceptance, verified acceptance payment, the required acceptance form and clearance.</p>}
+              <label>Update status<select name="status" defaultValue={selectedApplication.status} onChange={(event) => setStatusChoice(event.target.value)} disabled={saving}>{(selectedApplication.allowedStatuses || [selectedApplication.status]).map((status) => <option key={status} value={status}>{status === selectedApplication.status ? applicationStatusLabel(selectedApplication) : readableStatus(status)}</option>)}</select></label>
               {statusChoice === "REJECTED" && <label>Reason for rejection<textarea name="reviewNote" rows="3" maxLength={2000} required defaultValue={selectedApplication.status === "REJECTED" ? selectedApplication.reviewNote || "" : ""} placeholder="Type the exact issue and what needs to be corrected so the applicant knows what to change." disabled={saving} /></label>}
               <button className="button primary application-status-submit" type="submit" disabled={saving}><Check size={18} aria-hidden="true" />{saving ? "Saving…" : "Update application status"}</button>
             </form>}
@@ -221,7 +228,7 @@ export default function AdminApplications() {
           {(ready || notification) && <details className="review-disclosure"><summary>Status history and email notifications</summary>
             <p>{notification?.emailStatus === "SENT" ? "Latest notification accepted by the email provider." : selectedApplication.emailConfigured ? "Notifications are queued or awaiting retry." : "Email sending is not configured. Status updates are still visible in the applicant portal."}</p>
             {notification && notification.emailStatus !== "SENT" && <button type="button" className="button secondary" disabled={saving || !selectedApplication.emailConfigured} onClick={retryEmail}>Retry email notification</button>}
-            <ol className="review-history">{selectedApplication.statusHistory?.map((event) => <li key={event.id}><strong>{event.kind === "APPLICATION_REMINDER" ? "Application reminder" : event.kind === "SCREENING_APPROVAL" ? "Accepted for screening" : readableStatus(event.toStatus)}</strong><span>{formatDate(event.createdAt)}</span>{event.note && <p>{event.note}</p>}</li>)}</ol>
+            <ol className="review-history">{selectedApplication.statusHistory?.map((event) => <li key={event.id}><strong>{event.kind === "SCREENING_RESULT" ? event.notificationSubject || "Screening result published" : event.kind === "APPLICATION_REMINDER" ? "Application reminder" : event.kind === "SCREENING_APPROVAL" ? "Accepted for screening" : readableStatus(event.toStatus)}</strong><span>{formatDate(event.createdAt)}</span>{event.note && <p>{event.note}</p>}</li>)}</ol>
           </details>}
           {credentials && <div className="admission-credentials"><strong>Student account assigned</strong><span>Username: {credentials.portalUsername}</span><small>The student keeps their existing applicant login and must change their password at the next sign-in to activate student access. No separate password is issued.</small></div>}
         </div>
