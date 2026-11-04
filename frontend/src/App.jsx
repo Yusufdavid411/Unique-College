@@ -59,6 +59,8 @@ const AdminStudentRecord = lazy(() => import("./pages/admin/AdminStudentRecord.j
 const AdminAnnouncements = lazy(() => import("./pages/admin/AdminAnnouncements.jsx"));
 const AdminScreening = lazy(() => import("./pages/admin/AdminScreening.jsx"));
 const SchoolFormEditor = lazy(() => import("./components/SchoolFormEditor.jsx"));
+const AcademicWorkspace = lazy(() => import("./components/AcademicWorkspace.jsx"));
+const StudentCourses = lazy(() => import("./pages/student/StudentCourses.jsx"));
 
 export default function App() {
   const scope = portalScope();
@@ -110,6 +112,7 @@ export default function App() {
           <Route index element={<StudentDashboard />} />
           <Route path="profile" element={<StudentProfile />} />
           <Route path="academic" element={<StudentAcademic />} />
+          <Route path="courses" element={<StudentCourses />} />
           <Route path="records" element={<StudentRecords />} />
           <Route path="school-forms/:kind" element={<SchoolFormEditor />} />
           <Route path="announcements" element={<StudentAnnouncements />} />
@@ -122,6 +125,7 @@ export default function App() {
         <Route path={portalPath("/staff")} element={<ProtectedRoute roles={["STAFF"]} redirectTo="/staff/login" entry={scope === "staff" ? <StaffLogin /> : null}><StaffLayout /></ProtectedRoute>}>
           <Route index element={<StaffDashboard />} />
           <Route path="students" element={<StaffStudents />} />
+          <Route path="academic" element={<AcademicWorkspace />} />
           <Route path="profile" element={<StaffProfile />} />
           <Route path="settings" element={<StaffSettings />} />
           <Route path="security" element={<Navigate to={portalPath("/staff/settings")} replace />} />

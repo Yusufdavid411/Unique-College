@@ -16,6 +16,17 @@ router.use(asyncHandler(async (req, res, next) => {
   next();
 }));
 router.get("/me", asyncHandler(async (req, res) => ok(res, await studentRecord(prisma, { userId: req.user.id }))));
+router.get("/courses", asyncHandler(async (req, res) => {
+  const { sessionId, levelId } = z.object({ sessionId: z.string().uuid(), levelId: z.string().uuid() }).parse(req.query);
+  const enrolment = await prisma.studentEnrolment.findFirst({
+    where: { studentId: req.studentId, sessionId, levelId, status: "CONFIRMED" }, include: enrolmentInclude
+  });
+  if (!enrolment) return res.status(403).json({ success: false, message: "Confirm your assigned session and level in Academic record first." });
+  ok(res, await prisma.academicCourse.findMany({
+    where: { programmeId: enrolment.programmeId, departmentId: enrolment.programme.departmentId, sessionId, levelId, published: true },
+    select: { id: true, code: true, title: true, creditUnits: true, category: true, semester: true }, orderBy: [{ semester: "asc" }, { code: "asc" }], take: 500
+  }));
+}));
 router.get("/advisers", asyncHandler(async (req, res) => {
   const records = await prisma.staffStudentAssignment.findMany({ where: { isActive: true, enrolment: { studentId: req.studentId, session: { isActive: true } }, staff: { role: "STAFF", isActive: true, roleAssignments: { some: { role: { permissions: { has: "advisees.read" } } } } } }, select: { id: true, staff: { select: { name: true, email: true } }, enrolment: { select: { session: { select: { name: true } }, programme: { select: { name: true } } } } }, take: 100, orderBy: { id: "asc" } });
   ok(res, records);

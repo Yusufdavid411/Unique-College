@@ -1,0 +1,2 @@
+ALTER INDEX "academic_courses_programmeId_sessionId_levelId_semester_code_ke"
+RENAME TO "academic_courses_programmeId_sessionId_levelId_semester_cod_key";

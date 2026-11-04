@@ -9,17 +9,17 @@ import { ErrorToast } from "../../components/ToastNotifications.jsx";
 import ApplicationDownloads from "../../components/ApplicationDownloads.jsx";
 import PrivateFileButton from "../../components/PrivateFileButton.jsx";
 import StudentAdvisers from "../../components/StudentAdvisers.jsx";
+import StudentRegistrationProgress from "../../components/StudentRegistrationProgress.jsx";
 
 export const dateLabel = (value) => value ? new Date(value).toLocaleDateString("en-NG", { day: "numeric", month: "short", year: "numeric" }) : "Not recorded";
 export function StudentHeader({ label, title, children }) { return <header className="student-page-heading"><span className="eyebrow">{label}</span><h1>{title}</h1>{children && <p>{children}</p>}</header>; }
 
 export function StudentDashboard() {
   const { record } = useStudent();
-  const latest = record.enrolments[0];
   return <>
     <StudentHeader label="Your dashboard" title={`Welcome, ${record.user.name.split(" ")[0]}`}>Your student account is active. Here is what needs your attention.</StudentHeader>
     <section className="student-identity-card"><div className="student-monogram" aria-hidden="true">{record.user.name.split(" ").slice(0, 2).map((part) => part[0]).join("")}</div><div><span className="eyebrow">Student record</span><h2>{record.user.name}</h2><p>{record.application.studentNumber} · {record.user.portalUsername}</p></div><span className="student-badge">Admitted</span></section>
-    <section className="student-next-step"><span className="eyebrow">Your next step</span><h2>{!latest ? "Academic assignment is pending" : latest.status !== "CONFIRMED" ? "Confirm your academic details" : "Your academic details are confirmed"}</h2><p>{!latest ? "The registry will assign your official programme, session and level. Your admission programme is retained below; no academic assignment has been invented." : `${latest.programme.name} · ${latest.session.name} · ${latest.level.name}`}</p><Link className="button" to={portalPath("/student/academic")}>View academic record <ArrowRight size={16} /></Link></section>
+    <StudentRegistrationProgress />
     <div className="student-quick-grid">{[["My profile", "Keep your contact and next-of-kin information current.", "/student/profile", UserRound], ["Documents & receipts", "Access your accepted form and separate admission receipts.", "/student/records", FolderOpen], ["Academic record", "Review the programme and session assigned by the registry.", "/student/academic", GraduationCap]].map(([title, text, path, Icon]) => <Link className="student-card" to={portalPath(path)} key={path}><Icon size={23} /><h2>{title}</h2><p>{text}</p><span>Open <ArrowRight size={15} /></span></Link>)}</div>
     <StudentAnnouncements compact />
     <StudentAdvisers />

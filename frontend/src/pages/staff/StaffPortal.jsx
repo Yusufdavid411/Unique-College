@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link, Outlet } from "react-router-dom";
-import { LayoutDashboard, Users, Settings, UserRound } from "lucide-react";
+import { BookOpen, LayoutDashboard, Users, Settings, UserRound } from "lucide-react";
 import ChangePassword from "../../components/ChangePassword.jsx";
 import PortalShell from "../../components/PortalShell.jsx";
 import { useAuth } from "../../context/AuthContext.jsx";
@@ -9,7 +9,7 @@ import { portalPath } from "../../api/portalLinks.js";
 
 export default function StaffLayout() {
   const { user } = useAuth();
-  const links = [["Dashboard", "/staff", LayoutDashboard], ...(user.permissions.includes("advisees.read") ? [["My students", "/staff/students", Users]] : []), ["Profile & access", "/staff/profile", UserRound], ["Settings", "/staff/settings", Settings]];
+  const links = [["Dashboard", "/staff", LayoutDashboard], ["Academic workspace", "/staff/academic", BookOpen], ...(user.permissions.includes("advisees.read") ? [["My students", "/staff/students", Users]] : []), ["Profile & access", "/staff/profile", UserRound], ["Settings", "/staff/settings", Settings]];
   return <PortalShell title="Staff portal" accountScope="staff" links={links}><Outlet /></PortalShell>;
 }
 
