@@ -3136,14 +3136,32 @@ th {
   align-items: flex-start;
   gap: 12px;
   padding: 16px;
+  min-height: 56px;
+  border: 1px solid var(--line-strong);
   background: #f5fafc;
   border-radius: 10px;
+  cursor: pointer;
 }
 
-.declaration-check input {
-  width: 20px;
-  min-height: 20px;
-  margin-top: 2px;
+.portal-form .declaration-check input[type="checkbox"] {
+  flex: 0 0 28px;
+  width: 28px;
+  min-width: 28px;
+  height: 28px;
+  min-height: 28px;
+  margin: 0;
+  padding: 0;
+  accent-color: var(--blue-700);
+  cursor: pointer;
+}
+
+.declaration-check span {
+  min-width: 0;
+}
+
+.declaration-check input:focus-visible {
+  outline: 3px solid var(--blue-700);
+  outline-offset: 4px;
 }
 
 .portal-form-actions {
@@ -4340,7 +4358,6 @@ th {
   grid-column: 1 / -1;
 }
 
-.applicant-form-card label,
 .password-recovery-panel h1 { margin: 0; font-size: clamp(1.65rem, 5vw, 2rem); line-height: 1.2; }
 .password-recovery-panel form { display: grid; gap: 1rem; min-width: 0; }
 .password-recovery-panel form p, .password-recovery-notice { margin: 0; }
@@ -4356,6 +4373,7 @@ th {
   white-space: normal;
 }
 
+.applicant-form-card label,
 .application-review-form label {
   display: grid;
   gap: 7px;
