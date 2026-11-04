@@ -4,7 +4,7 @@ import { api, apiErrorMessage, FILE_TRANSFER_TIMEOUT } from "../api/client.js";
 
 const imageTypes = ["image/jpeg", "image/png", "image/webp"];
 
-function PreviewDialog({ path, label, allowDownload, filename, onClose }) {
+function PreviewDialog({ path, endpoint, label, allowDownload, filename, onClose }) {
   const dialog = useRef(null);
   const title = useId();
   const [preview, setPreview] = useState(null);
@@ -13,7 +13,7 @@ function PreviewDialog({ path, label, allowDownload, filename, onClose }) {
     if (!preview) return;
     const link = document.createElement("a");
     link.href = preview.url;
-    link.download = filename || path.split("/").pop() || "document";
+    link.download = filename || path?.split("/").pop() || "document.pdf";
     document.body.appendChild(link);
     link.click();
     link.remove();
@@ -26,13 +26,16 @@ function PreviewDialog({ path, label, allowDownload, filename, onClose }) {
     modal.showModal();
     async function load() {
       try {
-        const { data } = await api.get("/files", { params: { path }, responseType: "blob", signal: controller.signal, timeout: FILE_TRANSFER_TIMEOUT, notifyOnError: false });
+        const { data } = await api.get(endpoint || "/files", { params: endpoint ? undefined : { path }, responseType: "blob", signal: controller.signal, timeout: FILE_TRANSFER_TIMEOUT, notifyOnError: false });
         if (controller.signal.aborted) return;
         const isImage = imageTypes.includes(data.type);
         if (!isImage && data.type !== "application/pdf") throw new Error("This file type cannot be previewed.");
         url = URL.createObjectURL(data);
         setPreview({ url, isImage });
       } catch (failure) {
+        if (failure.response?.data instanceof Blob) {
+          try { failure.response.data = JSON.parse(await failure.response.data.text()); } catch {}
+        }
         if (!controller.signal.aborted) setError(apiErrorMessage(failure, "This file could not be previewed."));
       }
     }
@@ -42,7 +45,7 @@ function PreviewDialog({ path, label, allowDownload, filename, onClose }) {
       if (url) URL.revokeObjectURL(url);
       modal.close();
     };
-  }, [path]);
+  }, [path, endpoint]);
 
   return <dialog ref={dialog} className="private-preview-dialog" aria-labelledby={title} onCancel={(event) => { event.preventDefault(); onClose(); }}>
     <header><h2 id={title}>{label}</h2><div className="document-preview-actions">{allowDownload && preview && <button type="button" className="button secondary" onClick={download}><Download size={18} aria-hidden="true" />Download document</button>}<button type="button" className="button secondary" onClick={onClose}>Close</button></div></header>
@@ -54,11 +57,11 @@ function PreviewDialog({ path, label, allowDownload, filename, onClose }) {
   </dialog>;
 }
 
-export default function PrivateFilePreview({ path, label, buttonText, allowDownload = false, filename }) {
+export default function PrivateFilePreview({ path, endpoint, label, buttonText, allowDownload = false, filename }) {
   const [open, setOpen] = useState(false);
   const trigger = useRef(null);
   return <>
-    <button ref={trigger} type="button" className={buttonText ? "button secondary document-view-button" : "portal-add-button"} aria-haspopup="dialog" aria-label={`Preview ${label}`} disabled={!path} onClick={() => setOpen(true)}><Eye size={17} aria-hidden="true" />{buttonText || label}</button>
-    {open && <PreviewDialog path={path} label={label} allowDownload={allowDownload} filename={filename} onClose={() => { setOpen(false); requestAnimationFrame(() => trigger.current?.focus()); }} />}
+    <button ref={trigger} type="button" className={buttonText ? "button secondary document-view-button" : "portal-add-button"} aria-haspopup="dialog" aria-label={`Preview ${label}`} disabled={!path && !endpoint} onClick={() => setOpen(true)}><Eye size={17} aria-hidden="true" />{buttonText || label}</button>
+    {open && <PreviewDialog path={path} endpoint={endpoint} label={label} allowDownload={allowDownload} filename={filename} onClose={() => { setOpen(false); requestAnimationFrame(() => trigger.current?.focus()); }} />}
   </>;
 }

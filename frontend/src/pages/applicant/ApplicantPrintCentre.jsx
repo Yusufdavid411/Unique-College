@@ -7,5 +7,5 @@ export default function ApplicantPrintCentre() {
   if (loading) return <div className="portal-loading">Preparing print centre…</div>;
   if (!application) return <div className="portal-page"><p>Applicant record could not be loaded.</p></div>;
   if (!formAccess.unlocked) return <FormPurchaseRequired amount={formAccess.amount} />;
-  return <div className="portal-page"><header className="portal-page-header"><div><span className="eyebrow">Official documents</span><h1>Print centre</h1><p>Download each official document separately. Application forms require acceptance by admissions; admission letters require confirmed acceptance payment and release. Verified payments have their own receipts.</p></div></header><ApplicationDownloads application={application} /></div>;
+  return <div className="portal-page"><header className="portal-page-header"><div><span className="eyebrow">Official documents</span><h1>Print centre</h1><p>Print these documents and bring them to the school for submission.</p></div></header><ApplicationDownloads application={application} /></div>;
 }
