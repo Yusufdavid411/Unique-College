@@ -105,12 +105,14 @@ test("webhook secret comparisons reject absent or forged signatures and configur
   assert.throws(() => assertVerifiedTransaction({ reference: "ref", amount: "20000", currency: "NGN" }, { id: 123, tx_ref: "ref", amount: 0, currency: "NGN", status: "successful" }));
 });
 
-test("test payments cannot use production databases, portals, deployments or live merchant keys", () => {
+test("demo checkout supports the official deployment without extra database or deployment flags", () => {
   assert.equal(paymentConfigurationIssue(config), null);
-  assert.match(paymentConfigurationIssue({ ...config, databaseName: "neondb" }), /isolated test database/);
-  assert.match(paymentConfigurationIssue({ ...config, testDatabaseName: "neondb", databaseName: "neondb" }), /isolated test database/);
-  assert.match(paymentConfigurationIssue({ ...config, deploymentEnvironment: "production" }), /production deployment/);
-  assert.match(paymentConfigurationIssue({ ...config, returnUrl: "https://apply.uniquecollegekwali.com/payments" }), /live school portal/);
+  assert.equal(paymentConfigurationIssue({ ...config, databaseName: "neondb" }), null);
+  assert.equal(paymentConfigurationIssue({ ...config, testDatabaseName: "neondb", databaseName: "neondb" }), null);
+  assert.equal(paymentConfigurationIssue({ ...config, deploymentEnvironment: "production" }), null);
+  assert.equal(paymentConfigurationIssue({ ...config, returnUrl: "https://apply.uniquecollegekwali.com/payments" }), null);
+  assert.ok(paymentConfigurationIssue({ ...config, returnUrl: "javascript:alert(1)" }));
+  assert.ok(paymentConfigurationIssue({ ...config, returnUrl: "http://apply.uniquecollegekwali.com/payments" }));
   assert.match(paymentConfigurationIssue({ ...config, secretKey: "FLWSECK-live-example" }), /does not match/);
   assert.match(paymentConfigurationIssue({ ...config, mode: "live" }), /does not match/);
 });

@@ -2,8 +2,7 @@ import { Prisma } from "@prisma/client";
 
 export function demoPaymentsEnabled(configuration = process.env) {
   return configuration.PAYMENT_PROVIDER === "flutterwave" &&
-    configuration.FLUTTERWAVE_MODE === "test" &&
-    configuration.FLUTTERWAVE_RESTRICTED_PRODUCTION_TEST === "true";
+    configuration.FLUTTERWAVE_MODE === "test";
 }
 
 export function feeVerified(application, type, amount) {

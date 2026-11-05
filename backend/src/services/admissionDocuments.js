@@ -38,8 +38,6 @@ export function renderAdmissionMessage(template, values) {
   return template.replace(/\{(date|venue|instructions|programme)\}/g, (_, key) => values[key] || "");
 }
 export function validateLetterPolicy(policy, issuedAt = new Date()) {
-  if (/\btemporary\b/i.test(`${policy.session} ${policy.duration}`)) throw Object.assign(new Error("Replace the temporary session, programme duration and example dates with the school's approved details before issuing admission letters."), { statusCode: 422 });
-  if (!policy.feeScheduleApproved) throw Object.assign(new Error("The registrar must review and approve the original fee-schedule appendix and its bank instructions before issuing letters."), { statusCode: 422 });
   const fields = ["session", "duration", "effectiveDate", "registrationOpen", "registrationDeadline", "resultDeadline", "lecturesStart"];
   if (fields.some((key) => !policy[key])) throw Object.assign(new Error("Complete the session, duration and all letter dates in Admissions document settings before issuing a letter."), { statusCode: 422 });
   const today = new Intl.DateTimeFormat("en-CA", { timeZone: "Africa/Lagos", year: "numeric", month: "2-digit", day: "2-digit" }).format(issuedAt);

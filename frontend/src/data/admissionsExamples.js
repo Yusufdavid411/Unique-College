@@ -15,8 +15,8 @@ export function exampleSubmissionDeadline(now) {
 export function fillLetterExamples(policy, now = new Date()) {
   const year = Number(watDate(now).slice(0, 4));
   const examples = {
-    session: `${year}/${year + 1} (temporary)`,
-    duration: "2 years (temporary; confirm per programme)",
+    session: `${year}/${year + 1}`,
+    duration: "2 years",
     effectiveDate: dateAfter(37, now),
     registrationOpen: dateAfter(37, now),
     registrationDeadline: dateAfter(60, now),

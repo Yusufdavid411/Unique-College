@@ -102,7 +102,7 @@ test("offer, editable future pricing, automatic acceptance payment, clearance an
   const call = (path, method = "GET", body, credential = token("admin")) => fetch(base + path, { method, headers: { "Content-Type": "application/json", ...(credential ? { Authorization: `Bearer ${credential}` } : {}) }, ...(body ? { body: JSON.stringify(body) } : {}) });
   const decision = (status) => call(`/applications/${application.id}/status`, "PATCH", { status });
   const clearance = (status, note = "") => call(`/applications/${application.id}/clearance`, "PATCH", { status, note });
-  const flags = { PAYMENT_PROVIDER: "flutterwave", FLUTTERWAVE_MODE: "test", FLUTTERWAVE_RESTRICTED_PRODUCTION_TEST: "true" };
+  const flags = { PAYMENT_PROVIDER: "flutterwave", FLUTTERWAVE_MODE: "test", FLUTTERWAVE_RESTRICTED_PRODUCTION_TEST: "false" };
   const previousFlags = Object.fromEntries(Object.keys(flags).map((key) => [key, process.env[key]]));
   try {
     Object.assign(process.env, flags);
@@ -147,7 +147,7 @@ test("offer, editable future pricing, automatic acceptance payment, clearance an
     assert.match((await blocked.json()).message, /registrar|session|appendix/i);
     assert.equal(owner.role, "APPLICANT");
     application.courseOfInterest = "Community Health";
-    letterPolicy = { feeScheduleApproved: true, session: "2035/2036", duration: "Two years", effectiveDate: "2035-09-01", registrationOpen: "2035-08-01", registrationDeadline: "2035-09-30", resultDeadline: "2035-09-30", lecturesStart: "2035-09-01", screeningMessage: "Screening invitation", passedMessage: "Screening passed", failedMessage: "Screening failed", offerMessage: "Admission offered" };
+    letterPolicy = { feeScheduleApproved: false, session: "2035/2036", duration: "Two years", effectiveDate: "2035-09-01", registrationOpen: "2035-08-01", registrationDeadline: "2035-09-30", resultDeadline: "2035-09-30", lecturesStart: "2035-09-01", screeningMessage: "Screening invitation", passedMessage: "Screening passed", failedMessage: "Screening failed", offerMessage: "Admission offered" };
     const ready = (await (await call("/applications")).json()).data[0];
     assert.equal(ready.finalAdmissionReady, true);
     assert.equal(ready.admissionLetters, undefined);

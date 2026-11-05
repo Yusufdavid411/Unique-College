@@ -8,13 +8,13 @@ import { env } from "../src/config/env.js";
 import { validMaintenanceSecret } from "../src/routes/maintenanceRoutes.js";
 import { errorHandler } from "../src/middleware/errorHandler.js";
 
-const live = { enabled: true, secretKey: "FLWSECK-fixture-only", webhookHash: "fixture-only", mode: "live", restrictedProductionTest: false };
+const live = { enabled: true, secretKey: "FLWSECK-fixture-only", webhookHash: "fixture-only", mode: "live", returnUrl: "https://apply.uniquecollegekwali.com/payments" };
 test("readiness reports configuration honestly and never returns credentials", () => {
   const configuration = { RESEND_API_KEY: "private-resend-key", RESEND_FROM_EMAIL: "Admissions <no-reply@uniquecollegekwali.com>", STORAGE_PROVIDER: "blob", BLOB_READ_WRITE_TOKEN: "private-blob-token", CRON_SECRET: "private-cron-secret".repeat(3) };
   const checks = environmentReadiness(configuration, live);
   assert.ok(checks.every((check) => check.status === "CONFIGURED" && check.verifiedExternally === false));
   for (const secret of [configuration.RESEND_API_KEY, configuration.BLOB_READ_WRITE_TOKEN, configuration.CRON_SECRET, live.secretKey]) assert.ok(!JSON.stringify(checks).includes(secret));
-  assert.ok(environmentReadiness({}, { ...live, mode: "test", secretKey: "FLWSECK_TEST-fixture" }).find((check) => check.id === "payments").status === "ACTION_REQUIRED");
+  assert.equal(environmentReadiness({}, { ...live, mode: "test", secretKey: "FLWSECK_TEST-fixture" }).find((check) => check.id === "payments").status, "CONFIGURED");
   assert.equal(environmentReadiness({ ...configuration, RESEND_FROM_EMAIL: "wrong@example.com" }, live).find((check) => check.id === "email").status, "ACTION_REQUIRED");
   assert.equal(environmentReadiness({ VERCEL: "1", STORAGE_PROVIDER: "local" }, live).find((check) => check.id === "storage").status, "ACTION_REQUIRED");
 });
@@ -30,7 +30,8 @@ test("letter readiness tells the admin every missing official field without gues
   const report = await platformReadiness({ database: { $queryRaw: async () => [], siteSetting: { findUnique: async () => null }, applicationStatusHistory: { count: async () => 0 } }, configuration: {}, payment: live, access: async () => {} });
   const letters = report.checks.find((check) => check.id === "letters");
   assert.equal(letters.status, "ACTION_REQUIRED");
-  for (const field of ["academic session", "programme duration", "registration deadline", "lectures start date", "fee appendix"]) assert.ok(letters.message.includes(field));
+  for (const field of ["academic session", "programme duration", "registration deadline", "lectures start date"]) assert.ok(letters.message.includes(field));
+  assert.ok(!letters.message.includes("fee appendix"));
 });
 
 test("interrupted database requests give safe actionable errors without internal details", () => {

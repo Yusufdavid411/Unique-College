@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import { feeVerified } from "../src/services/paymentEligibility.js";
 
 test("the same verified demo fee unlocks all normal-account stages only while demo mode is enabled", () => {
-  const flags = { PAYMENT_PROVIDER: "flutterwave", FLUTTERWAVE_MODE: "test", FLUTTERWAVE_RESTRICTED_PRODUCTION_TEST: "true" };
+  const flags = { PAYMENT_PROVIDER: "flutterwave", FLUTTERWAVE_MODE: "test", FLUTTERWAVE_RESTRICTED_PRODUCTION_TEST: "false" };
   const original = Object.fromEntries(Object.keys(flags).map((key) => [key, process.env[key]]));
   try {
     Object.assign(process.env, flags);

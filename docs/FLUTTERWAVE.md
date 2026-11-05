@@ -10,13 +10,13 @@ Flutterwave remains in demo checkout mode:
 
 - `PAYMENT_PROVIDER=flutterwave`
 - `FLUTTERWAVE_MODE=test`
-- `FLUTTERWAVE_RESTRICTED_PRODUCTION_TEST=true`
 - The saved Flutterwave test secret key and webhook hash remain backend-only.
 - Return URL: `https://apply.uniquecollegekwali.com/payments`
 - Webhook: `https://api.uniquecollegekwali.com/api/payments/flutterwave/webhook`
 
-The restricted flag is a legacy configuration name for explicitly enabling demo
-payments on the official portal. It no longer limits access to form/screening only.
+No additional database, deployment or restricted-demo flag is required. Selecting
+the provider's demo mode with matching credentials enables the same admissions
+workflow on the official portal.
 
 ## Verified payments unlock the complete process
 
@@ -33,8 +33,7 @@ when no real money was collected. Live and demo modes share the same screens.
 ## Switching to live payments
 
 Configure the school's approved live Flutterwave secret key and webhook secret,
-set `FLUTTERWAVE_MODE=live`, and redeploy the API. The restricted demo flag is
-ignored in live mode and can be removed. Configure the webhook in the merchant's
+set `FLUTTERWAVE_MODE=live`, and redeploy the API. Configure the webhook in the merchant's
 live dashboard as well. No frontend rebuild or separate admissions flow is needed.
 
 Old demo payments remain demo transactions and do not satisfy new live-mode fee
@@ -49,7 +48,8 @@ accounts before a live rollout; do not charge users without school approval.
 - Require transaction ownership, exact amount/currency and matching gateway mode.
 - Validate webhook secrets, prevent transaction replay and avoid duplicate checkout.
 - Keep storage/file portability, backups, audit history and password-reset services.
-- School-approved letter settings remain required; sample dates are not approved.
+- Session, duration and valid letter dates remain required. The optional fee
+  appendix is attached only when approved; it never blocks letter release.
 
 Automated developer checks remain in the repository to protect these invariants.
 They are not user-facing test accounts, portals or application restrictions.

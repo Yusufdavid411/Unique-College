@@ -10,9 +10,7 @@ export function paymentConfiguration() {
   const secretKey = process.env.FLUTTERWAVE_SECRET_KEY || "";
   const webhookHash = process.env.FLUTTERWAVE_WEBHOOK_HASH || "";
   const returnUrl = process.env.FLUTTERWAVE_RETURN_URL || "https://apply.uniquecollegekwali.com/payments";
-  let databaseName = "";
-  try { databaseName = new URL(process.env.DATABASE_URL).pathname.slice(1); } catch {}
-  return { enabled, secretKey, webhookHash, returnUrl, mode: process.env.FLUTTERWAVE_MODE || "live", deploymentEnvironment: process.env.VERCEL_ENV || "local", databaseName, testDatabaseName: process.env.FLUTTERWAVE_TEST_DATABASE_NAME || "", restrictedProductionTest: process.env.FLUTTERWAVE_RESTRICTED_PRODUCTION_TEST === "true" };
+  return { enabled, secretKey, webhookHash, returnUrl, mode: process.env.FLUTTERWAVE_MODE || "live" };
 }
 
 export function paymentConfigurationIssue(config) {
@@ -20,17 +18,10 @@ export function paymentConfigurationIssue(config) {
   const testKey = config.secretKey.startsWith("FLWSECK_TEST-");
   if (!["test", "live"].includes(config.mode)) return "Select a valid Flutterwave payment mode.";
   if ((config.mode === "test") !== testKey) return "The Flutterwave key does not match the configured payment mode.";
-  if (config.mode === "test" && config.restrictedProductionTest) {
-    if (config.databaseName !== "neondb" || config.deploymentEnvironment !== "production" || config.returnUrl !== "https://apply.uniquecollegekwali.com/payments") return "Demo payments require the official production portal configuration.";
-    return null;
-  }
-  if (config.mode === "test") {
-    if (config.deploymentEnvironment === "production") return "Test payments are not permitted on the production deployment.";
-    if (!config.testDatabaseName || config.testDatabaseName === "neondb" || config.databaseName !== config.testDatabaseName) return "Test payments require the explicitly configured isolated test database.";
-    let hostname;
-    try { hostname = new URL(config.returnUrl).hostname; } catch { return "Configure a valid payment return address."; }
-    if (hostname === "uniquecollegekwali.com" || hostname.endsWith(".uniquecollegekwali.com") || hostname === "uniquecollegekwali.vercel.app") return "Test payments cannot return to a live school portal.";
-  }
+  let address;
+  try { address = new URL(config.returnUrl); } catch { return "Configure a valid payment return address."; }
+  if (address.protocol !== "https:" && !(address.protocol === "http:" && ["localhost", "127.0.0.1"].includes(address.hostname))) return "The payment return address is not configured securely.";
+  if (!["apply.uniquecollegekwali.com", "localhost", "127.0.0.1"].includes(address.hostname)) return "Use the official applicant portal as the payment return address.";
   return null;
 }
 

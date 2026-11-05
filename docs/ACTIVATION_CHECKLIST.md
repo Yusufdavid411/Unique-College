@@ -8,7 +8,7 @@ Open **Settings → School settings → Platform setup**. Refresh checks after s
 
 The admission-letter item lists every missing school-approved value. **Set official letter details** opens the relevant settings panel. Add academic session, default programme duration, admission effective date, registration opening/deadline, O-level deadline and lectures start date. These populate future admission letters; session also populates related school forms. Review the original fee appendix before approving its attachment. Individual programme duration can be overridden by the registrar at release. Existing quotes and issued letters are preserved.
 
-Missing/inconsistent dates or an unapproved appendix block letter issuance, not a successful payment. Never ask an applicant to pay again to fix missing letter settings.
+Missing/inconsistent dates block letter issuance, not a successful payment. The fee appendix is optional and is omitted unless approved; it does not block letters or admission. Never ask an applicant to pay again to fix missing letter settings.
 
 ## Resend: when the school account is ready
 
@@ -25,7 +25,7 @@ Official guidance: [Verified domains](https://resend.com/docs/dashboard/domains/
 ## Flutterwave: when the school merchant is approved
 
 1. Keep test mode isolated until the school is approved for live collection. Never substitute another institution's live merchant account.
-2. Configure the backend project with `PAYMENT_PROVIDER=flutterwave`, `FLUTTERWAVE_MODE=live`, the school's live `FLUTTERWAVE_SECRET_KEY`, a matching securely stored `FLUTTERWAVE_WEBHOOK_HASH`, `FLUTTERWAVE_RESTRICTED_PRODUCTION_TEST=false`, and `FLUTTERWAVE_RETURN_URL=https://apply.uniquecollegekwali.com/payments`.
+2. Configure the backend project with `PAYMENT_PROVIDER=flutterwave`, `FLUTTERWAVE_MODE=live`, the school's live `FLUTTERWAVE_SECRET_KEY`, a matching securely stored `FLUTTERWAVE_WEBHOOK_HASH`, and `FLUTTERWAVE_RETURN_URL=https://apply.uniquecollegekwali.com/payments`.
 3. In the merchant's live webhook settings, configure `https://api.uniquecollegekwali.com/api/payments/flutterwave/webhook`, using the same secret hash and the required retry/v3 settings. Test and live dashboard settings are separate.
 4. Redeploy the API and refresh Platform setup. `Configured` does not mean a live transaction has succeeded. With school approval, perform a controlled live transaction and verify the exact NGN quote, provider status, portal unlock, separate receipt and webhook replay/idempotency.
 5. Confirm who bears processor fees before collecting from applicants. Do not change expected amounts on the frontend or accept an underpayment/overpayment as the quoted fee.

@@ -17,13 +17,14 @@ test("screening uses exact quoted NGN amount and matching payment mode", async (
   assert.equal(screened({ screeningStatus: "PASSED" }), true);
 });
 
-test("letter configuration rejects missing, invalid and stale dates and unapproved appendix", () => {
+test("letter configuration rejects missing and stale dates without requiring an optional fee appendix", () => {
   assert.throws(() => validateLetterPolicy(defaultDocumentsPolicy));
   assert.equal(documentsPolicySchema.safeParse({ ...defaultDocumentsPolicy, resultDeadline: "2027-02-30" }).success, false);
   const policy = { ...defaultDocumentsPolicy, feeScheduleApproved: true, session: "2035/2036", duration: "Two years", effectiveDate: "2035-09-01", registrationOpen: "2035-08-01", registrationDeadline: "2035-09-30", resultDeadline: "2035-09-30", lecturesStart: "2035-09-01" };
   assert.doesNotThrow(() => validateLetterPolicy(policy, new Date("2035-06-01")));
-  assert.throws(() => validateLetterPolicy({ ...policy, session: "2035/2036 (temporary)" }, new Date("2035-06-01")), /temporary/);
-  assert.throws(() => validateLetterPolicy({ ...policy, duration: "2 years (temporary)" }, new Date("2035-06-01")), /temporary/);
+  assert.doesNotThrow(() => validateLetterPolicy({ ...policy, feeScheduleApproved: false }, new Date("2035-06-01")));
+  assert.doesNotThrow(() => validateLetterPolicy({ ...policy, session: "2035/2036 (temporary)" }, new Date("2035-06-01")));
+  assert.doesNotThrow(() => validateLetterPolicy({ ...policy, duration: "2 years (temporary)" }, new Date("2035-06-01")));
   assert.throws(() => validateLetterPolicy(policy, new Date("2035-10-01")));
   assert.throws(() => validateLetterPolicy({ ...policy, registrationDeadline: "2035-07-01" }, new Date("2035-06-01")));
   assert.equal(renderAdmissionMessage("Exam {date}, {venue}: {instructions}", { date: "Friday", venue: "College", instructions: "Bring ID" }), "Exam Friday, College: Bring ID");
@@ -47,6 +48,8 @@ test("original school templates generate complete PDFs without altering page cou
   const snapshot = { ...defaultDocumentsPolicy, fullName: application.fullName, reference: "UCHST/REG/ADM/2035/UCHK-2035-ABCDEF", programme: application.courseOfInterest, session: "2035/2036", duration: "Two years", effectiveDate: "2035-09-01", registrationOpen: "2035-08-01", registrationDeadline: "2035-09-30", resultDeadline: "2035-09-30", lecturesStart: "2035-09-01", feeScheduleApproved: true };
   const letter = await PDFDocument.load(await admissionLetterPdf(application, { snapshot, issuedAt: new Date("2035-06-01") }));
   assert.equal(letter.getPageCount(), 2);
+  const withoutAppendix = await PDFDocument.load(await admissionLetterPdf(application, { snapshot: { ...snapshot, feeScheduleApproved: false }, issuedAt: new Date("2035-06-01") }));
+  assert.equal(withoutAppendix.getPageCount(), 1);
   const form = await PDFDocument.load(await schoolFormPdf(application, { kind: "ACCEPTANCE", data: { surname: "Updated", firstName: "Sample", middleName: "", contactAddress: "Abuja" }, submittedAt: new Date("2035-06-01") }, snapshot));
   assert.equal(form.getPageCount(), 1);
   await assert.rejects(() => schoolFormPdf(application, { kind: "ACCEPTANCE", data: { contactAddress: "Long address ".repeat(100) } }, snapshot), /fit|long|shorten/i);

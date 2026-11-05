@@ -12,7 +12,7 @@ export default function ScreeningReview({ application, refresh, letterPanel }) {
   async function release(event) {
     event.preventDefault(); if (busy) return;
     const duration = new FormData(event.currentTarget).get("duration");
-    if (!await confirmAction({ title: "Release admission letter?", message: `Release the letter for ${application.fullName}? Confirm the course, dates, duration and approved fee appendix first.`, confirmLabel: "Release letter" })) return;
+    if (!await confirmAction({ title: "Release admission letter?", message: `Release the admission letter for ${application.fullName} using the saved course, session, dates and duration?`, confirmLabel: "Release letter" })) return;
     setBusy(true); setError("");
     try { const { data } = await api.post(`/records/applications/${application.id}/issue-letter`, duration ? { duration } : {}); notify({ title: "Admission letter released", message: data.message, type: "info" }); await refresh(application.id); }
     catch (failure) { setError(apiErrorMessage(failure)); }
