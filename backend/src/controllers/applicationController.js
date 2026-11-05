@@ -189,8 +189,12 @@ export const updateApplicationStatus = asyncHandler(async (req, res) => {
       data.clearedBy = null;
       data.clearedAt = null;
     }
+    let letterEventId = null;
+    if (req.body.status === "ADMITTED") {
+      const issued = await releaseAdmissionLetterInTransaction(transaction, current.id, req.user, undefined, { notify: current.status === "ADMITTED" });
+      letterEventId = issued.eventId;
+    }
     if (credentials) {
-      await releaseAdmissionLetterInTransaction(transaction, current.id, req.user);
       await transaction.studentProfile.upsert({ where: { userId: current.applicant.id }, update: {}, create: studentProfileData(latest) });
       await transaction.user.update({
         where: { id: current.applicant.id },
@@ -217,13 +221,15 @@ export const updateApplicationStatus = asyncHandler(async (req, res) => {
         changedBy: req.user.name,
         ...(policy ? { notificationSubject: "Admission offer ready", notificationText: renderAdmissionMessage(policy.offerMessage, { programme: current.courseOfInterest }) } : {}),
         ...(approveScreening ? { kind: "SCREENING_APPROVAL", notificationSubject: "Application accepted for screening", notificationText: statusMessage } : {}),
+        ...(req.body.status === "ADMITTED" && current.status !== "ADMITTED" ? { notificationSubject: "Admission confirmed — your documents are ready", notificationText: "Congratulations! Your admission is confirmed. Your admission letter and submitted acceptance form are available in your applicant Print centre and student Documents & receipts. Sign in at https://portal.uniquecollegekwali.com/ using your existing email and password. Your applicant portal remains accessible." } : {}),
         ...(approveScreening || current.status !== data.status ? { emailStatus: "PENDING", emailRecipient: current.applicant?.email || current.email } : {})
       }
     });
-    return { updated: await transaction.application.findUnique({ where: { id: req.params.id }, include: applicationDetails }), historyId: approveScreening || current.status !== data.status ? history?.id : null };
+    return { updated: await transaction.application.findUnique({ where: { id: req.params.id }, include: applicationDetails }), historyId: approveScreening || current.status !== data.status ? history?.id : null, letterEventId };
   }, { isolationLevel: "Serializable", timeout: 25000 });
 
   const email = await attemptStatusEmail(application.historyId);
+  if (application.letterEventId) await attemptStatusEmail(application.letterEventId);
   const refreshed = await prisma.application.findUnique({ where: { id: current.id }, include: applicationDetails });
   ok(res, { application: await reviewResponse(refreshed), credentials, email }, credentials ? "Applicant admitted and student credentials created" : "Application status updated");
 });

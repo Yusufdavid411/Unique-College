@@ -2,7 +2,7 @@ import { documentsPolicy, validateLetterPolicy, screened } from "./admissionDocu
 import { admissionProgressFor } from "./acceptance.js";
 import { admissionLetterPdf } from "./schoolDocumentsPdf.js";
 
-export async function releaseAdmissionLetterInTransaction(transaction, id, actor, duration) {
+export async function releaseAdmissionLetterInTransaction(transaction, id, actor, duration, { notify = true } = {}) {
   const application = await transaction.application.findUnique({ where: { id }, include: { payments: true } });
   if (!application || !["ACCEPTED", "ADMITTED"].includes(application.status) || application.offerResponse !== "ACCEPTED" || !screened(application) || !admissionProgressFor(application).paid) throw Object.assign(new Error("An accepted admission offer and verified acceptance fee are required before releasing the letter."), { statusCode: 409 });
   const latest = await transaction.admissionLetter.findFirst({ where: { applicationId: id }, orderBy: { version: "desc" } });
@@ -14,9 +14,9 @@ export async function releaseAdmissionLetterInTransaction(transaction, id, actor
   const snapshot = { ...policy, fullName: application.fullName, programme: application.courseOfInterest, reference: `UCHST/REG/ADM/${issuedAt.getUTCFullYear()}/${application.applicationNumber || application.id}` };
   const created = await transaction.admissionLetter.create({ data: { applicationId: id, version: 1, snapshot, issuedAt, issuedBy: actor.id } });
   await admissionLetterPdf(application, created);
-  const event = await transaction.applicationStatusHistory.create({ data: { applicationId: id, kind: "LETTER_READY", fromStatus: application.status, toStatus: application.status, changedBy: actor.name, notificationSubject: "Admission letter available", notificationText: "Your admission letter is ready. Sign in to download your official copy and complete your acceptance form.", emailRecipient: application.email, emailStatus: "PENDING" } });
+  const event = notify ? await transaction.applicationStatusHistory.create({ data: { applicationId: id, kind: "LETTER_READY", fromStatus: application.status, toStatus: application.status, changedBy: actor.name, notificationSubject: "Admission documents available", notificationText: "Your admission letter is ready in your Print centre. Your submitted acceptance form is available there too. Sign in to view and print your documents.", emailRecipient: application.email, emailStatus: "PENDING" } }) : null;
   await transaction.auditLog.create({ data: { actorId: actor.id, action: "admission_letter.issued", targetType: "application", targetId: id } });
-  return { letter: created, eventId: event.id };
+  return { letter: created, eventId: event?.id || null };
 }
 
 export async function releaseAdmissionLetter(database, id, actor, duration) {

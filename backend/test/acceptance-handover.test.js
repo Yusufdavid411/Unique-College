@@ -155,7 +155,9 @@ test("offer, editable future pricing, automatic acceptance payment, clearance an
     const admitted = await decision("ADMITTED");
     assert.equal(admitted.status, 200);
     assert.equal(application.admissionLetters.length, 1);
-    assert.ok(histories.some((event) => event.kind === "LETTER_READY"));
+    assert.ok(!histories.some((event) => event.kind === "LETTER_READY"));
+    const admissionNotice = histories.find((event) => event.notificationSubject === "Admission confirmed — your documents are ready");
+    assert.match(admissionNotice.notificationText, /admission letter and submitted acceptance form/);
     const result = (await admitted.json()).data;
     assert.equal(result.credentials.temporaryPassword, undefined);
     assert.equal(result.application.applicant.passwordHash, undefined);
@@ -179,6 +181,19 @@ test("offer, editable future pricing, automatic acceptance payment, clearance an
     const repeated = await decision("ADMITTED");
     assert.equal(repeated.status, 200);
     assert.equal((await repeated.json()).data.credentials, null);
+    const retainedUsername = owner.portalUsername;
+    const retainedPassword = owner.passwordHash;
+    application.admissionLetters = [];
+    const recovered = await decision("ADMITTED");
+    assert.equal(recovered.status, 200);
+    assert.equal((await recovered.json()).data.credentials, null);
+    assert.equal(application.admissionLetters.length, 1);
+    assert.equal(owner.portalUsername, retainedUsername);
+    assert.equal(owner.passwordHash, retainedPassword);
+    assert.equal(histories.filter((event) => event.kind === "LETTER_READY").length, 1);
+    assert.equal((await decision("ADMITTED")).status, 200);
+    assert.equal(application.admissionLetters.length, 1);
+    assert.equal(histories.filter((event) => event.kind === "LETTER_READY").length, 1);
     assert.equal((await clearance("PENDING")).status, 409);
   } finally {
     for (const [key, value] of Object.entries(previousFlags)) {

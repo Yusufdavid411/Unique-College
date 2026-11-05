@@ -33,7 +33,7 @@ function applicationNextStep(application, allowed, canAdmit) {
   if (!application.reviewReady) return { message: application.paymentConfirmed ? "Wait for the applicant to submit their completed form and documents." : "Wait for the application fee and completed submission." };
   if (status === "ADMITTED") return application.admissionLetters?.length
     ? { message: "Admission is final. Manage this record under Students." }
-    : { message: "This older admitted record has no released letter. Complete its letter release; future admissions release it automatically.", letter: canAdmit };
+    : { message: "Make the admission letter available for this existing student without changing their admission or login details.", status: canAdmit ? "ADMITTED" : null, label: "Prepare admission documents" };
   if (status === "REJECTED") return { message: "Application rejected. Request corrections only if the applicant should be allowed to resubmit." };
   if (status === "ACCEPTED") {
     if (admission?.response === "DECLINED") return { message: "The applicant declined the offer." };
@@ -75,7 +75,6 @@ export default function AdminApplications() {
   const [rejecting, setRejecting] = useState(false);
   const dialog = useRef(null);
   const documentsPanel = useRef(null);
-  const letterPanel = useRef(null);
   const nextAction = useRef(null);
   const rejectButton = useRef(null);
 
@@ -270,7 +269,6 @@ export default function AdminApplications() {
               {nextStep.status && canReview && <button type="button" className="button primary" disabled={saving} onClick={() => updateApplicationStatus(nextStep.status)}>{nextStep.label}<ArrowRight size={20} aria-hidden="true" /></button>}
               {nextStep.screening && <Link className="button primary" to={screeningLink}>{selectedApplication.status === "INTERVIEW_SCHEDULED" ? "Open screening record" : "Schedule screening"}</Link>}
               {nextStep.documents && <button type="button" className="button primary" onClick={() => { if (documentsPanel.current) { documentsPanel.current.open = true; documentsPanel.current.querySelector("summary")?.focus(); } }}>Review supporting documents</button>}
-              {nextStep.letter && <button type="button" className="button primary" onClick={() => { if (letterPanel.current) { letterPanel.current.open = true; letterPanel.current.querySelector("summary")?.focus(); } }}>Open admission letter release</button>}
               {nextStep.settings && <Link className="button primary" to={portalPath("/admin/settings") + "#admission-letter-settings"}>Complete admission letter settings</Link>}
               {nextStep.clearance && <button type="button" className="button primary" disabled={saving} onClick={() => saveClearance("CLEARED", "")}>Complete clearance</button>}
             </section>}
@@ -301,7 +299,7 @@ export default function AdminApplications() {
             {selectedApplication.status === "ACCEPTED" && canAdmit && selectedApplication.admission?.paid && selectedApplication.admission.response === "ACCEPTED" && selectedApplication.clearanceStatus !== "CLEARED" && <form className="application-review-form" onSubmit={(event) => { event.preventDefault(); saveClearance("CORRECTIONS_REQUIRED", new FormData(event.currentTarget).get("note")); }}><label>Clearance corrections<textarea name="note" rows={3} minLength={5} maxLength={2000} required defaultValue={selectedApplication.clearanceNote || ""} disabled={saving} /></label><button type="submit" className="button secondary" disabled={saving}>Request clearance corrections</button></form>}
           </details>}
           {ready && <>
-            <ScreeningReview application={selectedApplication} refresh={openApplication} letterPanel={letterPanel} />
+            <ScreeningReview application={selectedApplication} />
             <details className="review-disclosure"><summary>View submitted application</summary><ApplicationRecord application={selectedApplication} /></details>
             <details ref={documentsPanel} className="review-disclosure"><summary>Review supporting documents</summary>
               {canReview && selectedApplication.status !== "ADMITTED" && selectedApplication.documents?.length > 0 && <button className="button secondary" type="button" disabled={saving} onClick={verifyAllDocuments}>Verify all reviewed documents</button>}

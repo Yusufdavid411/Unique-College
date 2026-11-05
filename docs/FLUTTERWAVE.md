@@ -26,6 +26,14 @@ acceptance form, clearance and final student activation. Backend payment eligibi
 is shared across these stages. Administrators still review documents, publish
 results and make admission decisions; payment alone never issues admission.
 
+Final admission creates a missing admission letter in the same transaction as
+student activation. There is no separate admin release panel. One admission
+notification directs the user to the ready letter and submitted acceptance form.
+Acceptance forms are available as soon as the applicant submits them; their
+declaration is never submitted automatically on the applicant's behalf.
+Older admitted records without a letter can be repaired with one admission action
+without resetting the student's credentials or issuing duplicate letters.
+
 No payment records are rewritten as real transactions. Mode flags are financial
 history, not a separate application workflow. Receipt PDFs accurately indicate
 when no real money was collected. Live and demo modes share the same screens.

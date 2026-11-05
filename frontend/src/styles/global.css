@@ -3374,9 +3374,9 @@ th {
 }
 
 .record-downloads p { color: var(--muted); }
-.record-download-group h3 { margin: 0 0 10px; }
+.record-download-group h3 { margin: 0 0 10px; padding-bottom: 10px; border-bottom: 1px solid var(--line); }
 .record-download-group ul { list-style: none; margin: 0; padding: 0; }
-.record-download-group li { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; padding: 12px 0; border-top: 1px solid var(--line); }
+.record-download-group li { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; padding: 12px 0; }
 .record-download-group small { display: block; color: var(--muted); }
 .bulk-notice-recipients { max-height: 12rem; overflow: auto; }
 .record-downloads button { max-width: 100%; white-space: normal; text-align: left; }
