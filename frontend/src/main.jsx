@@ -9,6 +9,9 @@ import AppErrorBoundary from "./components/AppErrorBoundary.jsx";
 import ToastNotifications from "./components/ToastNotifications.jsx";
 import { SchoolProvider } from "./context/SchoolContext.jsx";
 import { ConfirmationProvider } from "./context/ConfirmationContext.jsx";
+import { installModuleRecovery } from "./api/moduleRecovery.js";
+
+installModuleRecovery(window);
 
 function ApplicationRoot() {
   React.useLayoutEffect(() => {

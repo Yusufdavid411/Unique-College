@@ -7,7 +7,12 @@ test("document groups keep heading rules without individual row dividers", async
   const heading = css.match(/\.record-download-group h3\s*\{([^}]+)\}/)[1];
   const row = css.match(/\.record-download-group li\s*\{([^}]+)\}/)[1];
   assert.match(heading, /border-bottom: 1px solid/);
-  assert.doesNotMatch(row, /border/);
+  assert.match(row, /border: 0/);
+  assert.doesNotMatch(row, /border-(?:top|bottom): 1px/);
+  const studentRow = css.match(/\.student-document-list > div\s*\{([^}]+)\}/)[1];
+  assert.doesNotMatch(studentRow, /border-bottom/);
+  const downloads = ["pages/applicant/ApplicantPrintCentre.jsx", "pages/student/StudentPages.jsx", "pages/admin/AdminApplications.jsx"];
+  for (const file of downloads) assert.match(await readFile(new URL("../../frontend/src/" + file, import.meta.url), "utf8"), /<ApplicationDownloads application=/);
 });
 
 test("admin admission no longer requires a separate letter-release panel", async () => {
