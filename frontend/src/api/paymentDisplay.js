@@ -1,4 +1,4 @@
-export const PAYMENT_SUCCESS_DURATION = 60 * 60 * 1000;
+export const PAYMENT_SUCCESS_DURATION = 5 * 60 * 1000;
 
 export function paymentSuccessExpiry(payment) {
   if (payment.status !== "VERIFIED") return 0;

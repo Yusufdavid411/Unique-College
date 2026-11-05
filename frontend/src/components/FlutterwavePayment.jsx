@@ -1,10 +1,10 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { CheckCircle2, CreditCard } from "lucide-react";
 import { api, apiErrorMessage } from "../api/client.js";
 import { portalPath } from "../api/portalLinks.js";
 import { useApplicant } from "../context/ApplicantContext.jsx";
-import PrivateFileButton from "./PrivateFileButton.jsx";
+import PrivateFilePreview from "./PrivateFilePreview.jsx";
 import LoadingButton from "./LoadingButton.jsx";
 import { trustedPaymentCheckout } from "../api/paymentCheckout.js";
 import { ErrorToast } from "./ToastNotifications.jsx";
@@ -23,9 +23,14 @@ export default function FlutterwavePayment() {
   const callbackHandled = useRef(false);
   const pending = application.payments.find((payment) => payment.status === "PENDING");
   const onlinePending = pending?.provider === "FLUTTERWAVE";
-  const history = application.payments.filter((payment) => payment.status !== "CANCELLED");
+  const history = application.payments.filter((payment) => {
+    if (payment.status === "CANCELLED") return false;
+    const active = payment.type === "ACCEPTANCE_FEE" ? admission?.offered && admission.paid && Number(payment.amount) === Number(admission.amount) : payment.type === "SCREENING_FEE" ? screening?.paid && Number(payment.amount) === Number(screening.amount) : payment.type === "APPLICATION_FEE" && formAccess.unlocked && Number(payment.amount) === Number(formAccess.amount);
+    return !(active && paymentSuccessExpiry(payment) > now);
+  });
   const acceptanceFormSubmitted = application.schoolForms?.some((form) => form.kind === "ACCEPTANCE" && form.status === "SUBMITTED");
   const canCompleteAcceptanceForm = admission?.offered && admission.response === "ACCEPTED" && admission.paid && !acceptanceFormSubmitted;
+  const recentAcceptance = canCompleteAcceptanceForm && showPaymentSuccess(application.payments, "ACCEPTANCE_FEE", admission.amount, now);
 
   useEffect(() => {
     const update = () => setNow(Date.now());
@@ -93,7 +98,13 @@ export default function FlutterwavePayment() {
     const blocked = Boolean(pending && (!canResume || pending.type !== type));
     return <section className="portal-alert payment-bank-card" key={type} aria-label={label}>
       <span className="eyebrow">{label}</span><strong className="payment-fee-value">{amount == null ? "Not quoted" : `NGN ${Number(amount).toLocaleString("en-NG", { minimumFractionDigits: 2 })}`}</strong>
-      {paid ? <><p className="payment-success-message"><CheckCircle2 size={20} aria-hidden="true" /><strong>Payment successful</strong></p>{type === "APPLICATION_FEE" && <p>Your application form is available.</p>}{type === "SCREENING_FEE" && <p>Check your exam invitation.</p>}<p>Your receipt is available in Payment history below.</p></> : !available ? <p>{admission?.response === "DECLINED" ? "This offer was declined. Contact admissions if you need assistance." : "Accept your active admission offer on the dashboard before paying this fee."}</p> : <>
+      {paid ? <>
+        <p className="payment-success-message"><CheckCircle2 size={20} aria-hidden="true" /><strong>Payment successful</strong></p>
+        {type === "APPLICATION_FEE" && <p>Your application form is available.</p>}
+        {type === "SCREENING_FEE" && <p>Admissions will schedule your exam.</p>}
+        {(() => { const payment = application.payments.find((item) => item.type === type && item.status === "VERIFIED" && Number(item.amount) === Number(amount)); return payment && <PrivateFilePreview endpoint={`/records/applications/${application.id}/payments/${payment.id}/receipt`} filename={`${payment.reference}-receipt.pdf`} label={`${label} receipt`} buttonText="View payment receipt" allowDownload />; })()}
+        {type === "ACCEPTANCE_FEE" && canCompleteAcceptanceForm && <div className="payment-next-action"><Link className="button primary" to={portalPath("/applicant/school-forms/ACCEPTANCE")}>Proceed to acceptance form</Link></div>}
+      </> : !available ? <p>{admission?.response === "DECLINED" ? "This offer was declined. Contact admissions if you need assistance." : "Accept your active admission offer on the dashboard before paying this fee."}</p> : <>
         {!paymentGateway.ready && <p role="status">Online payments are temporarily unavailable for this account. Please check back shortly. Do not transfer money outside this checkout.</p>}
         {blocked && <p>Another payment is awaiting confirmation. Check its status before paying again.</p>}
         {pending && !onlinePending && <button type="button" className="button secondary" disabled={busy} onClick={withdrawLegacyReceipt}>Withdraw incorrect receipt</button>}
@@ -108,16 +119,16 @@ export default function FlutterwavePayment() {
     {admission?.offered && feeCard("ACCEPTANCE_FEE", "Acceptance fee", admission.amount, admission.paid, admission.canPay)}
     {(screening?.eligible || screening?.paid) && feeCard("SCREENING_FEE", "Screening / entrance-exam fee", screening.amount, screening.paid, true)}
     {feeCard("APPLICATION_FEE", "Application form fee", formAccess.amount, formAccess.unlocked, true)}
+    {canCompleteAcceptanceForm && !recentAcceptance && <section className="portal-alert payment-next-action"><Link className="button primary" to={portalPath("/applicant/school-forms/ACCEPTANCE")}>Proceed to acceptance form</Link></section>}
     <ErrorToast message={notice} />
-    <section className="payment-history"><h2>Payment history</h2>
+    {(history.length > 0 || application.payments.length === 0) && <section className="payment-history"><h2>Payment history</h2>
       {!history.length && <div className="empty-state">No payments yet.</div>}
       {history.map((payment) => <article key={payment.id}>
         <span className={`payment-status-icon ${payment.status.toLowerCase()}`}><CreditCard /></span>
         <div><strong>{payment.type === "ACCEPTANCE_FEE" ? "Acceptance fee" : payment.type === "APPLICATION_FEE" ? "Application form fee" : payment.type.replaceAll("_", " ")}</strong><span>NGN {Number(payment.amount).toLocaleString()} · {payment.reference}</span><small>{payment.status === "VERIFIED" ? "Payment verified" : payment.provider === "FLUTTERWAVE" ? "Awaiting payment confirmation" : payment.status}</small></div>
-        {payment.status === "VERIFIED" && <div className="payment-receipt-actions"><PrivateFileButton endpoint={`/records/applications/${application.id}/payments/${payment.id}/receipt`} filename={`${payment.reference}-receipt.pdf`}>Download payment receipt (PDF)</PrivateFileButton></div>}
+        {payment.status === "VERIFIED" && <div className="payment-receipt-actions"><PrivateFilePreview endpoint={`/records/applications/${application.id}/payments/${payment.id}/receipt`} filename={`${payment.reference}-receipt.pdf`} label="Payment receipt" buttonText="View payment receipt" allowDownload /></div>}
       </article>)}
-    </section>
+    </section>}
     {!admission?.offered && <div className="applicant-next-step"><p>{formAccess.unlocked ? "Continue to your application form." : "Your form unlocks once Flutterwave confirms payment."}</p><button type="button" className="button primary" disabled={!formAccess.unlocked || busy} onClick={() => navigate(portalPath("/applicant/application"))}>Next: Application form</button></div>}
-    {canCompleteAcceptanceForm && <div className="applicant-next-step"><button type="button" className="button primary" disabled={busy} onClick={() => navigate(portalPath("/applicant/school-forms/ACCEPTANCE"))}>Complete acceptance form</button></div>}
   </div>;
 }

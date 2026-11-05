@@ -13,14 +13,18 @@ import AdminDirectorySearch, { matchesDirectorySearch } from "../../components/A
 import { useConfirmation } from "../../context/ConfirmationContext.jsx";
 import { watDate } from "../../data/admissionsExamples.js";
 import ApplicationBulkNotice from "../../components/ApplicationBulkNotice.jsx";
-import BulkFinalAdmission from "../../components/BulkFinalAdmission.jsx";
+import ApplicationStageAction from "../../components/ApplicationStageAction.jsx";
+import { matchesApplicationQueue } from "../../api/applicationQueues.js";
+import { ErrorToast } from "../../components/ToastNotifications.jsx";
+import { notify } from "../../api/notifications.js";
 
-const queues = { all: "All applications", submitted: "Submitted applications", waiting: "Not ready for review", corrections: "Corrections required", screening: "In screening", passed: "Screening complete", offered: "Admission offered", failed: "Screening unsuccessful", rejected: "Rejected" };
+const queues = { all: "All applications", submitted: "Submitted applications", waiting: "Not ready for review", corrections: "Corrections required", screening: "In screening", passed: "Screening complete", offered: "Admission offered", admitted: "Admitted students", failed: "Screening unsuccessful", rejected: "Rejected" };
 
 const readableStatus = (value) => ({ SCREENING_APPROVED: "Accept for screening", INTERVIEW_SCHEDULED: "Screening scheduled", SUBMITTED: "New submission", PENDING: "Under review", REVIEWED: "Under review", RETURNED: "Corrections required", ACCEPTED: "Admission offered", ADMITTED: "Admitted", DRAFT: "Not submitted" }[value] || value?.replaceAll("_", " ").toLowerCase().replace(/\b\w/g, (letter) => letter.toUpperCase()));
 const formatDate = (value) => value ? new Date(value).toLocaleDateString() : "Not submitted";
 const screeningLabels = { APPROVED: "Accepted for screening", PASSED: "Screening passed", FAILED: "Screening not successful" };
 const applicationStatusLabel = (application) => {
+  if (application.progressLabel) return application.progressLabel;
   if (application.status === "RETURNED") return readableStatus(application.status);
   if (!application.reviewReady) return "Awaiting submission";
   if (application.status === "SUBMITTED" && application.screeningStatus === "PASSED") return "Resubmitted · Screening passed";
@@ -78,16 +82,29 @@ export default function AdminApplications() {
   const nextAction = useRef(null);
   const rejectButton = useRef(null);
 
-  const loadApplications = useCallback(async () => {
-    setLoading(true);
+  const listVersion = useRef(0);
+  const loadApplications = useCallback(async ({ background = false } = {}) => {
+    const current = ++listVersion.current;
+    if (!background) setLoading(true);
     try {
-      const { data } = await api.get("/applications");
-      setApplications(data.data || []);
-    } catch (error) { setFeedback(apiErrorMessage(error, "Unable to load applications.")); }
-    finally { setLoading(false); }
+      const { data } = await api.get("/applications", { notifyOnError: false });
+      if (current === listVersion.current) setApplications(data.data || []);
+    } catch (error) { if (!background) setFeedback(apiErrorMessage(error, "Unable to load applications.")); }
+    finally { if (!background || current === listVersion.current) setLoading(false); }
   }, []);
   useEffect(() => { loadApplications(); }, [loadApplications]);
   const selectedId = selectedApplication?.id;
+  useEffect(() => {
+    const controller = new AbortController();
+    const update = () => {
+      if (document.hidden || saving) return;
+      loadApplications({ background: true });
+      if (selectedId) api.get(`/applications/${selectedId}`, { notifyOnError: false, signal: controller.signal }).then(({ data }) => { if (!controller.signal.aborted) setSelectedApplication((current) => current?.id === selectedId ? data.data : current); }).catch(() => {});
+    };
+    const timer = window.setInterval(update, 15000);
+    window.addEventListener("focus", update);
+    return () => { controller.abort(); window.clearInterval(timer); window.removeEventListener("focus", update); };
+  }, [selectedId, saving, loadApplications]);
   useEffect(() => {
     if (!selectedId) return;
     const previousFocus = document.activeElement;
@@ -102,7 +119,7 @@ export default function AdminApplications() {
     setCredentials(null);
     setRejecting(false);
     try {
-      const { data } = await api.get(`/applications/${applicationId}`);
+      const { data } = await api.get(`/applications/${applicationId}`, { notifyOnError: false });
       setSelectedApplication(data.data);
     } catch (error) { setFeedback(apiErrorMessage(error, "Unable to open this application.")); }
   }
@@ -116,11 +133,11 @@ export default function AdminApplications() {
     setSaving(true);
     setFeedback("");
     try {
-      const { data } = await api.patch(`/applications/${selectedApplication.id}/status`, { status, ...(status === "REJECTED" ? { reviewNote } : {}) });
+      const { data } = await api.patch(`/applications/${selectedApplication.id}/status`, { status, ...(status === "REJECTED" ? { reviewNote } : {}) }, { notifyOnError: false });
       setSelectedApplication(data.data.application);
       setRejecting(false);
       setCredentials(data.data.credentials || null);
-      setFeedback(data.data.email?.status === "SENT" ? "Status updated. Notification submitted to the email provider." : "Status updated. Check email notification status below.");
+      notify({ title: "Status updated", message: "The applicant’s progress has been updated.", type: "info" });
       nextAction.current?.focus();
       loadApplications();
     } catch (error) { setFeedback(apiErrorMessage(error, "Unable to save the review.")); }
@@ -130,7 +147,7 @@ export default function AdminApplications() {
   async function updateDocument(documentId, reviewStatus) {
     setSaving(true);
     try {
-      await api.patch(`/applications/${selectedApplication.id}/documents/${documentId}`, { reviewStatus });
+      await api.patch(`/applications/${selectedApplication.id}/documents/${documentId}`, { reviewStatus }, { notifyOnError: false });
       await openApplication(selectedApplication.id);
     } catch (error) { setFeedback(apiErrorMessage(error, "Unable to review this document.")); }
     finally { setSaving(false); }
@@ -141,7 +158,7 @@ export default function AdminApplications() {
     setSaving(true);
     try {
       if (!await confirmAction({ title: "Verify all reviewed documents?", message: "Confirm you have opened and checked every current document for this applicant. This does not approve payments or grant admission.", confirmLabel: "I reviewed them — verify all" })) return;
-      await api.post(`/applications/${selectedApplication.id}/documents/verify-all`, { reviewed: true, documents: selectedApplication.documents.map(({ id, updatedAt }) => ({ id, updatedAt })) });
+      await api.post(`/applications/${selectedApplication.id}/documents/verify-all`, { reviewed: true, documents: selectedApplication.documents.map(({ id, updatedAt }) => ({ id, updatedAt })) }, { notifyOnError: false });
       await openApplication(selectedApplication.id);
     } catch (error) { setFeedback(apiErrorMessage(error)); }
     finally { setSaving(false); }
@@ -153,7 +170,7 @@ export default function AdminApplications() {
     setFeedback("");
     const endpoint = `/applications/${selectedApplication.id}`;
     try {
-      const { data: policy } = await api.get("/settings/admissions");
+      const { data: policy } = await api.get("/settings/admissions", { notifyOnError: false });
       const deadline = policy.data.closingDate;
       if (!deadline || deadline < watDate()) {
         setFeedback("Set a current or future submission deadline in Admissions setup before sending a reminder.");
@@ -165,7 +182,8 @@ export default function AdminApplications() {
         message: `This sends an email and portal notification asking the applicant to submit by 11:59 pm WAT on ${date}. Check that this is the school’s intended deadline before sending.`,
         confirmLabel: "Send reminder"
       })) return;
-      await api.post(`${endpoint}/reminder`);
+      await api.post(`${endpoint}/reminder`, undefined, { notifyOnError: false });
+      notify({ title: "Reminder sent", message: "The reminder is available in the applicant’s portal and submitted for email delivery.", type: "info" });
       const response = await api.get(endpoint, { notifyOnError: false }).catch(() => null);
       if (response) setSelectedApplication(response.data.data);
     } catch (error) { setFeedback(error.response?.status === 429 && error.response.data?.message ? error.response.data.message : apiErrorMessage(error, "Unable to send the reminder.")); }
@@ -175,9 +193,9 @@ export default function AdminApplications() {
   async function retryEmail() {
     setSaving(true);
     try {
-      const { data } = await api.post(`/applications/${selectedApplication.id}/notifications/retry`);
-      setFeedback(data.message);
-      const response = await api.get(`/applications/${selectedApplication.id}`);
+      const { data } = await api.post(`/applications/${selectedApplication.id}/notifications/retry`, undefined, { notifyOnError: false });
+      notify({ title: "Email notification", message: data.message, type: "info" });
+      const response = await api.get(`/applications/${selectedApplication.id}`, { notifyOnError: false });
       setSelectedApplication(response.data.data);
     } catch (error) { setFeedback(apiErrorMessage(error, "Email could not be sent.")); }
     finally { setSaving(false); }
@@ -188,9 +206,9 @@ export default function AdminApplications() {
     setSaving(true);
     setFeedback("");
     try {
-      const { data } = await api.patch(`/applications/${selectedApplication.id}/clearance`, { status, note });
+      const { data } = await api.patch(`/applications/${selectedApplication.id}/clearance`, { status, note }, { notifyOnError: false });
       await openApplication(selectedApplication.id);
-      setFeedback(data.message);
+      notify({ title: "Clearance updated", message: data.message, type: "info" });
       nextAction.current?.focus();
     } catch (error) { setFeedback(apiErrorMessage(error, "Clearance could not be updated.")); }
     finally { setSaving(false); }
@@ -207,7 +225,7 @@ export default function AdminApplications() {
     else if (!event.shiftKey && (document.activeElement === last || document.activeElement === dialog.current)) { event.preventDefault(); first?.focus(); }
   }
 
-  const visibleApplications = applications.filter((application) => (filter === "all" || application.notificationAudience === filter || (filter === "waiting" && !application.reviewReady && !application.notificationAudience)) && matchesDirectorySearch(search, application.fullName, application.email, application.applicationNumber, application.courseOfInterest, applicationStatusLabel(application)));
+  const visibleApplications = applications.filter((application) => matchesApplicationQueue(application, filter) && matchesDirectorySearch(search, application.fullName, application.email, application.applicationNumber, application.courseOfInterest, applicationStatusLabel(application)));
   async function deleteApplicantAccount(event) {
     event.preventDefault();
     if (saving || !selectedApplication?.applicant) return;
@@ -219,9 +237,9 @@ export default function AdminApplications() {
     if (!await confirmAction({ title: "Delete applicant login?", message: "The applicant will lose access to this application. Application and payment records will be retained. This action cannot be undone.", confirmLabel: "Delete login", danger: true })) return;
     setSaving(true);
     try {
-      const { data } = await api.delete(`/applications/${selectedApplication.id}/account`, { data: { confirmation } });
+      const { data } = await api.delete(`/applications/${selectedApplication.id}/account`, { data: { confirmation }, notifyOnError: false });
       setSelectedApplication(null);
-      setFeedback(data.message);
+      notify({ title: "Account removed", message: data.message, type: "info" });
       await loadApplications();
     } catch (error) {
       setFeedback(apiErrorMessage(error));
@@ -240,10 +258,13 @@ export default function AdminApplications() {
   return <div className="admin-page">
     <header className="admin-header"><span className="eyebrow">Admissions office</span><h1>Applications</h1><p>Review submitted applications and keep applicants informed.</p></header>
     <AdminDirectorySearch label="Search applications" placeholder="Name, email, application ID, programme or status" value={search} onChange={setSearch} />
-    {!selectedApplication && feedback && <p className="admin-feedback" role="status">{feedback}</p>}
-    <div className="review-filters" role="group" aria-label="Application queue">{Object.entries(queues).map(([value, label]) => <button key={value} type="button" aria-pressed={filter === value} onClick={() => setFilter(value)}>{label}</button>)}</div>
-    {canReview && filter !== "all" && <ApplicationBulkNotice key={filter} audience={filter} label={queues[filter]} />}
-    {canReview && canAdmit && filter === "offered" && <BulkFinalAdmission key={search} applications={visibleApplications} refresh={loadApplications} />}
+    <ErrorToast message={feedback} />
+    <div className="review-filters" role="group" aria-label="Application queue">{Object.entries(queues).map(([value, label]) => <button key={value} type="button" aria-pressed={filter === value} onClick={() => { setFilter(value); setFeedback(""); }}>{label} ({applications.filter((application) => matchesApplicationQueue(application, value)).length})</button>)}</div>
+    {canReview && ["waiting", "corrections", "offered"].includes(filter) && <ApplicationBulkNotice key={filter} audience={filter} label={queues[filter]} />}
+    {canReview && filter === "submitted" && <ApplicationStageAction applications={visibleApplications} action="SCREENING_APPROVED" label="Accept for screening" refresh={loadApplications} />}
+    {canAdmit && filter === "passed" && <ApplicationStageAction applications={visibleApplications} action="ACCEPTED" label="Issue admission offers" refresh={loadApplications} />}
+    {canReview && filter === "screening" && <div className="form-panel"><Link className="button primary" to={portalPath("/admin/screening")}>Schedule screening / record results</Link></div>}
+    {canReview && canAdmit && filter === "offered" && <ApplicationStageAction applications={visibleApplications} action="ADMITTED" label="Admit students & release letters" refresh={loadApplications} />}
     <div className="admin-table-card"><div className="admin-table-wrap"><table className="review-queue">
       <thead><tr><th>Applicant</th><th>Programme</th><th>Submitted</th><th>Status / review</th></tr></thead>
       <tbody>{loading ? <tr><td colSpan="4">Loading applications…</td></tr> : visibleApplications.length ? visibleApplications.map((application) => <tr key={application.id}>
@@ -262,7 +283,6 @@ export default function AdminApplications() {
               <p>Review or change the <Link to={portalPath("/admin/settings") + "#admissions-availability"}>application submission deadline</Link> before sending.</p>
             </div>}
             {!ready && selectedApplication.reviewNote && <p>{selectedApplication.reviewNote}</p>}
-            {feedback && <p className="admin-feedback" role="status">{feedback}</p>}
             {nextStep && <section ref={nextAction} tabIndex={-1} className="application-next-action" aria-label="Next action">
               <h4>Next step</h4>
               <p>{nextStep.message}</p>

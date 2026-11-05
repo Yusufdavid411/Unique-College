@@ -6,7 +6,7 @@ import { useSchool } from "../context/SchoolContext.jsx";
 import { assetPaths } from "../data/siteData.js";
 import { portalPath, publicPageHref } from "../api/portalLinks.js";
 
-export default function PortalShell({ title, links, children, accountScope = "student" }) {
+export default function PortalShell({ title, links, children, accountScope = "student", profilePath, profileLabel = "Open my profile" }) {
   const { user, logout } = useAuth();
   const { schoolInfo } = useSchool();
   const [open, setOpen] = useState(false);
@@ -47,8 +47,8 @@ export default function PortalShell({ title, links, children, accountScope = "st
       <button type="button" className="student-logout" onClick={logout}><LogOut size={18} />Sign out</button>
     </aside>
     <div className="student-workspace" inert={open && mobile ? true : undefined}>
-      <header className="student-topbar"><button type="button" ref={trigger} className="student-menu-toggle" aria-label={`Open ${accountScope} navigation`} aria-controls="student-navigation" aria-expanded={open} onClick={() => setOpen(true)}><Menu size={22} /></button><div><strong>{title}</strong><span>{schoolInfo.shortName}</span></div><Link to={portalPath(`/${accountScope}/profile`)} aria-label="Open my profile"><UserRound size={21} /><span>{user.name}</span></Link></header>
-      <main id="student-main" className="student-main" tabIndex={-1}>{children}</main>
+      <header className="student-topbar"><button type="button" ref={trigger} className="student-menu-toggle" aria-label={`Open ${accountScope} navigation`} aria-controls="student-navigation" aria-expanded={open} onClick={() => setOpen(true)}><Menu size={22} /></button><div><strong>{title}</strong><span>{schoolInfo.shortName}</span></div><Link to={portalPath(profilePath || `/${accountScope}/profile`)} aria-label={profileLabel}><UserRound size={21} /><span>{user.name}</span></Link></header>
+      <main id="student-main" className={`student-main${accountScope === "admin" ? " admin-main" : ""}`} tabIndex={-1}>{children}</main>
     </div>
   </div>;
 }

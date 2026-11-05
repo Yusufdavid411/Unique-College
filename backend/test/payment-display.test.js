@@ -2,7 +2,8 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { PAYMENT_SUCCESS_DURATION, paymentSuccessExpiry, showPaymentSuccess } from "../../frontend/src/api/paymentDisplay.js";
 
-test("each paid fee confirmation expires one hour after verification without altering history", () => {
+test("each paid fee confirmation expires five minutes after verification without altering history", () => {
+  assert.equal(PAYMENT_SUCCESS_DURATION, 300000);
   const verifiedAt = "2026-11-04T10:00:00Z";
   const start = Date.parse(verifiedAt);
   for (const type of ["APPLICATION_FEE", "SCREENING_FEE", "ACCEPTANCE_FEE"]) {

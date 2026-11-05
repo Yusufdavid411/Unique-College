@@ -50,3 +50,13 @@ test("bulk reminders use the confirmed audience and deadline without changing st
   assert.equal(saved[0].emailStatus, "PENDING");
   assert.match(saved[0].notificationText, /15 November 2026/);
 });
+
+test("correction reminders wait after the automatic status message instead of sending twice", async () => {
+  let historyFilter;
+  const record = { ...submitted, status: "RETURNED", statusHistory: [{ id: "recent-correction-message" }] };
+  const database = { application: { findMany: async ({ select }) => { historyFilter = select.statusHistory.where; return [record]; } } };
+  const preview = await bulkNotificationPreview(database, "corrections", now);
+  assert.equal(preview.recipients.length, 0);
+  assert.equal(preview.recentlyNotified, 1);
+  assert.deepEqual(historyFilter.OR, [{ kind: "BULK_CORRECTIONS" }, { kind: "STATUS", toStatus: "RETURNED" }]);
+});

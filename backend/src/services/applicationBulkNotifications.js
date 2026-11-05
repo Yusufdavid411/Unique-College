@@ -33,6 +33,7 @@ const eventKind = (audience) => audience === "waiting" ? "APPLICATION_REMINDER" 
 
 export async function bulkNotificationPreview(database, audience, now = new Date(), ids) {
   const kind = eventKind(audience);
+  const recentMessages = audience === "corrections" ? { OR: [{ kind }, { kind: "STATUS", toStatus: "RETURNED" }] } : audience === "offered" ? { OR: [{ kind }, { kind: "STATUS", toStatus: "ACCEPTED" }] } : { kind };
   const closingDate = audience === "waiting" ? (await getAdmissionsPolicy(database)).closingDate : null;
   const today = new Intl.DateTimeFormat("en-CA", { timeZone: "Africa/Lagos", year: "numeric", month: "2-digit", day: "2-digit" }).format(now);
   if (audience === "waiting" && (!closingDate || closingDate < today)) throw conflict("Set a current or future application submission deadline in Admissions setup before sending reminders.", 422);
@@ -40,7 +41,7 @@ export async function bulkNotificationPreview(database, audience, now = new Date
     where: { isTest: false, ...(ids ? { id: { in: ids } } : {}), applicant: { isActive: true, role: "APPLICANT" } },
     select: { id: true, fullName: true, status: true, submittedAt: true, screeningStatus: true, offerResponse: true, formFeeAmount: true,
       applicant: { select: { email: true } }, payments: { select: { status: true, type: true, amount: true, currency: true, provider: true, isTest: true } },
-      statusHistory: { where: { kind, createdAt: { gte: new Date(now.getTime() - 86400000) } }, take: 1, select: { id: true } } },
+      statusHistory: { where: { ...recentMessages, createdAt: { gte: new Date(now.getTime() - 86400000) } }, take: 1, select: { id: true } } },
     orderBy: [{ fullName: "asc" }, { id: "asc" }]
   });
   const matching = records.filter((record) => notificationAudience(record) === audience);

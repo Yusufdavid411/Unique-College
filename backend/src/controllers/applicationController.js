@@ -15,6 +15,7 @@ import { screened, documentsPolicy, validateLetterPolicy, renderAdmissionMessage
 import { feeVerified } from "../services/paymentEligibility.js";
 import { notificationAudience } from "../services/applicationBulkNotifications.js";
 import { releaseAdmissionLetterInTransaction } from "../services/admissionLetters.js";
+import { applicationProgress } from "../services/applicationProgress.js";
 
 const applicationDetails = {
   applicant: { select: { id: true, name: true, email: true, role: true, isActive: true, portalUsername: true, officialEmail: true } },
@@ -62,7 +63,7 @@ export const listApplications = asyncHandler(async (req, res) => {
       acceptanceFeeAmount: true, clearanceStatus: true, requiresAcceptanceForm: true, declarationAccepted: true,
       schoolForms: { select: { kind: true, status: true } }, admissionLetters: { take: 1, select: { id: true } },
       documents: { where: { supersededAt: null }, select: { type: true, reviewStatus: true } },
-      submittedAt: true, createdAt: true, courseOfInterest: true, formFeeAmount: true, screeningStatus: true, screeningAt: true, screeningVenue: true, screeningFeeAmount: true, entranceExamScore: true,
+      submittedAt: true, createdAt: true, updatedAt: true, courseOfInterest: true, formFeeAmount: true, screeningStatus: true, screeningAt: true, screeningVenue: true, screeningFeeAmount: true, entranceExamScore: true,
       payments: { select: { status: true, amount: true, type: true, currency: true, isTest: true, provider: true } }
     },
     orderBy: { createdAt: "desc" }
@@ -74,7 +75,8 @@ export const listApplications = asyncHandler(async (req, res) => {
     const activeApplicant = application.applicant?.isActive && application.applicant.role === "APPLICANT";
     const finalAdmissionReady = Boolean(activeApplicant && reviewReady && application.status === "ACCEPTED" && declarationAccepted && hasVerifiedAdmissionDocuments(documents || []) &&
       !admissionFailure({ ...application, schoolForms, admissionLetters, requiresAcceptanceForm, clearanceStatus, acceptanceFeeAmount }) && !admissionPaymentBlockerFor(application));
-    return { ...application, courseOfInterest: reviewReady ? application.courseOfInterest : null, reviewReady, screeningPaid: screeningProgress(application, screeningFee).paid, notificationAudience: activeApplicant ? notificationAudience(application) : null, finalAdmissionReady };
+    const progress = applicationProgress({ ...application, documents, schoolForms, admissionLetters, declarationAccepted, requiresAcceptanceForm, clearanceStatus, acceptanceFeeAmount }, screeningFee);
+    return { ...application, ...progress, courseOfInterest: reviewReady ? application.courseOfInterest : null, reviewReady, notificationAudience: activeApplicant ? notificationAudience(application) : null, finalAdmissionReady };
   }));
 });
 
@@ -111,7 +113,7 @@ async function reviewResponse(application) {
     if (status === "ADMITTED") return !admissionFailure(application) && !admissionPaymentBlocker && !letterSetupBlocker;
     return true;
   });
-  return { ...application, admission: admissionProgressFor(application), reviewReady, paymentConfirmed, screeningPaid, admissionPaymentBlocker, letterSetupBlocker, admissionDocumentsReady, acceptancePaymentRecorded, allowedStatuses, emailConfigured: statusEmailConfigured() };
+  return { ...application, ...applicationProgress(application, screeningFee), admission: admissionProgressFor(application), reviewReady, paymentConfirmed, screeningPaid, admissionPaymentBlocker, letterSetupBlocker, admissionDocumentsReady, acceptancePaymentRecorded, allowedStatuses, emailConfigured: statusEmailConfigured() };
 }
 
 export const getApplication = asyncHandler(async (req, res) => {

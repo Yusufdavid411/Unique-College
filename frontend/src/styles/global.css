@@ -3351,6 +3351,7 @@ th {
 
 .payment-history .private-file-control,
 .payment-receipt-actions {
+  min-width: 0;
   grid-column: 1 / -1;
   min-width: 0;
 }
@@ -3374,6 +3375,9 @@ th {
 }
 
 .record-downloads p { color: var(--muted); }
+.payment-next-action { margin-top: 1rem; }
+.stage-action-panel { display: grid; gap: 1rem; }
+.stage-action-panel fieldset { margin-top: 1rem; border: 0; padding: 0; }
 .record-download-group h3 { margin: 0 0 10px; padding-bottom: 10px; border-bottom: 1px solid var(--line); }
 .record-download-group ul { list-style: none; margin: 0; padding: 0; }
 .record-download-group li { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; padding: 12px 0; border: 0; }

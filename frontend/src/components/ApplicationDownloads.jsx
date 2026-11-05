@@ -8,9 +8,9 @@ function DocumentGroup({ title, documents }) {
   if (!documents.length) return null;
   return <div className="record-download-group">
     <h3>{title}</h3>
-    <ul>{documents.map(({ label, amount, endpoint, filename, unavailable }) => <li key={endpoint || label}>
+    <ul>{documents.map(({ label, amount, endpoint, path, filename, unavailable }) => <li key={endpoint || path || label}>
       <div><strong>{label}</strong>{amount != null && <small>{currency.format(amount)}</small>}</div>
-      {unavailable ? <span className="portal-status">Awaiting release by Admissions</span> : <PrivateFilePreview endpoint={endpoint} filename={filename} label={amount == null ? label : `${label} receipt`} buttonText="View PDF" allowDownload />}
+      {unavailable ? <span className="portal-status">Awaiting release by Admissions</span> : <PrivateFilePreview endpoint={endpoint} path={path} filename={filename} label={amount == null ? label : `${label} receipt`} buttonText={path ? "View document" : "View PDF"} allowDownload />}
     </li>)}</ul>
   </div>;
 }
@@ -20,6 +20,7 @@ export default function ApplicationDownloads({ application }) {
   const base = `/records/applications/${application.id}`;
   const applicationForms = ["ACCEPTED", "ADMITTED"].includes(application.status)
     ? [{ label: "Application form", endpoint: `${base}/form`, filename: `${name}-application-form.pdf` }] : [];
+  applicationForms.push(...(application.documents || []).filter((document) => document.reviewStatus === "VERIFIED" && !document.supersededAt && document.path).map((document) => ({ label: document.label || document.type.replaceAll("_", " "), path: document.path })));
   const schoolForms = (application.schoolForms || []).filter((form) => form.status === "SUBMITTED" && formLabels[form.kind]).map((form) => ({
     label: formLabels[form.kind], endpoint: `${base}/documents/${form.kind}`, filename: `${name}-${form.kind.toLowerCase().replaceAll("_", "-")}.pdf`
   }));

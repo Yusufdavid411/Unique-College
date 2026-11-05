@@ -2,6 +2,8 @@ import { useState } from "react";
 import { Bell } from "lucide-react";
 import { api, apiErrorMessage } from "../api/client.js";
 import { useConfirmation } from "../context/ConfirmationContext.jsx";
+import { ErrorToast } from "./ToastNotifications.jsx";
+import { notify } from "../api/notifications.js";
 
 export default function ApplicationBulkNotice({ audience, label }) {
   const [preview, setPreview] = useState(null);
@@ -17,7 +19,12 @@ export default function ApplicationBulkNotice({ audience, label }) {
     setPreview(null);
     try {
       const { data } = await api.get("/applications/bulk-notifications", { params: { audience }, notifyOnError: false });
+      if (!data.data.recipients.length) {
+        notify({ title: "No reminders to send", message: data.data.recentlyNotified ? "This group has already received a reminder within the last 24 hours." : "No applicants currently need this reminder.", type: "info" });
+        return;
+      }
       setPreview(data.data);
+      if (data.data.recentlyNotified) notify({ title: "Recent recipients skipped", message: `${data.data.recentlyNotified} already received this reminder within the last 24 hours.`, type: "info" });
       setMessage(data.data.message);
     } catch (error) { setFeedback(apiErrorMessage(error)); }
     finally { setBusy(false); }
@@ -33,18 +40,17 @@ export default function ApplicationBulkNotice({ audience, label }) {
       if (!await confirm({ title: "Send group notification?", message: `Send to ${count} applicant${count === 1 ? "" : "s"} in ${label}? This does not change application statuses.`, confirmLabel: "Send notification" })) return;
       const { data } = await api.post("/applications/bulk-notifications", { audience, ids: preview.recipients.map(({ id }) => id), closingDate: preview.closingDate, ...(deadline ? {} : { message }) }, { timeout: 60000, notifyOnError: false });
       setPreview(null);
-      setFeedback(`${data.data.notified} notified.${data.data.emailPending ? ` ${data.data.emailPending} email deliveries pending.` : ""}`);
+      notify({ title: "Reminders sent", message: `${data.data.notified} applicant(s) notified in their portal and submitted for email delivery.`, type: "info" });
     } catch (error) { setFeedback(apiErrorMessage(error)); }
     finally { setBusy(false); }
   }
 
   return <section className="form-panel" aria-label="Group notifications">
-    {!preview && <div><button className="button secondary" type="button" disabled={busy} onClick={loadPreview}><Bell size={18} aria-hidden="true" />{busy ? "Checking recipients…" : "Notify this group"}</button></div>}
-    {feedback && <p role="status">{feedback}</p>}
+    {!preview && <div><button className="button secondary" type="button" disabled={busy} onClick={loadPreview}><Bell size={18} aria-hidden="true" />{busy ? "Checking recipients…" : audience === "waiting" ? "Remind to complete application" : audience === "corrections" ? "Remind to complete corrections" : "Remind about admission offer"}</button></div>}
+    <ErrorToast message={feedback} />
     {preview && <form className="student-form" onSubmit={send}>
       <strong>{preview.recipients.length} eligible · {label}</strong>
       <small>Applies to the full group, not just search results. Portal notifications appear immediately; email delivery may follow later.</small>
-      {preview.recentlyNotified > 0 && <small>{preview.recentlyNotified} skipped because they received this notification in the last 24 hours.</small>}
       {preview.recipients.length > 0 && <>
         <details><summary>Review recipients</summary><ul className="bulk-notice-recipients">{preview.recipients.map(({ id, fullName }) => <li key={id}>{fullName}</li>)}</ul></details>
         <strong>{preview.subject}</strong>
