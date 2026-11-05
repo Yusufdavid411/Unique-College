@@ -28,6 +28,14 @@ test("API rejects anonymous and revoked sessions and isolates database outages",
     assert.equal(temporary.status, 403);
     assert.equal((await temporary.json()).code, "PASSWORD_CHANGE_REQUIRED");
     assert.equal((await fetch(base + "/api/auth/me", { headers })).status, 200);
+    for (const origin of ["http://localhost:5173", "http://localhost:5174"]) {
+      const response = await fetch(base + "/api/auth/me", { headers: { ...headers, Origin: origin } });
+      assert.equal(response.status, 200);
+      assert.match(response.headers.get("cache-control"), /no-store/);
+      assert.equal(response.headers.get("access-control-allow-origin"), origin);
+      assert.match(response.headers.get("vary"), /Origin/i);
+      assert.match(response.headers.get("vary"), /Authorization/i);
+    }
   } finally {
     prisma.user.findUnique = original;
     await new Promise((resolve) => server.close(resolve));

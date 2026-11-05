@@ -13,6 +13,12 @@ export const app = express();
 app.set("trust proxy", 1);
 
 app.use(helmet({ crossOriginResourcePolicy: { policy: "cross-origin" } }));
+app.use("/api", (req, res, next) => {
+  res.set("Cache-Control", "private, no-store");
+  res.vary("Origin");
+  res.vary("Authorization");
+  next();
+});
 const corsOptions = {
   origin(origin, callback) {
     if (!origin) return callback(null, true);

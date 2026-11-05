@@ -12,6 +12,10 @@ Frontend responses revalidate their cache entries. The recovery screen has a
 white background, readable text and a dashboard link appropriate to the current
 portal. This recovery path does not retry payments or form submissions.
 
+API responses are private and non-cacheable and vary by Origin and Authorization.
+The login-check URL is portal-scoped to avoid reusing an older cached response
+with another portal's CORS header when switching between subdomains.
+
 ApplicationDownloads is shared by admin, applicant and student portals. Only its
 three section headings have divider rules; document rows and document controls
 have no underline. Supporting student document rows also have no divider.

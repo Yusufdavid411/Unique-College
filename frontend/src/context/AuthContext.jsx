@@ -22,7 +22,7 @@ export function AuthProvider({ children }) {
       setSession({ scope, user: null, loading: Boolean(token) });
       if (!token) return;
       try {
-        const response = await api.get("/auth/me", { headers: { Authorization: `Bearer ${token}` }, notifyOnError: false });
+        const response = await api.get("/auth/me", { headers: { Authorization: `Bearer ${token}` }, notifyOnError: false, params: { portal: scope } });
         if (!active || current !== version || requestIntent !== intent.current) return;
         const user = response.data.data.user;
         const verifiedScope = scopeForUser(user);
